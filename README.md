@@ -55,6 +55,29 @@ cargo run -p groove-lfs -- dashboard
 
 # Simulate OS installation safely
 cargo run -p groove-installer -- --dry-run
+
+# Run full ISO checksum and integrity suite
+./scripts/verify_system_suite.sh
+```
+
+---
+
+## 💿 Bootable ISO & Release Information
+
+The official bootable LiveUSB ISO image is built and verified:
+
+- **Image:** `linux-groove-0.1.0-aarch64.iso` (594 MB)
+- **Target Architecture:** `aarch64-unknown-linux-gnu`
+- **Release Notes:** [RELEASE_NOTES_v0.1.0.md](RELEASE_NOTES_v0.1.0.md)
+- **Checksums:** [SHA256SUMS.txt](SHA256SUMS.txt)
+
+```text
+9b778d805960f12983d7ce2c22841711ab11fa78585435d5cc7d855d6f6717ed  linux-groove-0.1.0-aarch64.iso
+```
+
+### Flashing to USB (LiveUSB Mode)
+```bash
+sudo dd if=/Volumes/Backup/linux_groove_terabit/iso/linux-groove-0.1.0-aarch64.iso of=/dev/rdiskX bs=4M status=progress conv=fsync
 ```
 
 ---
