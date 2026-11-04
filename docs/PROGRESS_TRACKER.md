@@ -48,8 +48,8 @@
 ---
 
 ### Fase 3: Cross-Toolchain & Herramientas Temporales Rustificadas (LFS 5-6)
-- [ ] Configuración del entorno Docker de compilación (`Dockerfile.lfs-builder`).
-- [ ] Capítulo 5 LFS: Binutils (Pass 1).
+- [x] Configuración del entorno Docker de compilación (`Dockerfile.lfs-builder`).
+- [x] Capítulo 5 LFS: Binutils (Pass 1) compilado e instalado en `$LFS/tools/bin`.
 - [ ] Capítulo 5 LFS: GCC (Pass 1).
 - [ ] Capítulo 5 LFS: Linux API Headers 6.12.
 - [ ] Capítulo 5 LFS: Glibc 2.40.
