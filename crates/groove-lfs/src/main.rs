@@ -1,7 +1,9 @@
+mod fetcher;
+
 use clap::{Parser, Subcommand};
 use colored::*;
 use groove_common::GrooveConfig;
-use std::path::Path;
+use fetcher::TarballFetcher;
 use std::process::Command;
 
 #[derive(Parser)]

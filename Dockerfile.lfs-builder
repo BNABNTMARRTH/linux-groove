@@ -49,3 +49,4 @@ ENV PATH=/mnt/lfs/tools/bin:/bin:/usr/bin:/sbin:/usr/sbin:/root/.cargo/bin
 WORKDIR /workspace
 
 CMD ["/bin/bash"]
+

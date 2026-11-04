@@ -61,3 +61,4 @@ cargo run -p groove-installer -- --dry-run
 
 ## 📜 License
 Licensed under Apache-2.0 or MIT at your option.
+
