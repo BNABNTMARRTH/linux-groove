@@ -9,6 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bash \
     binutils \
     bison \
+    flex \
+    bc \
     bzip2 \
     coreutils \
     diffutils \
@@ -31,6 +33,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     e2fsprogs \
     libssl-dev \
+    libelf-dev \
+    kmod \
+    cpio \
+    squashfs-tools \
+    xorriso \
+    mtools \
+    dosfstools \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
@@ -48,4 +57,3 @@ ENV PATH=/mnt/lfs/tools/bin:/bin:/usr/bin:/sbin:/usr/sbin:/root/.cargo/bin
 WORKDIR /workspace
 
 CMD ["/bin/bash"]
-

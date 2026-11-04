@@ -1,0 +1,31 @@
+[ensemble]
+id = "ensemble-cinema-video"
+name = "The Blue Reel Cinema Suite"
+description = "Edición cinematográfica no lineal, streaming broadcast y transcodificación acelerada por GPU"
+category = "Video & Broadcast"
+version = "0.1.0"
+author = "Linux Groove OS Team"
+icon = "applications-multimedia"
+
+[environment]
+LIBVA_DRIVER_NAME = "virtio_gpu"
+FFMPEG_DATADIR = "/usr/share/ffmpeg"
+
+[[applications]]
+name = "Kdenlive"
+command = "/usr/bin/kdenlive"
+description = "Editor no lineal multipista de vídeo profesional"
+desktop_entry = "org.kde.kdenlive.desktop"
+
+[[applications]]
+name = "OBS Studio"
+command = "/usr/bin/obs"
+description = "Software de grabación y transmisión en directo con soporte Wayland PipeWire"
+desktop_entry = "com.obsproject.Studio.desktop"
+
+[[applications]]
+name = "FFmpeg VA-API"
+command = "/usr/bin/ffmpeg"
+description = "Motor de transcodificación multimedia por hardware"
+desktop_entry = ""
+

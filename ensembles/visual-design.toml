@@ -1,0 +1,31 @@
+[ensemble]
+id = "ensemble-visual-design"
+name = "The Canvas & Typography Atelier"
+description = "Ilustración vectorial, diseño editorial, maquetación de portadas y armonías cromáticas"
+category = "Visual Art & Design"
+version = "0.1.0"
+author = "Linux Groove OS Team"
+icon = "applications-graphics"
+
+[environment]
+GIMP2_DIRECTORY = "/home/groove/.config/GIMP/2.10"
+INKSCAPE_PROFILE_DIR = "/home/groove/.config/inkscape"
+
+[[applications]]
+name = "Inkscape"
+command = "/usr/bin/inkscape"
+description = "Editor de gráficos vectoriales SVG profesional"
+desktop_entry = "org.inkscape.Inkscape.desktop"
+
+[[applications]]
+name = "GIMP"
+command = "/usr/bin/gimp"
+description = "Manipulación y retoque avanzado de imágenes ráster"
+desktop_entry = "gimp.desktop"
+
+[[applications]]
+name = "groove-palette"
+command = "/usr/bin/groove-session palette"
+description = "Extractor y armonizador de paletas Blue Note Jazz"
+desktop_entry = "groove-palette.desktop"
+

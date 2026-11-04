@@ -1,0 +1,39 @@
+[ensemble]
+id = "ensemble-jazz-audio"
+name = "The Bebop Audio Studio"
+description = "Producción musical multitrack, sintetizadores modulares y mezcla en tiempo real"
+category = "Audio & Music"
+version = "0.1.0"
+author = "Linux Groove OS Team"
+icon = "audio-midi"
+
+[environment]
+PIPEWIRE_LATENCY = "64/48000"
+JACK_DEFAULT_SERVER = "pipewire"
+LV2_PATH = "/usr/ensemble/jazz-audio/lib/lv2:/usr/lib/lv2"
+LADSPA_PATH = "/usr/ensemble/jazz-audio/lib/ladspa:/usr/lib/ladspa"
+
+[[applications]]
+name = "Ardour"
+command = "/usr/bin/ardour8"
+description = "Estación de trabajo de audio digital (DAW) profesional"
+desktop_entry = "ardour.desktop"
+
+[[applications]]
+name = "Carla"
+command = "/usr/bin/carla"
+description = "Host de plugins modulares (VST3, LV2, SFZ)"
+desktop_entry = "carla.desktop"
+
+[[applications]]
+name = "groove-tuner"
+command = "/usr/bin/groove-session tuner"
+description = "Afinador y metrónomo analógico con swing para músicos de Jazz"
+desktop_entry = "groove-tuner.desktop"
+
+[realtime]
+priority = 98
+memlock = "unlimited"
+nice = -19
+governor = "performance"
+

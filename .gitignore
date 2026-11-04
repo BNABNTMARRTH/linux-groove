@@ -15,6 +15,15 @@ Cargo.lock
 *.squashfs
 sources/
 iso/
-ensembles/
 images/
+*.ensemble
+
+# Kernel build artifacts
+*.o
+*.ko
+*.mod*
+.*.cmd
+.*.d
+modules.order
+Module.symvers
 

@@ -1,0 +1,33 @@
+[ensemble]
+id = "ensemble-rust-dev"
+name = "The Systems & Creative Coding Lab"
+description = "Entorno de desarrollo de sistemas en Rust, shaders gráficos, síntesis de audio DSP y terminal moderna"
+category = "Development & Systems"
+version = "0.1.0"
+author = "Linux Groove OS Team"
+icon = "utilities-terminal"
+
+[environment]
+RUSTUP_HOME = "/home/groove/.rustup"
+CARGO_HOME = "/home/groove/.cargo"
+EDITOR = "hx"
+TERM = "xterm-256color"
+
+[[applications]]
+name = "Helix Editor"
+command = "/usr/bin/hx"
+description = "Editor modal moderno escrito en Rust con soporte LSP y Treesitter nativo"
+desktop_entry = "helix.desktop"
+
+[[applications]]
+name = "Alacritty"
+command = "/usr/bin/alacritty"
+description = "Emulador de terminal acelerado por GPU (OpenGL/Vulkan) en Rust"
+desktop_entry = "Alacritty.desktop"
+
+[[applications]]
+name = "Rust Toolchain & Cargo"
+command = "/home/groove/.cargo/bin/cargo"
+description = "Compilador Rust y gestor de paquetes"
+desktop_entry = ""
+

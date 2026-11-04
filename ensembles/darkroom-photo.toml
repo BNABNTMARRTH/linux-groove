@@ -1,0 +1,24 @@
+[ensemble]
+id = "ensemble-darkroom-photo"
+name = "The Silver Halide Darkroom"
+description = "Revelado digital de negativos RAW, gestión de color fotográfico y catalogación de alta velocidad"
+category = "Photography & RAW Processing"
+version = "0.1.0"
+author = "Linux Groove OS Team"
+icon = "camera-photo"
+
+[environment]
+DARKTABLE_CONFIG_DIR = "/home/groove/.config/darktable"
+
+[[applications]]
+name = "Darktable"
+command = "/usr/bin/darktable"
+description = "Mesa de luz y cuarto oscuro virtual con pipeline de color flotante 32-bit"
+desktop_entry = "org.darktable.Darktable.desktop"
+
+[[applications]]
+name = "RawTherapee"
+command = "/usr/bin/rawtherapee"
+description = "Revelador de máxima precisión para sensores Bayer y X-Trans"
+desktop_entry = "rawtherapee.desktop"
+

@@ -316,15 +316,16 @@ impl GrooveInit {
         println!("\n{}", "🎷 [groove-init] Entrando en bucle de supervisión PID 1 (esperando eventos)...".green().bold());
         
         // Loop de supervisión no bloqueante
+        let is_test = std::env::var("GROOVE_TEST_MODE").is_ok();
         let mut cycles = 0;
         while !self.shutdown_requested.load(Ordering::SeqCst) {
             // Supervisar y cosechar procesos zombi
             // En producción nix::sys::wait::waitpid(-1, WNOHANG)
-            std::thread::sleep(Duration::from_millis(100));
+            std::thread::sleep(Duration::from_millis(200));
             cycles += 1;
             
-            // Para ejecución de demostración / test, terminar tras inicialización
-            if cycles > 10 {
+            // Para ejecución de test rápido, terminar tras inicialización
+            if is_test && cycles > 10 {
                 println!("🎷 [groove-init] Verificación de ciclo de vida completada exitosamente.");
                 break;
             }

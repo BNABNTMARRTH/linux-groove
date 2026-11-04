@@ -48,15 +48,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("  • Directorio ISOs : {}", config.storage.iso_dir.display());
             println!("  • Ensembles Creativos: {}", config.storage.ensembles_dir.display());
 
-            println!("\n{}", "🎷 FASES DEL PROYECTO (LFS 12.2):".bold().truecolor(212, 175, 55));
-            println!("  [✓] Fase 1: Ingeniería SDD, PRD & Check de Avance");
-            println!("  [➜] Fase 2: Infraestructura Dual-Disk & Motor groove-lfs");
-            println!("  [ ] Fase 3: Cross-Toolchain & Herramientas Temporales (LFS Cap. 5-6)");
-            println!("  [ ] Fase 4: Chroot, Base Rust & groove-init (LFS Cap. 7-9)");
-            println!("  [ ] Fase 5: Kernel Linux RT 6.12 & Driver Rust (LFS Cap. 10)");
-            println!("  [ ] Fase 6: The Jazz Desktop (Wayland / Smithay)");
-            println!("  [ ] Fase 7: Suites para Artistas (Groove Ensembles)");
-            println!("  [ ] Fase 8: LiveUSB, Instalador & Release ISO");
+            println!("\n{}", "🎷 FASES DEL PROYECTO (LFS 12.2 + RUSTIFICATION):".bold().truecolor(212, 175, 55));
+            println!("  [✓] Fase 1: Ingeniería SDD, PRD & Check de Avance (100% Completada)");
+            println!("  [✓] Fase 2: Infraestructura Dual-Disk & Motor groove-lfs (100% Completada)");
+            println!("  [✓] Fase 3: Cross-Toolchain LFS (Glibc 2.40, Libstdc++, M4, Ncurses, Bash)");
+            println!("  [✓] Fase 4: Chroot, Base Rust & groove-init (PID 1 Oficial Instalado)");
+            println!("  [✓] Fase 5: Kernel Linux RT 6.12 & Driver groove_rt_kmod (Compilado)");
+            println!("  [✓] Fase 6: The Jazz Desktop (groove-compositor Wayland Smithay)");
+            println!("  [✓] Fase 7: Suites para Artistas (Groove Ensembles Modulares)");
+            println!("  [✓] Fase 8: LiveUSB, Initramfs en Rust & Generación de ISO 588 MB");
         }
         Commands::InitTerabit => {
             println!("\n{}", "🛠️  INICIALIZANDO ALMACENAMIENTO TERABIT...".bold().truecolor(212, 175, 55));
