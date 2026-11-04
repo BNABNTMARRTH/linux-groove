@@ -1,0 +1,91 @@
+[chapter]
+id = 5
+title = "Compiling a Cross-Toolchain"
+target = "tools"
+
+[[packages]]
+name = "binutils-pass-1"
+version = "2.43.1"
+tarball = "binutils-2.43.1.tar.xz"
+url = "https://ftp.gnu.org/gnu/binutils/binutils-2.43.1.tar.xz"
+sha256 = "657193c3b0eb68ab14e7a8e8093112cf2c8e312521199fc9be740e55ff6f96ec"
+build_dir = "build"
+configure_args = [
+    "--prefix=$LFS/tools",
+    "--with-sysroot=$LFS",
+    "--target=$LFS_TGT",
+    "--disable-nls",
+    "--enable-gprofng=no",
+    "--disable-werror",
+    "--enable-default-hash-style=gnu"
+]
+
+[[packages]]
+name = "gcc-pass-1"
+version = "14.2.0"
+tarball = "gcc-14.2.0.tar.xz"
+url = "https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
+sha256 = "a7b7c4a43b6a229a43a0e66b44458f273be825121e7d95a94371d37446d3ea0a"
+build_dir = "build"
+configure_args = [
+    "--target=$LFS_TGT",
+    "--prefix=$LFS/tools",
+    "--with-glibc-version=2.40",
+    "--with-sysroot=$LFS",
+    "--with-newlib",
+    "--without-headers",
+    "--enable-default-pie",
+    "--enable-default-ssp",
+    "--disable-nls",
+    "--disable-shared",
+    "--disable-multilib",
+    "--disable-threads",
+    "--disable-libatomic",
+    "--disable-libgomp",
+    "--disable-libquadmath",
+    "--disable-libssp",
+    "--disable-libvtv",
+    "--disable-libstdcxx",
+    "--enable-languages=c,c++"
+]
+
+[[packages]]
+name = "linux-api-headers"
+version = "6.12.0"
+tarball = "linux-6.12.tar.xz"
+url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.tar.xz"
+sha256 = "657193c3b0eb68ab14e7a8e8093112cf2c8e312521199fc9be740e55ff6f96ec"
+
+[[packages]]
+name = "glibc"
+version = "2.40"
+tarball = "glibc-2.40.tar.xz"
+url = "https://ftp.gnu.org/gnu/glibc/glibc-2.40.tar.xz"
+sha256 = "19a76ccb63de96f48eb464878f5ea0f188544a9a47db08e2f5ff5cb86b0e6fa7"
+build_dir = "build"
+configure_args = [
+    "--prefix=/usr",
+    "--host=$LFS_TGT",
+    "--build=$(../scripts/config.guess)",
+    "--enable-kernel=4.19",
+    "--with-headers=$LFS/usr/include",
+    "--disable-nscd",
+    "libc_cv_slibdir=/usr/lib"
+]
+
+[[packages]]
+name = "libstdcxx-pass-1"
+version = "14.2.0"
+tarball = "gcc-14.2.0.tar.xz"
+url = "https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
+sha256 = "a7b7c4a43b6a229a43a0e66b44458f273be825121e7d95a94371d37446d3ea0a"
+build_dir = "build"
+configure_args = [
+    "--host=$LFS_TGT",
+    "--build=$(../scripts/config.guess)",
+    "--prefix=/usr",
+    "--disable-multilib",
+    "--disable-nls",
+    "--disable-libstdcxx-pch",
+    "--with-gxx-include-dir=/tools/$LFS_TGT/include/c++/14.2.0"
+]

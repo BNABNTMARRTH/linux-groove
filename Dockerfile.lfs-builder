@@ -1,0 +1,51 @@
+# Linux Groove OS: Contenedor Constructor LFS 12.2 Multi-Arquitectura
+FROM debian:bookworm-slim
+
+# Prevenir prompts interactivos
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Instalar requisitos oficiales de LFS 12.2 (Host System Requirements)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    binutils \
+    bison \
+    bzip2 \
+    coreutils \
+    diffutils \
+    findutils \
+    gawk \
+    gcc \
+    g++ \
+    grep \
+    gzip \
+    m4 \
+    make \
+    patch \
+    perl \
+    python3 \
+    sed \
+    tar \
+    texinfo \
+    xz-utils \
+    curl \
+    git \
+    e2fsprogs \
+    libssl-dev \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalar toolchain oficial de Rust para compilaciones del userspace y kernel
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    --default-toolchain stable \
+    --target aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Configurar variables de entorno canónicas de LFS
+ENV LFS=/mnt/lfs
+ENV LC_ALL=POSIX
+ENV LFS_TGT=aarch64-lfs-linux-gnu
+ENV PATH=/mnt/lfs/tools/bin:/bin:/usr/bin:/sbin:/usr/sbin:/root/.cargo/bin
+
+WORKDIR /workspace
+
+CMD ["/bin/bash"]

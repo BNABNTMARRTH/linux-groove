@@ -1,0 +1,33 @@
+[chapter]
+id = 6
+title = "Cross Compiling Temporary Tools (Rustified & Essential Tools)"
+target = "tools"
+
+[[packages]]
+name = "m4"
+version = "1.4.19"
+tarball = "m4-1.4.19.tar.xz"
+url = "https://ftp.gnu.org/gnu/m4/m4-1.4.19.tar.xz"
+sha256 = "3be4a4018c7acab07ea0705a61d84f88e1bb3b216447ec051c07172b8c56e309"
+configure_args = ["--prefix=/usr", "--host=$LFS_TGT", "--build=$(build-aux/config.guess)"]
+
+[[packages]]
+name = "ncurses"
+version = "6.5"
+tarball = "ncurses-6.5.tar.gz"
+url = "https://anduin.linuxfromscratch.org/LFS/ncurses-6.5.tar.gz"
+sha256 = "136d91bc269a9a629acac77bc0f15aafd259d2b847447f42071ebd857c2d8bc2"
+
+[[packages]]
+name = "bash"
+version = "5.2.32"
+tarball = "bash-5.2.32.tar.gz"
+url = "https://ftp.gnu.org/gnu/bash/bash-5.2.32.tar.gz"
+sha256 = "8f572a1e649e1e351897d84f8ee96f7c63e26fb516087ff27cfcf07469b8e906"
+
+[[rust_temporary_tools]]
+name = "uutils-coreutils-cross"
+source = "/Volumes/Backup/linux_groove_terabit/sources/rust-repos/uutils-coreutils"
+target_dir = "$LFS/tools/bin"
+features = ["unix"]
+description = "Compilación cruzada de uutils/coreutils para equipar $LFS/tools con utilidades 100% Rust"
