@@ -8,5 +8,5 @@ description = "PID 1 Init y Supervisor de Servicios en Rust para Linux Groove OS
 groove-common = { path = "../groove-common" }
 serde = { version = "1.0", features = ["derive"] }
 toml = "0.8"
-nix = { version = "0.27", features = ["process", "signal", "mount", "sched"] }
-
+nix = { version = "0.27", features = ["process", "signal", "mount", "sched", "fs"] }
+colored = "2.1"

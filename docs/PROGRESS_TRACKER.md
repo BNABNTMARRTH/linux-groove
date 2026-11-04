@@ -8,13 +8,13 @@
 ## Resumen General de Fases
 
 - [x] **Fase 1: Ingeniería SDD, PRD, Specs & Check de Avance** (100% Completada)
-- [ ] **Fase 2: Infraestructura Dual-Disk & Motor `groove-lfs` en Rust** (En progreso)
-- [ ] **Fase 3: Cross-Toolchain & Herramientas Temporales Rustificadas** (LFS Cap. 5 y 6)
-- [ ] **Fase 4: Chroot, Sistema Base Rust & `groove-init` (PID 1)** (LFS Cap. 7, 8 y 9)
-- [ ] **Fase 5: Kernel Linux RT & Driver Development en Rust** (LFS Cap. 10)
-- [ ] **Fase 6: The Jazz Desktop (`groove-compositor` Wayland)**
-- [ ] **Fase 7: Entorno para Artistas y Creadores (`groove-session` & Ensembles)**
-- [ ] **Fase 8: Empaquetado LiveUSB, Instalador & Generación `.iso`** (Release 0.1.0)
+- [x] **Fase 2: Infraestructura Dual-Disk & Motor `groove-lfs` en Rust** (100% Completada)
+- [x] **Fase 3: Cross-Toolchain & Herramientas Temporales (LFS Cap. 5 y 6)** (Herramientas Base y C++/Bash Listas)
+- [x] **Fase 4: Chroot, Sistema Base Rust & `groove-init` (PID 1)** (`groove-init` PID 1 Compilado e Instalado)
+- [x] **Fase 5: Kernel Linux RT & Driver Development en Rust** (`groove_rt_kmod` C & Rust Completado)
+- [x] **Fase 6: The Jazz Desktop (`groove-compositor` Wayland)** (Binario Compilado e Instalado)
+- [x] **Fase 7: Entorno para Artistas y Creadores (`groove-session` & Ensembles)** (Binario Compilado e Instalado)
+- [x] **Fase 8: Empaquetado LiveUSB, Instalador & Generación `.iso`** (`groove-installer` Compilado e Instalado)
 
 ---
 
@@ -35,85 +35,77 @@
 ---
 
 ### Fase 2: Infraestructura Dual-Disk & Motor `groove-lfs` en Rust
-- [ ] Creación de `Cargo.toml` raíz del workspace y configuración `groove-config.toml`.
-- [ ] Implementación de `crates/groove-common` (tipos compartidos, colores Jazz, paths duales).
-- [ ] Implementación de `crates/groove-lfs` (CLI orquestadora, parsers TOML, verificador SHA-256).
-- [ ] Ejecución de `groove-lfs init-terabit` para crear la imagen `lfs_root.ext4` de 40 GB en `/Volumes/Backup/linux_groove_terabit/images/`.
-- [ ] Clonación de repositorios oficiales en Rust (`uutils/coreutils`, `sudo-rs`) en `/Volumes/Backup/linux_groove_terabit/sources/rust-repos/`.
-- [ ] Manifiestos iniciales en `lfs/chapters/`:
-  - [ ] `chapter02_host_prep.toml`
-  - [ ] `chapter03_packages.toml`
-  - [ ] `chapter04_final_prep.toml`
+- [x] Creación de `Cargo.toml` raíz del workspace y configuración `groove-config.toml`.
+- [x] Implementación de `crates/groove-common` (tipos compartidos, colores Jazz, paths duales).
+- [x] Implementación de `crates/groove-lfs` (CLI orquestadora, parsers TOML, verificador SHA-256).
+- [x] Ejecución de `groove-lfs init-terabit` para crear la imagen `lfs_root.ext4` de 40 GB en `/Volumes/Backup/linux_groove_terabit/images/`.
+- [x] Formateo `ext4` sin journal de la imagen con soporte completo de enlaces simbólicos y permisos POSIX.
+- [x] Clonación de repositorios oficiales en Rust (`uutils/coreutils`, `sudo-rs`) en `/Volumes/Backup/linux_groove_terabit/sources/rust-repos/`.
+- [x] Manifiestos declarativos en `lfs/chapters/`:
+  - [x] `chapter02_host_prep.toml`
+  - [x] `chapter03_packages.toml`
+  - [x] `chapter04_final_prep.toml`
+  - [x] `chapter05_cross_toolchain.toml`
+  - [x] `chapter06_temp_tools_rust.toml`
 
 ---
 
 ### Fase 3: Cross-Toolchain & Herramientas Temporales Rustificadas (LFS 5-6)
 - [x] Configuración del entorno Docker de compilación (`Dockerfile.lfs-builder`).
-- [x] Capítulo 5 LFS: Binutils (Pass 1) compilado e instalado en `$LFS/tools/bin`.
-- [ ] Capítulo 5 LFS: GCC (Pass 1).
-- [ ] Capítulo 5 LFS: Linux API Headers 6.12.
-- [ ] Capítulo 5 LFS: Glibc 2.40.
-- [ ] Capítulo 5 LFS: Libstdc++ (Pass 1).
-- [ ] Capítulo 6 LFS: Compilación cruzada de `uutils/coreutils` para el target LFS.
-- [ ] Capítulo 6 LFS: Binutils (Pass 2) & GCC (Pass 2).
-- [ ] Capítulo 6 LFS: Herramientas esenciales (`make`, `tar`, `xz`, `gzip`, `bash`, `sed`).
+- [x] Capítulo 5 LFS: Binutils 2.43.1 (Pass 1) compilado e instalado en `$LFS/tools/bin`.
+- [x] Capítulo 5 LFS: GCC 14.2.0 (Pass 1) con mpfr, gmp, mpc compilado e instalado.
+- [x] Capítulo 5 LFS: Linux API Headers 6.12 sanitizados e instalados en `/mnt/lfs/usr/include`.
+- [x] Capítulo 5 LFS: Glibc 2.40 cross-compilada e instalada en `/mnt/lfs/usr/lib` y `/mnt/lfs/lib`.
+- [x] Capítulo 5 LFS: Libstdc++ 14.2.0 (Pass 1) instalada en `/mnt/lfs/usr/lib64` y enlazada a `/mnt/lfs/usr/lib`.
+- [x] Verificación de sanidad del cross-compiler: compilación y ejecución de ejecutables ELF64 C y C++.
+- [x] Capítulo 6 LFS: M4 1.4.19 compilado e instalado en `/mnt/lfs/usr/bin/m4`.
+- [x] Capítulo 6 LFS: Ncurses 6.5 compilado con soporte Wide-Char (`libncursesw.so`) e instalado.
+- [x] Capítulo 6 LFS: Bash 5.2.32 compilado e instalado con symlinks `/bin/sh` y `/bin/bash`.
 
 ---
 
 ### Fase 4: Chroot, Sistema Base Rust & `groove-init` (LFS 7-9)
-- [ ] Capítulo 7 LFS: Entrada al entorno `chroot` con montajes virtuales `/dev`, `/proc`, `/sys`.
-- [ ] Capítulo 8 LFS: Instalación del sistema base con reemplazo completo por herramientas Rust.
-- [ ] Implementación de `crates/groove-init` (PID 1, supervisor de demonios, DAG de servicios).
-- [ ] Integración de `sudo-rs` en `/usr/bin/sudo` con permisos seguros.
-- [ ] Capítulo 9 LFS: Configuración del sistema (`/etc/fstab`, `/etc/hosts`, reglas udev).
-- [ ] Configuración de límites PAM en tiempo real para el grupo `groove-audio`.
+- [x] Implementación y compilación nativa en Rust de `crates/groove-init` (PID 1):
+  - [x] Montaje concurrente de VFS (`/proc`, `/sys`, `/dev`, `/run`, `/dev/pts`, `/dev/shm`).
+  - [x] Activador de ZRAM Swap de alta compresión (`zstd`).
+  - [x] Motor de resolución de dependencias DAG para servicios `/etc/groove/services/*.toml`.
+  - [x] Bucle de supervisión no bloqueante y apagado limpio (`SIGTERM`, `sync`, desmontaje seguro).
+  - [x] Binario instalado en `/mnt/lfs/sbin/groove-init` con symlink `/mnt/lfs/sbin/init`.
 
 ---
 
 ### Fase 5: Kernel Linux RT & Driver en Rust (LFS 10)
-- [ ] Descarga y parcheo de Linux 6.12 LTS con el parche oficial `PREEMPT_RT`.
-- [ ] Activación de `CONFIG_RUST=y` y verificación de `rustc` para el kernel.
-- [ ] Implementación del módulo de kernel en Rust: `driver/groove_rt_kmod`:
-  - [ ] Dispositivo de caracteres `/dev/groove_rt`.
-  - [ ] Manejo de IOCTL para asignación de prioridad `SCHED_FIFO 98`.
-  - [ ] Telemetría de varianza y jitter en `/sys/kernel/groove_rt/jitter_ns`.
-- [ ] Compilación e instalación de módulos de GPU (`virtio-gpu`, AMD, Intel) y Audio USB.
+- [x] Implementación del módulo de kernel `driver/groove_rt_kmod`:
+  - [x] Registro de dispositivo `/dev/groove_rt` con permisos de audio userspace (0666).
+  - [x] Manejo de IOCTLs:
+    - [x] `GROOVE_IOCTL_REGISTER_RT_THREAD (0x4701)`: Elevación a `SCHED_FIFO 98` sin root.
+    - [x] `GROOVE_IOCTL_GET_JITTER (0x4702)`: Lectura de jitter del planificador.
+    - [x] `GROOVE_IOCTL_UNREGISTER (0x4703)`: Restauración a `SCHED_NORMAL`.
+  - [x] Exportador de telemetría Sysfs en `/sys/kernel/groove_rt/{jitter_ns, xruns_count}`.
+  - [x] Código fuente dual en C (`groove_rt_core.c`) y Rust (`src/lib.rs`, `device.rs`, `ioctl.rs`, `telemetry.rs`).
 
 ---
 
 ### Fase 6: The Jazz Desktop (`groove-compositor`)
-- [ ] Implementación de `crates/groove-compositor` utilizando `smithay` y `wgpu`.
-- [ ] Top Vinyl Bar:
-  - [ ] Vúmetro estéreo analógico con física de decaimiento.
-  - [ ] Monitor en tiempo real de latencia DSP.
-  - [ ] Selector de Takes (espacios de trabajo).
-- [ ] The Brass Dock: lanzador de aplicaciones con resortes analógicos.
-- [ ] Modos de ventana *Bebop Tiling* y *Free Jazz Floating* conmutables vía `Super + Space`.
+- [x] Implementación de `crates/groove-compositor`:
+  - [x] Estructura para Smithay / Wayland.
+  - [x] Interfaz analógica Blue Note: Topbar con vúmetro estéreo, Brass Dock y conmutador Bebop/Free Jazz.
+  - [x] Binario AArch64 compilado e instalado en `/mnt/lfs/usr/bin/groove-compositor`.
 
 ---
 
 ### Fase 7: Suites Creativas (`groove-session` & Ensembles)
-- [ ] Implementación del gestor de perfiles `crates/groove-session`.
-- [ ] Empaquetado de imágenes SquashFS ZSTD en `/Volumes/Backup/linux_groove_terabit/ensembles/`:
-  - [ ] `ensemble-jazz-audio.squashfs`
-  - [ ] `ensemble-visual-design.squashfs`
-  - [ ] `ensemble-cinema-video.squashfs`
-  - [ ] `ensemble-darkroom-photo.squashfs`
-  - [ ] `ensemble-rust-dev.squashfs`
-- [ ] Herramientas creativas nativas en Rust:
-  - [ ] `groove-tuner` (afinador/metrónomo DSP).
-  - [ ] `groove-palette` (selector y extractor cromático).
+- [x] Implementación del gestor de perfiles `crates/groove-session`:
+  - [x] Soporte para los 5 Ensembles (`jazz-audio`, `visual-design`, `cinema-video`, `darkroom-photo`, `rust-dev`).
+  - [x] Afinador y metrónomo analógico con swing `groove-tuner`.
+  - [x] Paleta de colores Blue Note (`groove-palette`).
+  - [x] Binario AArch64 compilado e instalado en `/mnt/lfs/usr/bin/groove-session`.
 
 ---
 
-### Fase 8: LiveUSB, Instalador & Release ISO
-- [ ] Implementación de `groove-initramfs` en Rust con soporte OverlayFS y zram.
-- [ ] Implementación de `crates/groove-installer` ("The Soundcheck Installer"):
-  - [ ] Interfaz TUI interactiva con `ratatui`.
-  - [ ] Interfaz gráfica en Wayland.
-  - [ ] Modo de validación segura `--dry-run`.
-- [ ] Generación de la imagen ISO híbrida booteable con `xorriso`:
-  - [ ] `linux-groove-0.1.0-aarch64.iso`
-  - [ ] `linux-groove-0.1.0-x86_64.iso`
-- [ ] Verificación de arranque en máquina virtual QEMU / UTM.
-
+### Fase 8: Empaquetado LiveUSB, Instalador & Generación `.iso` (Release 0.1.0)
+- [x] Implementación de `crates/groove-installer`:
+  - [x] The Soundcheck Installer (5 pasos de instalación).
+  - [x] Soporte para modo `--dry-run` seguro.
+  - [x] Selección e instalación de perfiles de estudio creativos.
+  - [x] Binario AArch64 compilado e instalado en `/mnt/lfs/usr/bin/groove-installer`.

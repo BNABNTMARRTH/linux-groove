@@ -49,3 +49,4 @@ impl TarballFetcher {
         Ok(hash.eq_ignore_ascii_case(expected))
     }
 }
+
