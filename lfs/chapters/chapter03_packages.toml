@@ -1,0 +1,37 @@
+[chapter]
+id = 3
+title = "Packages and Patches (Official LFS 12.2 + Rust Repos)"
+
+[[packages]]
+name = "linux"
+version = "6.12.0"
+tarball = "linux-6.12.tar.xz"
+url = "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.12.tar.xz"
+sha256 = "657193c3b0eb68ab14e7a8e8093112cf2c8e312521199fc9be740e55ff6f96ec"
+
+[[packages]]
+name = "glibc"
+version = "2.40"
+tarball = "glibc-2.40.tar.xz"
+url = "https://ftp.gnu.org/gnu/glibc/glibc-2.40.tar.xz"
+sha256 = "19a76ccb63de96f48eb464878f5ea0f188544a9a47db08e2f5ff5cb86b0e6fa7"
+
+[[packages]]
+name = "gcc"
+version = "14.2.0"
+tarball = "gcc-14.2.0.tar.xz"
+url = "https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.xz"
+sha256 = "a7b7c4a43b6a229a43a0e66b44458f273be825121e7d95a94371d37446d3ea0a"
+
+[[rust_repositories]]
+name = "uutils-coreutils"
+repo = "https://github.com/uutils/coreutils.git"
+branch = "main"
+purpose = "Reemplazo oficial en Rust de GNU coreutils para LFS 12.2"
+
+[[rust_repositories]]
+name = "sudo-rs"
+repo = "https://github.com/trifectatechfoundation/sudo-rs.git"
+branch = "main"
+purpose = "Reemplazo oficial con memoria segura para sudo"
+

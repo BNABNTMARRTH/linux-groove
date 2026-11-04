@@ -1,0 +1,20 @@
+[chapter]
+id = 4
+title = "Final Preparations and Filesystem Hierarchy"
+
+[layout]
+directories = [
+    "/bin",
+    "/etc",
+    "/lib",
+    "/sbin",
+    "/usr/bin",
+    "/usr/lib",
+    "/usr/sbin",
+    "/var",
+    "/tools",
+    "/usr/ensemble"
+]
+user = "lfs"
+group = "lfs"
+

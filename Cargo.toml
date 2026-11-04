@@ -1,0 +1,18 @@
+[workspace]
+members = [
+    "crates/groove-common",
+    "crates/groove-lfs",
+    "crates/groove-init",
+    "crates/groove-compositor",
+    "crates/groove-session",
+    "crates/groove-installer",
+]
+resolver = "2"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = true
+

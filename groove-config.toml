@@ -1,0 +1,33 @@
+[storage]
+# Disco principal de código, especificaciones y manifiestos LFS
+workspace_root = "/Volumes/HDEXTERNO/linux_groove"
+
+# Disco de alta capacidad para imágenes pesadas, tarballs y repositorios Rust
+terabit_root = "/Volumes/Backup/linux_groove_terabit"
+sources_dir = "/Volumes/Backup/linux_groove_terabit/sources"
+images_dir = "/Volumes/Backup/linux_groove_terabit/images"
+iso_dir = "/Volumes/Backup/linux_groove_terabit/iso"
+ensembles_dir = "/Volumes/Backup/linux_groove_terabit/ensembles"
+cargo_target_dir = "/Volumes/Backup/linux_groove_terabit/cargo-target"
+
+# Imagen EXT4 sin límite de 4 GB para el entorno LFS
+lfs_image_path = "/Volumes/Backup/linux_groove_terabit/images/lfs_root.ext4"
+lfs_image_size_gb = 40
+
+[system]
+distro_name = "Linux Groove OS"
+codename = "The Blue Note Edition"
+version = "0.1.0"
+lfs_version = "12.2"
+kernel_version = "6.12.0"
+default_target = "aarch64-unknown-linux-gnu"
+secondary_target = "x86_64-unknown-linux-gnu"
+
+[branding.colors]
+midnight_club = "#0B0E17"
+vinyl_groove = "#141926"
+warm_brass = "#D4AF37"
+bebop_coral = "#E05A47"
+cool_mute = "#3C4A63"
+cream_sleeve = "#F4EFE6"
+

@@ -1,0 +1,19 @@
+# Target de compilación en disco rápido/ExFAT
+target/
+Cargo.lock
+
+# Archivos de sistema y logs
+*.log
+.DS_Store
+*.swp
+*.bak
+
+# Imágenes pesadas y temporales (están en Backup/linux_groove_terabit)
+*.iso
+*.ext4
+*.img
+*.squashfs
+sources/
+iso/
+ensembles/
+images/

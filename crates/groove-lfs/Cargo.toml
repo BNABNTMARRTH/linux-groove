@@ -1,0 +1,15 @@
+[package]
+name = "groove-lfs"
+version = "0.1.0"
+edition = "2021"
+description = "Motor y CLI de orquestación LFS 12.2 en Rust para Linux Groove OS"
+
+[dependencies]
+groove-common = { path = "../groove-common" }
+clap = { version = "4.4", features = ["derive"] }
+colored = "2.1"
+serde = { version = "1.0", features = ["derive"] }
+toml = "0.8"
+sha2 = "0.10"
+walkdir = "2.4"
+

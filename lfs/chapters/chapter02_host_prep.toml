@@ -1,0 +1,10 @@
+[chapter]
+id = 2
+title = "Preparing the Host System and Storage"
+
+[storage]
+description = "Verifica montajes en /Volumes/HDEXTERNO y prepara la imagen virtual en /Volumes/Backup/linux_groove_terabit"
+lfs_mount = "/mnt/lfs"
+image_size_gb = 40
+filesystem = "ext4"
+
