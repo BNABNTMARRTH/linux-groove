@@ -109,12 +109,17 @@
   - [x] Soporte para modo `--dry-run` seguro.
   - [x] Selección e instalación de perfiles de estudio creativos.
   - [x] Binario AArch64 compilado e instalado en `/mnt/lfs/usr/bin/groove-installer`.
+- [x] Rust Userspace Core & SUID Security Integrados:
+  - [x] `uutils/coreutils` multicall binary (13 MB) compilado para AArch64 con LTO y todos los symlinks (`ls`, `cp`, `mv`, `uname`, etc.) instalados en `/usr/bin` y `/bin`.
+  - [x] `sudo-rs` (837 KB) compilado con soporte PAM, configurado con bit SUID (4755) y `/etc/sudoers` para usuario `groove`.
+  - [x] Driver `groove_rt.ko` compilado e instalado en `/lib/modules/6.12.0/extra/`.
+  - [x] Los 5 Creative Ensembles empaquetados en SquashFS (`*.ensemble`) y colocados en `/groove/ensembles/`.
 - [x] Generación de Initramfs en Rust / CPIO (`initramfs-6.12-groove.cpio.gz`, 965 KB):
   - [x] Detección automática de dispositivo LiveUSB con LABEL `LINUX_GROOVE_LIVE`.
   - [x] Montaje loopback de `rootfs.squashfs` con compresión Zstandard.
   - [x] Montaje dinámico de RAM OverlayFS y transferencia mediante `switch_root`.
-- [x] Generación de imagen `.iso` híbrida booteable:
-  - [x] `linux-groove-0.1.0-aarch64.iso` generada con `xorriso` (588 MB, superando el KPI de < 800 MB).
+- [x] Generación de imagen `.iso` híbrida booteable final:
+  - [x] `linux-groove-0.1.0-aarch64.iso` generada con `xorriso` (594 MB, superando ampliamente el KPI de < 800 MB).
   - [x] Configuración de arranque GRUB2 temática *Blue Note* (LiveUSB, TUI Safe Mode, Soundcheck Installer).
 - [x] Verificación de Arranque en Vivo en QEMU:
   - [x] Kernel Linux 6.12 LTS PREEMPT_RT arranca en máquina virtual ARM64 `virt`.
