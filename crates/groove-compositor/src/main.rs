@@ -1,12 +1,34 @@
+mod gui;
+
 use colored::*;
+use std::env;
 use std::io::{self, Write};
 use std::thread;
 use std::time::Duration;
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if args.iter().any(|a| a == "--tui") {
+        run_tui();
+    } else {
+        println!("{}", "🎷 ======================================================================".truecolor(212, 175, 55));
+        println!("  {} - \"The Blue Note Shell\"", "ABRIENDO VENTANA NATIVA DE RUST".bold().truecolor(244, 239, 230));
+        println!("{}", "==========================================================================".truecolor(212, 175, 55));
+        println!("  [Controles de la ventana]:");
+        println!("    • Barra espaciadora : Conmutar entre 'Bebop Tiling' y 'Free Jazz Floating'");
+        println!("    • Teclas 1 a 5      : Montar en caliente los 5 Ensembles Creativos");
+        println!("    • Tecla T           : Activar/Pausar Afinador DSP y Vinilo");
+        println!("    • Tecla Escape      : Cerrar ventana");
+        println!("{}", "==========================================================================".truecolor(212, 175, 55));
+        
+        gui::run_native_gui();
+    }
+}
+
+fn run_tui() {
     print_banner();
 
-    println!("\n{}", "🎷 [GROOVE COMPOSITOR] Modo Interactivo Blue Note iniciado.".bold().truecolor(212, 175, 55));
+    println!("\n{}", "🎷 [GROOVE COMPOSITOR] Modo Interactivo TUI Blue Note iniciado.".bold().truecolor(212, 175, 55));
     println!("Escribe un comando o presiona Enter para ver la animación del vúmetro.");
     println!("Comandos: [vu] [tuner] [ensembles] [palette] [clear] [exit]\n");
 
