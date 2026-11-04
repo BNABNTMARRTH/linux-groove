@@ -1,3 +1,4 @@
+use font8x8::{UnicodeFonts, BASIC_FONTS};
 use minifb::{Key, Window, WindowOptions};
 use std::f32::consts::PI;
 
@@ -14,6 +15,8 @@ const COLOR_BRASS_LIGHT: u32 = 0xF3E5AB;  // Cream Brass
 const COLOR_CORAL: u32 = 0xE05A47;        // Bebop Coral (Clip)
 const COLOR_CREAM: u32 = 0xF4EFE6;        // Cream Sleeve
 const COLOR_EMERALD: u32 = 0x10B981;      // Safe audio
+const COLOR_SLATE: u32 = 0x94A3B8;        // Dim text
+const COLOR_MUTED: u32 = 0x64748B;        // Muted text
 const COLOR_RED_DOT: u32 = 0xEF4444;
 const COLOR_YELLOW_DOT: u32 = 0xF59E0B;
 const COLOR_GREEN_DOT: u32 = 0x10B981;
@@ -36,8 +39,6 @@ pub fn run_native_gui() {
     window.set_target_fps(60);
 
     let mut frame_count: usize = 0;
-    let mut vu_level_l: f32;
-    let mut vu_level_r: f32;
     let mut vinyl_angle: f32 = 0.0;
     let mut active_ensemble = 0; // 0: Audio, 1: Design, 2: Video, 3: Photo, 4: Rust
     let mut is_tiling = true;
@@ -46,7 +47,7 @@ pub fn run_native_gui() {
     while window.is_open() && !window.is_key_down(Key::Escape) {
         frame_count += 1;
 
-        // Input handling
+        // Teclado interactivo
         if window.is_key_pressed(Key::Space, minifb::KeyRepeat::No) {
             is_tiling = !is_tiling;
         }
@@ -57,71 +58,105 @@ pub fn run_native_gui() {
         if window.is_key_pressed(Key::Key5, minifb::KeyRepeat::No) { active_ensemble = 4; }
         if window.is_key_pressed(Key::T, minifb::KeyRepeat::No) { tuner_active = !tuner_active; }
 
-        // Animation updates
+        // Giro del vinilo
         if tuner_active {
             vinyl_angle += 0.05;
             if vinyl_angle > 2.0 * PI { vinyl_angle -= 2.0 * PI; }
         }
 
-        // Bouncing VU meters
+        // Simulación de vúmetro estéreo rebotando
         let jitter = ((frame_count as f32 * 0.15).sin() * 0.2) + ((frame_count as f32 * 0.37).cos() * 0.1);
-        vu_level_l = (0.65 + jitter).clamp(0.1, 0.98);
-        vu_level_r = (0.60 + jitter * 0.9 + 0.04).clamp(0.1, 0.98);
+        let vu_level_l = (0.65 + jitter).clamp(0.1, 0.98);
+        let vu_level_r = (0.60 + jitter * 0.9 + 0.04).clamp(0.1, 0.98);
 
-        // 1. Clear background
+        // 1. Limpiar fondo
         buffer.fill(COLOR_BG);
 
-        // 2. Render Top Vinyl Bar (Height: 42px)
+        // 2. Barra Superior (Top Vinyl Bar)
         draw_rect(&mut buffer, 0, 0, WIDTH, 42, COLOR_VINYL);
         draw_line_h(&mut buffer, 0, WIDTH, 42, COLOR_BRASS);
 
-        // Topbar: Logo / Blue Note Badge
-        draw_circle(&mut buffer, 26, 21, 12, COLOR_BRASS);
-        draw_circle(&mut buffer, 26, 21, 10, COLOR_VINYL);
-        draw_circle(&mut buffer, 26, 21, 4, COLOR_CORAL);
+        // Logo e Identidad
+        draw_circle(&mut buffer, 24, 21, 10, COLOR_BRASS);
+        draw_circle(&mut buffer, 24, 21, 4, COLOR_CORAL);
+        draw_text(&mut buffer, 42, 14, "LINUX GROOVE", COLOR_CREAM, 2);
+        draw_rect(&mut buffer, 245, 13, 62, 17, 0x1E293B);
+        draw_text(&mut buffer, 252, 17, "RT 6.12", COLOR_BRASS, 1);
 
-        // Topbar: Real-Time Stereo VU Meter (L & R)
-        draw_vu_meter(&mut buffer, 160, 14, 180, 7, vu_level_l);
-        draw_vu_meter(&mut buffer, 160, 24, 180, 7, vu_level_r);
+        // Vúmetro estéreo L & R
+        draw_text(&mut buffer, 325, 17, "VU L/R", COLOR_BRASS, 1);
+        draw_vu_meter(&mut buffer, 375, 14, 120, 6, vu_level_l);
+        draw_vu_meter(&mut buffer, 375, 23, 120, 6, vu_level_r);
+        let db_str = format!("{:+.1}dB", (vu_level_l * 12.0 - 12.0));
+        draw_text(&mut buffer, 502, 17, &db_str, if vu_level_l > 0.9 { COLOR_CORAL } else { COLOR_BRASS }, 1);
 
-        // Topbar: DSP indicator (xruns: 0, 0.8ms)
-        draw_rect(&mut buffer, 360, 12, 140, 20, COLOR_SURFACE);
-        draw_circle(&mut buffer, 372, 22, 4, COLOR_EMERALD); // green dot
-        draw_rect(&mut buffer, 384, 16, 50, 4, COLOR_BRASS);
-        draw_rect(&mut buffer, 384, 23, 100, 3, COLOR_BORDER);
+        // Telemetría DSP
+        draw_circle(&mut buffer, 570, 21, 4, COLOR_EMERALD);
+        draw_text(&mut buffer, 580, 17, "0.8ms 48kHz (0 xruns)", COLOR_SLATE, 1);
 
-        // Topbar: Window mode tag
-        let mode_color = if is_tiling { COLOR_EMERALD } else { COLOR_CORAL };
-        draw_rect(&mut buffer, WIDTH - 220, 10, 120, 22, COLOR_SURFACE);
-        draw_rect(&mut buffer, WIDTH - 220, 10, 120, 2, mode_color);
+        // Conmutador de Modo de Ventana
+        let mode_name = if is_tiling { "[Bebop Tiling]" } else { "[Free Jazz Floating]" };
+        let mode_c = if is_tiling { COLOR_EMERALD } else { COLOR_CORAL };
+        draw_text(&mut buffer, 765, 17, mode_name, mode_c, 1);
 
-        // Topbar: Clock box
-        draw_rect(&mut buffer, WIDTH - 80, 10, 65, 22, COLOR_SURFACE);
-
-        // 3. Render Windows Area (Tiled or Floating)
+        // 3. Ventanas de Trabajo (Tiled / Floating)
         if is_tiling {
-            // Window Left: Rust Userspace Terminal (Width 550)
-            render_terminal_window(&mut buffer, 20, 58, 540, 460, frame_count);
+            // Ventana Izquierda: Terminal Alacritty con Userspace Rust
+            render_terminal_window(&mut buffer, 20, 56, 550, 465, frame_count);
 
-            // Window Right: Ensembles & Tuner (Width 360)
-            render_studio_panel(&mut buffer, 580, 58, 360, 460, active_ensemble, vinyl_angle, tuner_active);
+            // Ventana Derecha: Panel de Estudios Creativos y Afinador
+            render_studio_panel(&mut buffer, 585, 56, 355, 465, active_ensemble, vinyl_angle, tuner_active);
         } else {
-            // Free Jazz Floating Mode: Offset with overlapping effect
-            render_studio_panel(&mut buffer, 480, 80, 440, 430, active_ensemble, vinyl_angle, tuner_active);
-            render_terminal_window(&mut buffer, 40, 70, 580, 450, frame_count);
+            // Free Jazz Floating Mode
+            render_studio_panel(&mut buffer, 480, 75, 450, 440, active_ensemble, vinyl_angle, tuner_active);
+            render_terminal_window(&mut buffer, 30, 65, 570, 455, frame_count);
         }
 
-        // 4. Render The Brass Dock (Bottom)
+        // 4. The Brass Dock (Lanzador Inferior)
         render_dock(&mut buffer, active_ensemble);
 
-        // Update the window framebuffer
-        window
-            .update_with_buffer(&buffer, WIDTH, HEIGHT)
-            .unwrap();
+        // Actualizar el framebuffer de la ventana en pantalla
+        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
 
-// Helpers de dibujo en framebuffer 32-bit (ARGB)
+// -------------------------------------------------------------
+// MOTOR DE RASTERIZACIÓN DE TIPOGRAFÍAS EN FRAMEBUFFER
+// -------------------------------------------------------------
+fn draw_text(buf: &mut [u32], start_x: usize, start_y: usize, text: &str, color: u32, scale: usize) {
+    let mut cursor_x = start_x;
+
+    for ch in text.chars() {
+        if ch == '\n' {
+            continue;
+        }
+        if let Some(glyph) = BASIC_FONTS.get(ch) {
+            for (row, byte) in glyph.iter().enumerate() {
+                for col in 0..8 {
+                    if (byte >> col) & 1 == 1 {
+                        // Dibujar pixel escalado
+                        for sy in 0..scale {
+                            let py = start_y + row * scale + sy;
+                            if py >= HEIGHT { continue; }
+                            let row_start = py * WIDTH;
+                            for sx in 0..scale {
+                                let px = cursor_x + col * scale + sx;
+                                if px < WIDTH {
+                                    buf[row_start + px] = color;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        cursor_x += 8 * scale;
+    }
+}
+
+// -------------------------------------------------------------
+// DIBUJO GEOMÉTRICO BÁSICO (PRIMITIVAS RÁPIDAS)
+// -------------------------------------------------------------
 fn draw_rect(buf: &mut [u32], x: usize, y: usize, w: usize, h: usize, color: u32) {
     for cy in y..(y + h).min(HEIGHT) {
         let row_start = cy * WIDTH;
@@ -174,179 +209,194 @@ fn draw_vu_meter(buf: &mut [u32], x: usize, y: usize, w: usize, h: usize, level:
     }
 }
 
+// -------------------------------------------------------------
+// RENDERIZADO DE VENTANA TERMINAL (ALACRITTY + RUST USERSPACE)
+// -------------------------------------------------------------
 fn render_terminal_window(buf: &mut [u32], x: usize, y: usize, w: usize, h: usize, frame: usize) {
-    // Window Body
+    // Cuerpo y Borde
     draw_rect(buf, x, y, w, h, COLOR_VINYL);
-    // Window Border
+    draw_line_h(buf, x, x + w, y, COLOR_BORDER);
+    draw_line_h(buf, x, x + w, y + h - 1, COLOR_BORDER);
     for cy in y..y + h {
         buf[cy * WIDTH + x] = COLOR_BORDER;
         buf[cy * WIDTH + x + w - 1] = COLOR_BORDER;
     }
-    draw_line_h(buf, x, x + w, y, COLOR_BORDER);
-    draw_line_h(buf, x, x + w, y + h - 1, COLOR_BORDER);
 
     // Titlebar
     draw_rect(buf, x + 1, y + 1, w - 2, 28, COLOR_SURFACE);
     draw_line_h(buf, x, x + w, y + 29, COLOR_BORDER);
 
-    // Traffic light dots
-    draw_circle(buf, x + 18, y + 14, 5, COLOR_RED_DOT);
-    draw_circle(buf, x + 34, y + 14, 5, COLOR_YELLOW_DOT);
-    draw_circle(buf, x + 50, y + 14, 5, COLOR_GREEN_DOT);
+    // Botones de ventana (Traffic lights)
+    draw_circle(buf, x + 16, y + 14, 5, COLOR_RED_DOT);
+    draw_circle(buf, x + 32, y + 14, 5, COLOR_YELLOW_DOT);
+    draw_circle(buf, x + 48, y + 14, 5, COLOR_GREEN_DOT);
 
-    // Simulated terminal text lines
-    let term_x = x + 20;
-    let mut term_y = y + 46;
+    draw_text(buf, x + 68, y + 10, "alacritty -- groove@bluenote:~ (Rust Userspace)", COLOR_CREAM, 1);
 
-    // Line 1: Welcome Header
-    draw_rect(buf, term_x, term_y, 380, 8, COLOR_BRASS);
-    term_y += 18;
+    // Texto real en la terminal
+    let term_x = x + 16;
+    let mut term_y = y + 42;
 
-    // Line 2: Kernel & Init
-    draw_rect(buf, term_x, term_y, 440, 6, 0x64748B);
+    draw_text(buf, term_x, term_y, "Linux Groove OS 0.1.0 - The Blue Note Edition", COLOR_BRASS, 1);
+    term_y += 16;
+
+    draw_text(buf, term_x, term_y, "Kernel: 6.12.0-groove-rt | PID 1: groove-init (Rust)", COLOR_MUTED, 1);
+    term_y += 20;
+
+    // Comando 1: uname -a
+    draw_text(buf, term_x, term_y, "groove@bluenote:~$ ", COLOR_EMERALD, 1);
+    draw_text(buf, term_x + 19 * 8, term_y, "uname -a", COLOR_CREAM, 1);
     term_y += 14;
+    draw_text(buf, term_x, term_y, "Linux bluenote-groove 6.12.0-groove-rt aarch64", COLOR_SLATE, 1);
+    term_y += 20;
 
-    // Line 3: Shell Prompt
-    draw_rect(buf, term_x, term_y, 110, 6, COLOR_EMERALD); // groove@bluenote:~$
-    draw_rect(buf, term_x + 120, term_y, 70, 6, COLOR_CREAM); // uname -a
+    // Comando 2: uutils/coreutils
+    draw_text(buf, term_x, term_y, "groove@bluenote:~$ ", COLOR_EMERALD, 1);
+    draw_text(buf, term_x + 19 * 8, term_y, "coreutils --version", COLOR_CREAM, 1);
     term_y += 14;
+    draw_text(buf, term_x, term_y, "coreutils 0.13.0 (multi-call binary - pure Rust)", COLOR_SLATE, 1);
+    term_y += 20;
 
-    // Line 4: uname output
-    draw_rect(buf, term_x, term_y, 480, 6, 0x94A3B8);
-    term_y += 18;
-
-    // Line 5: Prompt 2: coreutils
-    draw_rect(buf, term_x, term_y, 110, 6, COLOR_EMERALD);
-    draw_rect(buf, term_x + 120, term_y, 130, 6, COLOR_CREAM); // coreutils --version
+    // Comando 3: sudo whoami (sudo-rs)
+    draw_text(buf, term_x, term_y, "groove@bluenote:~$ ", COLOR_EMERALD, 1);
+    draw_text(buf, term_x + 19 * 8, term_y, "sudo whoami", COLOR_CREAM, 1);
     term_y += 14;
+    draw_text(buf, term_x, term_y, "root (uid=0) [auth via sudo-rs & PAM]", COLOR_CORAL, 1);
+    term_y += 20;
 
-    // Line 6: coreutils 0.13 output
-    draw_rect(buf, term_x, term_y, 320, 6, 0x94A3B8);
-    term_y += 18;
-
-    // Line 7: sudo-rs prompt
-    draw_rect(buf, term_x, term_y, 110, 6, COLOR_EMERALD);
-    draw_rect(buf, term_x + 120, term_y, 90, 6, COLOR_CREAM); // sudo whoami
+    // Comando 4: groove-session
+    draw_text(buf, term_x, term_y, "groove@bluenote:~$ ", COLOR_EMERALD, 1);
+    draw_text(buf, term_x + 19 * 8, term_y, "groove-session list-ensembles", COLOR_CREAM, 1);
     term_y += 14;
-    draw_rect(buf, term_x, term_y, 140, 6, COLOR_CORAL); // root (uid=0)
-    term_y += 18;
+    draw_text(buf, term_x, term_y, "* ensemble-jazz-audio: Ardour 8, Carla, PipeWire RT", COLOR_BRASS_LIGHT, 1);
+    term_y += 14;
+    draw_text(buf, term_x, term_y, "* ensemble-visual-design: Inkscape, GIMP, Krita", COLOR_MUTED, 1);
+    term_y += 20;
 
-    // Line 8: Active Command line with blinking cursor
-    draw_rect(buf, term_x, term_y, 110, 6, COLOR_EMERALD);
-    draw_rect(buf, term_x + 120, term_y, 160, 6, COLOR_BRASS_LIGHT); // groove-session
+    // Línea activa con cursor parpadeante
+    draw_text(buf, term_x, term_y, "groove@bluenote:~$ ", COLOR_EMERALD, 1);
+    draw_text(buf, term_x + 19 * 8, term_y, "groove-tuner --freq 440", COLOR_CREAM, 1);
     if (frame / 20) % 2 == 0 {
-        draw_rect(buf, term_x + 285, term_y - 2, 7, 10, COLOR_BRASS); // cursor
+        draw_rect(buf, term_x + 43 * 8, term_y, 8, 10, COLOR_BRASS);
     }
 }
 
+// -------------------------------------------------------------
+// RENDERIZADO DEL PANEL DERECHO (ESTUDIOS CREATIVOS Y VINILO)
+// -------------------------------------------------------------
 fn render_studio_panel(buf: &mut [u32], x: usize, y: usize, w: usize, h: usize, active_ens: usize, angle: f32, tuner_on: bool) {
-    // Window Body & Border
+    // Cuerpo y Borde
     draw_rect(buf, x, y, w, h, COLOR_VINYL);
+    draw_line_h(buf, x, x + w, y, COLOR_BORDER);
+    draw_line_h(buf, x, x + w, y + h - 1, COLOR_BORDER);
     for cy in y..y + h {
         buf[cy * WIDTH + x] = COLOR_BORDER;
         buf[cy * WIDTH + x + w - 1] = COLOR_BORDER;
     }
-    draw_line_h(buf, x, x + w, y, COLOR_BORDER);
-    draw_line_h(buf, x, x + w, y + h - 1, COLOR_BORDER);
 
     // Titlebar
     draw_rect(buf, x + 1, y + 1, w - 2, 28, COLOR_SURFACE);
     draw_line_h(buf, x, x + w, y + 29, COLOR_BORDER);
-    draw_circle(buf, x + 18, y + 14, 5, COLOR_BRASS);
+    draw_circle(buf, x + 16, y + 14, 5, COLOR_BRASS);
+    draw_text(buf, x + 30, y + 10, "STUDIO ENSEMBLES & TUNER", COLOR_CREAM, 1);
 
-    // 1. Spinning Vinyl Record
+    // 1. Vinilo Giratorio
     let vinyl_cx = x + w / 2;
-    let vinyl_cy = y + 105;
-    let vinyl_r = 55;
+    let vinyl_cy = y + 95;
+    let vinyl_r = 48;
 
-    // Outer Vinyl body (black grooves)
+    // Surcos de vinilo
     draw_circle(buf, vinyl_cx, vinyl_cy, vinyl_r, 0x05070B);
     draw_circle(buf, vinyl_cx, vinyl_cy, vinyl_r - 8, 0x141926);
     draw_circle(buf, vinyl_cx, vinyl_cy, vinyl_r - 16, 0x0A0D14);
     draw_circle(buf, vinyl_cx, vinyl_cy, vinyl_r - 24, 0x181F30);
 
-    // Center Red Label
-    draw_circle(buf, vinyl_cx, vinyl_cy, 20, COLOR_CORAL);
-    draw_circle(buf, vinyl_cx, vinyl_cy, 5, COLOR_BRASS);
+    // Etiqueta central Blue Note
+    draw_circle(buf, vinyl_cx, vinyl_cy, 18, COLOR_CORAL);
+    draw_circle(buf, vinyl_cx, vinyl_cy, 4, COLOR_BRASS);
 
-    // Tonearm / Needle
+    // Aguja / Tonearm
     if tuner_on {
-        let needle_x = vinyl_cx + (angle.cos() * 16.0) as usize;
-        let needle_y = vinyl_cy + (angle.sin() * 16.0) as usize;
+        let needle_x = (vinyl_cx as f32 + angle.cos() * 12.0) as usize;
+        let needle_y = (vinyl_cy as f32 + angle.sin() * 12.0) as usize;
         draw_circle(buf, needle_x, needle_y, 3, COLOR_CREAM);
     }
 
-    // 2. Frequency Bar: 440 Hz (Concert Pitch A4)
-    draw_rect(buf, x + 30, y + 175, w - 60, 24, COLOR_SURFACE);
-    draw_rect(buf, x + 40, y + 182, 120, 10, COLOR_BRASS); // 440.00 Hz badge
-    draw_rect(buf, x + w - 110, y + 182, 60, 10, COLOR_EMERALD); // SCHED_FIFO
+    // Frecuencia de afinación y DSP
+    draw_text(buf, x + 40, y + 155, "THE BEBOP TUNER: 440.00 Hz (A4)", COLOR_BRASS, 1);
+    draw_text(buf, x + 40, y + 170, "SCHED_FIFO 98  |  Latency: 0.8ms", COLOR_EMERALD, 1);
 
-    // 3. Studio Ensembles Selection Cards
-    let ens_names = ["1. The Bebop Audio Studio", "2. The Modern Canvas", "3. The Cinema Cut", "4. The Darkroom Photo", "5. The Systems Workshop (Rust)"];
-    let mut ens_y = y + 215;
+    // 2. Lista de Ensembles Creativos
+    let ens_names = [
+        ("1. The Bebop Audio Studio", "Ardour 8, Carla, PipeWire RT"),
+        ("2. The Modern Canvas",      "Inkscape, GIMP, Krita"),
+        ("3. The Cinema Cut",         "Kdenlive, OBS Studio, FFmpeg"),
+        ("4. The Darkroom Photo",     "Darktable, RawTherapee"),
+        ("5. The Systems Workshop",   "Rustc 1.99, Cargo, Helix"),
+    ];
 
-    for (idx, _name) in ens_names.iter().enumerate() {
+    let mut ens_y = y + 195;
+
+    for (idx, (name, apps)) in ens_names.iter().enumerate() {
         let is_active = idx == active_ens;
         let card_bg = if is_active { 0x1E2738 } else { 0x0F1420 };
         let border_c = if is_active { COLOR_BRASS } else { COLOR_BORDER };
 
-        draw_rect(buf, x + 20, ens_y, w - 40, 36, card_bg);
-        draw_line_h(buf, x + 20, x + w - 20, ens_y, border_c);
-        draw_line_h(buf, x + 20, x + w - 20, ens_y + 35, border_c);
+        draw_rect(buf, x + 16, ens_y, w - 32, 44, card_bg);
+        draw_line_h(buf, x + 16, x + w - 16, ens_y, border_c);
+        draw_line_h(buf, x + 16, x + w - 16, ens_y + 43, border_c);
 
-        // Icon indicator
-        let icon_color = match idx {
+        let icon_c = match idx {
             0 => COLOR_BRASS,
             1 => 0x3B82F6,
             2 => 0xA855F7,
             3 => 0xF59E0B,
             _ => COLOR_CORAL,
         };
-        draw_circle(buf, x + 38, ens_y + 18, 7, icon_color);
+        draw_circle(buf, x + 30, ens_y + 22, 6, icon_c);
 
-        // Name and status bars
-        draw_rect(buf, x + 56, ens_y + 10, 180, 6, if is_active { COLOR_CREAM } else { 0x64748B });
-        draw_rect(buf, x + 56, ens_y + 20, 130, 4, 0x475569);
+        draw_text(buf, x + 46, ens_y + 8, name, if is_active { COLOR_CREAM } else { COLOR_SLATE }, 1);
+        draw_text(buf, x + 46, ens_y + 24, apps, COLOR_MUTED, 1);
 
-        // Status tag
-        let status_c = if is_active { COLOR_BRASS } else { 0x334155 };
-        draw_rect(buf, x + w - 85, ens_y + 12, 50, 12, status_c);
+        let status_txt = if is_active { "MONTADO" } else { "SquashFS" };
+        let status_c = if is_active { COLOR_BRASS } else { 0x475569 };
+        draw_text(buf, x + w - 90, ens_y + 16, status_txt, status_c, 1);
 
-        ens_y += 44;
+        ens_y += 50;
     }
 }
 
+// -------------------------------------------------------------
+// RENDERIZADO DEL BRASS DOCK (LANZADOR INFERIOR)
+// -------------------------------------------------------------
 fn render_dock(buf: &mut [u32], active_ens: usize) {
-    let dock_w = 420;
-    let dock_h = 52;
+    let dock_w = 480;
+    let dock_h = 48;
     let dock_x = (WIDTH - dock_w) / 2;
     let dock_y = HEIGHT - dock_h - 12;
 
-    // Floating Glass Pill
     draw_rect(buf, dock_x, dock_y, dock_w, dock_h, 0x0E121C);
     draw_line_h(buf, dock_x, dock_x + dock_w, dock_y, COLOR_BRASS);
     draw_line_h(buf, dock_x, dock_x + dock_w, dock_y + dock_h, COLOR_BORDER);
 
-    // 6 App Launcher Icons
-    let icons = [
-        (COLOR_EMERALD, "Terminal"),
-        (COLOR_BRASS, "Ardour"),
-        (0x3B82F6, "Inkscape"),
-        (0xA855F7, "Kdenlive"),
-        (COLOR_CORAL, "Helix"),
-        (COLOR_BRASS_LIGHT, "Soundcheck"),
+    let items = [
+        ("Term", COLOR_EMERALD),
+        ("Ardour", COLOR_BRASS),
+        ("Design", 0x3B82F6),
+        ("Video", 0xA855F7),
+        ("Rust", COLOR_CORAL),
+        ("Install", COLOR_BRASS_LIGHT),
     ];
 
-    for (i, (c, _)) in icons.iter().enumerate() {
-        let ix = dock_x + 30 + i * 62;
-        let iy = dock_y + 10;
-        draw_rect(buf, ix, iy, 32, 32, 0x181F30);
-        draw_line_h(buf, ix, ix + 32, iy, COLOR_BORDER);
-        draw_circle(buf, ix + 16, iy + 16, 9, *c);
+    for (i, (label, color)) in items.iter().enumerate() {
+        let ix = dock_x + 18 + i * 76;
+        let iy = dock_y + 8;
+        draw_rect(buf, ix, iy, 68, 30, 0x181F30);
+        draw_circle(buf, ix + 12, iy + 15, 5, *color);
+        draw_text(buf, ix + 22, iy + 11, label, COLOR_CREAM, 1);
 
-        // Active indicator dot
         if i == active_ens {
-            draw_circle(buf, ix + 16, iy + 36, 2, COLOR_BRASS);
+            draw_circle(buf, ix + 34, iy + 33, 2, COLOR_BRASS);
         }
     }
 }

@@ -8,4 +8,5 @@ description = "Compositor y Shell Wayland en Rust con estética Blue Note Jazz"
 groove-common = { path = "../groove-common" }
 colored = "2.1"
 minifb = "0.29.0"
+font8x8 = "0.3.1"
 
