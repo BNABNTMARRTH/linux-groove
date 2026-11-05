@@ -58,7 +58,7 @@ def main():
     unset DBUS_SESSION_BUS_ADDRESS
     exec dbus-run-session -- "$@"
     ''')
-    script('groove-xfce','export XDG_SESSION_TYPE=x11\nexport XDG_CURRENT_DESKTOP=XFCE\nexec '+PREFIX+'/bin/startxfce4\n')
+    script('groove-xfce',environment+'\nexport XDG_SESSION_TYPE=x11\nexport XDG_CURRENT_DESKTOP=XFCE\nexec '+PREFIX+'/bin/startxfce4\n')
     script('groove-weston',environment+f'''
     export XDG_SESSION_TYPE=wayland
     export XDG_CURRENT_DESKTOP=Weston
@@ -324,6 +324,27 @@ EOF
     {PREFIX}/bin/dbus-uuidgen --ensure=/etc/machine-id
     {PREFIX}/bin/dbus-uuidgen --ensure=/var/lib/dbus/machine-id
     ''')
+    # Install BusyBox static binary and symlink missing system utilities for a complete CLI experience
+    busybox_src = Path('/usr/bin/busybox')
+    if busybox_src.exists():
+        bb_dest = root / 'bin/busybox'
+        bb_dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(busybox_src, bb_dest)
+        bb_dest.chmod(0o755)
+        res = subprocess.run([str(busybox_src), '--list'], stdout=subprocess.PIPE, text=True, check=False)
+        if res.returncode == 0:
+            for applet in res.stdout.splitlines():
+                applet = applet.strip()
+                if not applet: continue
+                already_exists = False
+                for p in (root/'bin'/applet, root/'sbin'/applet, root/'usr/bin'/applet, root/'usr/sbin'/applet, root/PREFIX.lstrip('/')/'bin'/applet, root/PREFIX.lstrip('/')/'sbin'/applet):
+                    if p.exists() or p.is_symlink():
+                        already_exists = True
+                        break
+                if not already_exists:
+                    target = root / 'usr/bin' / applet
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.symlink_to('/bin/busybox')
     script('groove-device-trigger',f'{PREFIX}/bin/udevadm trigger --action=add\n{PREFIX}/bin/udevadm settle --timeout=15\n')
     daemon_env=f'PATH = "{PREFIX}/bin:{PREFIX}/sbin:/usr/bin:/usr/sbin:/bin:/sbin"'
     services=root/'etc/groove/services';services.mkdir(parents=True,exist_ok=True)

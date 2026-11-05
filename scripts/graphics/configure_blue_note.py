@@ -25,7 +25,13 @@ def install(root, environment):
 label=$1
 name=$2
 shift 2
-export GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1
+if [ "${XDG_SESSION_TYPE:-}" = x11 ]; then
+    export GDK_BACKEND=x11
+    export MOZ_ENABLE_WAYLAND=0
+else
+    export GDK_BACKEND=wayland,x11
+    export MOZ_ENABLE_WAYLAND=1
+fi
 state="$HOME/.local/state/groove"
 mkdir -p "$state"
 log="$state/launch-$name.log"
@@ -90,6 +96,12 @@ kill -TERM "$compositor"
     put('/usr/libexec/groove-system-info', '''#!/bin/sh
 exec /usr/libexec/groove-terminal --title="Groove · Sistema" --command=/usr/bin/groove-sysinfo
 ''', 0o755)
+    put('/usr/libexec/groove-control-center', '''#!/bin/sh
+exec /usr/libexec/groove-launch "Control" control /opt/groove-graphics/bin/groove-control-center "$@"
+''', 0o755)
+    put('/usr/libexec/groove-installer-gui', '''#!/bin/sh
+exec /opt/groove-graphics/bin/xfce4-terminal --title="Instalador de Linux Groove OS" --geometry=100x30 -e /usr/bin/groove-installer "$@"
+''', 0o755)
     # Old wallpaper actions did not change anything; do not expose empty actions.
     for name in ('motion', 'wallpaper', 'system'):
         (root / f'usr/share/applications/groove-launcher-{name}.desktop').unlink(missing_ok=True)
@@ -99,7 +111,7 @@ exec /usr/libexec/groove-terminal --title="Groove · Sistema" --command=/usr/bin
     for svg in sorted((ASSETS / 'icons').glob('*.svg')):
         put('/usr/share/icons/groove-glass/' + svg.name, svg.read_text())
         if converter.exists():
-            for size, suffix in ((40, ''), (80, '@2x')):
+            for size, suffix in ((48, ''), (96, '@2x')):
                 dest = root / f'usr/share/icons/groove-glass/{svg.stem}{suffix}.png'
                 subprocess.run([str(converter), '-w', str(size), '-h', str(size),
                     str(svg), '-o', str(dest)], env=env, check=True)

@@ -55,7 +55,7 @@ def install(root):
     theme_dir = root / 'usr/share/themes/GrooveBlueNote/xfwm4'
     theme_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. xfwm4 themerc
+    # 1. xfwm4 themerc (macOS Traffic Light style on the left)
     themerc = '''
     button_layout=CHM|
     button_offset=8
@@ -74,7 +74,7 @@ def install(root):
     '''
     put('/usr/share/themes/GrooveBlueNote/xfwm4/themerc', themerc)
 
-    # 2. Render traffic-light buttons via rsvg-convert or direct SVG
+    # 2. Render traffic-light buttons via rsvg-convert
     converter = root / PREFIX.lstrip('/') / 'bin/rsvg-convert'
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = str(root / PREFIX.lstrip('/') / 'lib')
@@ -164,54 +164,40 @@ def install(root):
                                 str(tmp_dir / 'border.svg'), '-o', str(dest)], env=env, check=True)
                 dest.chmod(0o644)
 
-    # 5. Picom Configuration
+    # 5. Picom Configuration (Reliable XRender backend with full RGBA support)
     put('/etc/xdg/picom.conf', '''
-    backend = "glx";
-    vsync = true;
+    experimental-backends = true;
+    backend = "xrender";
+    vsync = false;
+
     corner-radius = 12;
     rounded-corners-exclude = [
       "window_type = 'dock'",
       "window_type = 'desktop'",
       "class_g = 'xfce4-panel'"
     ];
+
     shadow = true;
-    shadow-radius = 24;
-    shadow-opacity = 0.42;
-    shadow-offset-x = -12;
-    shadow-offset-y = -12;
+    shadow-radius = 16;
+    shadow-opacity = 0.38;
+    shadow-offset-x = -10;
+    shadow-offset-y = -10;
     shadow-exclude = [
       "class_g = 'xfce4-screenshooter'",
       "window_type = 'dock'",
       "window_type = 'desktop'",
       "_GTK_FRAME_EXTENTS@:c"
     ];
-    fading = true;
-    fade-in-step = 0.05;
-    fade-out-step = 0.05;
-    fade-delta = 6;
-    inactive-opacity = 0.95;
+
+    fading = false;
+    inactive-opacity = 1.0;
     active-opacity = 1.0;
     frame-opacity = 1.0;
-    blur: {
-      method = "dual_kawase";
-      strength = 6;
-      background = true;
-    };
-    blur-background-exclude = [
-      "window_type = 'dock'",
-      "window_type = 'desktop'"
-    ];
     ''')
 
-    # Picom launcher with automatic GLX / Xrender fallback
     put('/usr/libexec/groove-picom', '''#!/bin/sh
     set -eu
-    # Use GLX if DRI render node exists and GLX is available; otherwise fallback cleanly to xrender
-    if [ -c /dev/dri/renderD128 ] && [ -f /opt/groove-wayfire/lib/dri/virtio_gpu_dri.so ]; then
-        exec /opt/groove-graphics/bin/picom --config /etc/xdg/picom.conf --backend glx "$@"
-    else
-        exec /opt/groove-graphics/bin/picom --config /etc/xdg/picom.conf --backend xrender "$@"
-    fi
+    exec /opt/groove-graphics/bin/picom --experimental-backends --config /etc/xdg/picom.conf "$@"
     ''', 0o755)
 
     # 6. Autostart Picom and Groove Dock
@@ -258,7 +244,7 @@ def install(root):
     </channel>
     ''')
 
-    # 8. XFCE Desktop Configuration (xfce4-desktop.xml) across all monitors
+    # 8. XFCE Desktop Configuration (xfce4-desktop.xml) with Interactive Desktop Icons!
     wallpaper_path = '/usr/share/backgrounds/groove-default.png'
     desktop_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfce4-desktop" version="1.0">
@@ -279,84 +265,90 @@ def install(root):
         </property>
       </property>
       <property name="desktop-icons" type="empty">
-        <property name="style" type="int" value="0"/>
+        <property name="style" type="int" value="2"/>
+        <property name="icon-size" type="uint" value="48"/>
+        <property name="show-thumbnails" type="bool" value="true"/>
+        <property name="file-icons" type="empty">
+          <property name="show-home" type="bool" value="true"/>
+          <property name="show-filesystem" type="bool" value="true"/>
+          <property name="show-trash" type="bool" value="false"/>
+          <property name="show-removable" type="bool" value="true"/>
+        </property>
       </property>
     </channel>
     '''
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
 
     # 9. Single 32px Top Menu Bar (xfce4-panel.xml)
-    put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', '''
-    <?xml version="1.0" encoding="UTF-8"?>
+    # CRITICAL: property name="panel-1" MUST be nested INSIDE property name="panels" type="array"
+    panel_xml = '''<?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfce4-panel" version="1.0">
       <property name="configver" type="int" value="2"/>
       <property name="panels" type="array">
         <value type="int" value="1"/>
-      </property>
-      <property name="panel-1" type="empty">
-        <property name="position" type="string" value="p=6;x=0;y=0"/>
-        <property name="length" type="uint" value="100"/>
-        <property name="position-locked" type="bool" value="true"/>
-        <property name="size" type="uint" value="32"/>
-        <property name="plugin-ids" type="array">
-          <value type="int" value="1"/>
-          <value type="int" value="2"/>
-          <value type="int" value="3"/>
-          <value type="int" value="4"/>
-          <value type="int" value="5"/>
-          <value type="int" value="6"/>
-          <value type="int" value="7"/>
-        </property>
-        <property name="background-style" type="uint" value="1"/>
-        <property name="background-rgba" type="array">
-          <value type="double" value="0.08"/>
-          <value type="double" value="0.10"/>
-          <value type="double" value="0.14"/>
-          <value type="double" value="0.85"/>
+        <property name="dark-mode" type="bool" value="true"/>
+        <property name="panel-1" type="empty">
+          <property name="position" type="string" value="p=6;x=0;y=0"/>
+          <property name="length" type="uint" value="100"/>
+          <property name="position-locked" type="bool" value="true"/>
+          <property name="icon-size" type="uint" value="16"/>
+          <property name="size" type="uint" value="32"/>
+          <property name="plugin-ids" type="array">
+            <value type="int" value="1"/>
+            <value type="int" value="2"/>
+            <value type="int" value="3"/>
+            <value type="int" value="4"/>
+            <value type="int" value="5"/>
+            <value type="int" value="6"/>
+          </property>
+          <property name="background-style" type="uint" value="0"/>
         </property>
       </property>
       <property name="plugins" type="empty">
         <property name="plugin-1" type="string" value="applicationsmenu">
           <property name="show-button-title" type="bool" value="true"/>
-          <property name="button-title" type="string" value="🎷 Groove"/>
+          <property name="button-title" type="string" value=" 🎷 Linux Groove "/>
           <property name="show-menu-icons" type="bool" value="true"/>
+          <property name="custom-menu" type="bool" value="false"/>
         </property>
-        <property name="plugin-2" type="string" value="pager">
-          <property name="rows" type="uint" value="1"/>
-          <property name="miniature-view" type="bool" value="false"/>
+        <property name="plugin-2" type="string" value="tasklist">
+          <property name="grouping" type="uint" value="1"/>
+          <property name="flat-buttons" type="bool" value="true"/>
+          <property name="show-handle" type="bool" value="false"/>
+          <property name="show-labels" type="bool" value="true"/>
         </property>
         <property name="plugin-3" type="string" value="separator">
           <property name="expand" type="bool" value="true"/>
           <property name="style" type="uint" value="0"/>
         </property>
-        <property name="plugin-4" type="string" value="clock">
-          <property name="digital-format" type="string" value="%a %d %b, %H:%M"/>
-          <property name="mode" type="uint" value="2"/>
-        </property>
-        <property name="plugin-5" type="string" value="separator">
-          <property name="expand" type="bool" value="true"/>
-          <property name="style" type="uint" value="0"/>
-        </property>
-        <property name="plugin-6" type="string" value="systray">
+        <property name="plugin-4" type="string" value="systray">
           <property name="square-icons" type="bool" value="true"/>
         </property>
-        <property name="plugin-7" type="string" value="actions">
+        <property name="plugin-5" type="string" value="clock">
+          <property name="digital-format" type="string" value="%a %d %b  %H:%M"/>
+          <property name="mode" type="uint" value="2"/>
+        </property>
+        <property name="plugin-6" type="string" value="actions">
           <property name="appearance" type="uint" value="0"/>
           <property name="items" type="array">
-            <value type="string" value="-lock-screen"/>
+            <value type="string" value="+lock-screen"/>
             <value type="string" value="-switch-user"/>
             <value type="string" value="-suspend"/>
-            <value type="string" value="-hibernate"/>
-            <value type="string" value="-hybrid-sleep"/>
             <value type="string" value="-separator"/>
             <value type="string" value="+logout"/>
-            <value type="string" value="-restart"/>
+            <value type="string" value="+restart"/>
             <value type="string" value="+shutdown"/>
           </property>
         </property>
       </property>
     </channel>
-    ''')
+    '''
+    # Put panel config in ALL discovery paths so xfce4-panel never falls back to an empty panel
+    put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
+    put(PREFIX + '/etc/xdg/xfce4/panel/default.xml', panel_xml)
+    put(PREFIX + '/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
+    put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
+    put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
 
     # 10. GTK3 Settings & Decorations
     put('/etc/xdg/gtk-3.0/settings.ini', '''
@@ -381,3 +373,64 @@ def install(root):
       </property>
     </channel>
     ''')
+
+    # 11. CSS Styling for macOS top bar and windows
+    css = '''
+    @import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");
+    @define-color theme_bg_color #141926;
+    @define-color theme_fg_color #f4efe6;
+    @define-color theme_selected_bg_color #d4af37;
+    @define-color theme_selected_fg_color #0b0e17;
+
+    window, dialog { background-color: #141926; color: #f4efe6; }
+    button:checked, button.suggested-action { background: #d4af37; color: #0b0e17; }
+    entry:focus { border-color: #d4af37; box-shadow: inset 0 0 0 1px #d4af37; }
+    selection { background-color: #d4af37; color: #0b0e17; }
+
+    .xfce4-panel {
+        background-color: rgba(14, 18, 28, 0.90);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        color: #f4efe6;
+    }
+    .xfce4-panel button {
+        border-radius: 4px;
+        color: #f4efe6;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+    .xfce4-panel button:hover {
+        background-color: rgba(255, 255, 255, 0.12);
+    }
+    .dim-label {
+        color: #94a3b8;
+    }
+    '''
+    put('/usr/share/themes/GrooveBlueNote/gtk-3.0/gtk.css', css)
+
+    # 12. Populate Desktop Launchers in /home/groove/Desktop
+    desktop_dir = root / 'home/groove/Desktop'
+    desktop_dir.mkdir(parents=True, exist_ok=True)
+
+    launchers = [
+        ('groove-control-center.desktop', 'Centro de Control', '/usr/libexec/groove-control-center', '/usr/share/icons/groove-glass/system.png'),
+        ('groove-installer.desktop', 'Instalar Linux Groove OS', '/usr/libexec/groove-installer-gui', '/usr/share/icons/groove-glass/installer.png'),
+        ('firefox.desktop', 'Firefox ESR', '/usr/libexec/groove-browser', '/usr/share/icons/groove-glass/browser.png'),
+        ('thunar.desktop', 'Archivos', '/usr/libexec/groove-files', '/usr/share/icons/groove-glass/files.png'),
+        ('xfce4-terminal.desktop', 'Terminal', '/usr/libexec/groove-terminal', '/usr/share/icons/groove-glass/terminal.png')
+    ]
+    for fname, name, exec_cmd, icon_path in launchers:
+        put(f'/home/groove/Desktop/{fname}', f'''[Desktop Entry]
+Version=1.0
+Type=Application
+Name={name}
+Exec={exec_cmd}
+Icon={icon_path}
+Terminal=false
+Categories=Utility;
+''', mode=0o755)
+
+    os.chown(desktop_dir, 1000, 1000)
+    for f in desktop_dir.glob('*.desktop'):
+        os.chown(f, 1000, 1000)
+        f.chmod(0o755)

@@ -1,1 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><rect x="3" y="3" width="34" height="34" rx="8" fill="#242b38"/><rect x="4" y="4" width="32" height="32" rx="7" fill="none" stroke="#3a455a" stroke-width="1"/><path d="M20 12a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 3a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" fill="#ece9e2"/><path d="M18.5 7h3v3.2h-3zm0 22.8h3V33h-3zM7 18.5h3.2v3H7zm22.8 0H33v3h-3.2zM10.8 12.2l2.1-2.1 2.3 2.3-2.1 2.1zm14 14l2.1-2.1 2.3 2.3-2.1 2.1zM10.8 27.8l2.3-2.3 2.1 2.1-2.3 2.3zm14-14l2.3-2.3 2.1 2.1-2.3 2.3z" fill="#d4af37"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.06"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/>
+  <circle cx="24" cy="24" r="11" fill="none" stroke="#94a3b8" stroke-width="4.5" stroke-dasharray="6.5 4.5"/>
+  <circle cx="24" cy="24" r="8" fill="#1e293b" stroke="#94a3b8" stroke-width="1.5"/>
+  <circle cx="24" cy="24" r="3.5" fill="#d4af37"/>
+</svg>
