@@ -14,11 +14,17 @@ def main():
         keys={line.split(':')[0] for line in entries};lines=[line for line in lines if line.split(':')[0] not in keys];path.write_text('\n'.join(lines+entries)+'\n')
     put('/etc/os-release','NAME="Linux Groove OS"\nPRETTY_NAME="Linux Groove OS 0.2.0 — Blue Note Desktop Preview"\nID=groove\nID_LIKE=lfs\nVERSION_ID=0.2.0\nVERSION_CODENAME=blue-note\n')
     account('passwd',['root:x:0:0:root:/root:/bin/bash','messagebus:x:18:18:System D-Bus:/run/dbus:/bin/false','lightdm:x:65:65:LightDM:/var/lib/lightdm:/bin/false','groove:x:1000:1000:Groove Artist:/home/groove:/bin/bash'])
-    account('group',['root:x:0:','tty:x:5:','video:x:12:groove','messagebus:x:18:','input:x:24:groove','lightdm:x:65:','render:x:107:groove','groove:x:1000:'])
+    account('group',['root:x:0:','tty:x:5:','cdrom:x:15:','video:x:12:groove,lightdm','messagebus:x:18:','input:x:24:groove,lightdm','lightdm:x:65:','render:x:107:groove,lightdm','kvm:x:108:','sgx:x:109:','groove:x:1000:'])
     account('shadow',['root:!:1:0:99999:7:::','messagebus:!:1:0:99999:7:::','lightdm:!:1:0:99999:7:::','groove:!:1:0:99999:7:::'])
     (root/'etc/shadow').chmod(0o600)
-    put('/etc/dbus-1/system.conf','<busconfig/>\n')
-    put('/etc/dbus-1/session.conf','<busconfig/>\n')
+    dbus_sys=root/PREFIX.lstrip('/')/'share/dbus-1/system.conf'
+    put('/etc/dbus-1/system.conf',dbus_sys.read_text() if dbus_sys.exists() else '<busconfig/>\n')
+    dbus_sess=root/PREFIX.lstrip('/')/'share/dbus-1/session.conf'
+    put('/etc/dbus-1/session.conf',dbus_sess.read_text() if dbus_sess.exists() else '<busconfig/>\n')
+    dbus_sysd=root/PREFIX.lstrip('/')/'share/dbus-1/system.d'
+    if dbus_sysd.exists():
+        for conf in dbus_sysd.glob('*.conf'):
+            put(f'/etc/dbus-1/system.d/{conf.name}',conf.read_text())
     put('/etc/nsswitch.conf','passwd: files\ngroup: files\nshadow: files\nhosts: files dns\nnetworks: files\n')
     put('/etc/login.defs','ENV_PATH PATH=/opt/groove-graphics/bin:/opt/groove-graphics/sbin:/usr/bin:/bin\nLOGIN_RETRIES 3\nFAIL_DELAY 2\nDEFAULT_HOME yes\nUID_MIN 1000\nGID_MIN 1000\n')
     put('/etc/ld.so.conf','include /etc/ld.so.conf.d/*.conf\n/usr/lib\n/lib\n')
@@ -52,7 +58,7 @@ def main():
     exec {PREFIX}/bin/weston --backend=drm-backend.so --renderer=pixman --config=/etc/xdg/weston/weston.ini
     ''')
     script('groove-greeter',environment+f'exec {PREFIX}/sbin/lightdm-gtk-greeter\n')
-    script('groove-xserver',f'exec {PREFIX}/bin/Xorg -config /etc/X11/xorg.conf -modulepath {PREFIX}/lib/xorg/modules -nolisten tcp "$@"\n')
+    script('groove-xserver',f'exec {PREFIX}/bin/Xorg -logfile /var/log/lightdm/x-0.log -modulepath {PREFIX}/lib/xorg/modules -nolisten tcp "$@"\n')
     script('groove-live-access','''
     case "${PAM_SERVICE:-}" in lightdm|login) ;; *) exit 1 ;; esac
     [ "${PAM_USER:-}" = groove ] || exit 1
@@ -77,7 +83,7 @@ def main():
     ''')
     put('/etc/lightdm/lightdm.conf','''
     [LightDM]
-    minimum-vt=7
+    minimum-vt=1
     logind-check-graphical=false
     start-default-seat=true
     sessions-directory=/usr/share/xsessions:/usr/share/wayland-sessions
@@ -121,7 +127,6 @@ def main():
     EndSection
     Section "Files"
         ModulePath "{PREFIX}/lib/xorg/modules"
-        FontPath "{PREFIX}/share/fonts/dejavu"
     EndSection
     ''')
     put('/etc/udev/rules.d/70-groove-input.rules','SUBSYSTEM=="input", GROUP="input", MODE="0660"\nSUBSYSTEM=="drm", GROUP="video", MODE="0660"\nKERNEL=="renderD*", GROUP="render", MODE="0660"\n')
@@ -185,12 +190,18 @@ def main():
         break
     put('/etc/dhcpcd.conf','hostname linux-groove\noption domain_name_servers, domain_name, domain_search\noption classless_static_routes\nrequire dhcp_server_identifier\nnoipv4ll\n')
     script('groove-runtime',f'''
-    mkdir -p /run/dbus /run/user/1000 /run/lightdm /var/lib/lightdm /var/cache/lightdm /var/log/lightdm /var/lib/xkb /var/lib/dhcpcd /var/lib/dbus /var/cache/fontconfig /tmp/.X11-unix /tmp/.ICE-unix
+    mkdir -p /run/dbus /run/user/1000 /run/lightdm /run/lightdm/root /var/lib/lightdm /var/lib/lightdm-data /var/cache/lightdm /var/log/lightdm /var/lib/xkb /var/lib/dhcpcd /var/lib/dbus /var/cache/fontconfig /tmp/.X11-unix /tmp/.ICE-unix {PREFIX}/var/log
     chmod 1777 /tmp /tmp/.X11-unix /tmp/.ICE-unix
     chown 1000:1000 /run/user/1000 /home/groove
     chmod 0700 /run/user/1000
     chown 18:18 /run/dbus
-    chown 65:65 /var/lib/lightdm /var/cache/lightdm /var/log/lightdm
+    chown -R 65:65 /var/lib/lightdm /var/cache/lightdm /var/log/lightdm /var/lib/lightdm-data /run/lightdm
+    chmod 0755 /var/log/lightdm
+    chmod 0750 /var/lib/lightdm /var/cache/lightdm
+    chmod 0711 /var/lib/lightdm-data
+    chmod 0777 {PREFIX}/var/log
+    [ -e /usr/bin/xkbcomp ] || ln -sfn {PREFIX}/bin/xkbcomp /usr/bin/xkbcomp
+    [ -e {PREFIX}/var ] || ln -sfn /var {PREFIX}/var
     {PREFIX}/bin/dbus-uuidgen --ensure=/etc/machine-id
     {PREFIX}/bin/dbus-uuidgen --ensure=/var/lib/dbus/machine-id
     ''')

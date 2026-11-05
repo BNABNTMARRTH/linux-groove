@@ -22,17 +22,14 @@ tar -C "$PREFIX" --exclude='./include' --exclude='./share/doc' --exclude='./shar
 cp /tmp/groove-init-target/release/groove-init "$ROOT/sbin/groove-init"
 chmod 0755 "$ROOT/sbin/groove-init"
 python3 /workspace/scripts/graphics/configure_rootfs.py "$ROOT"
-# Preserve the source-installed configuration for D-Bus.
-mkdir -p "$ROOT/etc/dbus-1"
-cp /etc/dbus-1/system.conf /etc/dbus-1/session.conf "$ROOT/etc/dbus-1/"
+if [[ -d "$PREFIX/share/dbus-1/system.d" ]]; then
+    mkdir -p "$ROOT/etc/dbus-1/system.d"
+    cp -rf "$PREFIX/share/dbus-1/system.d/"* "$ROOT/etc/dbus-1/system.d/"
+fi
 if [[ -f /workspace/scripts/graphics/ca-bundle.pem ]]; then
     (cd /workspace/scripts/graphics && sha256sum -c ca-bundle.sha256)
     mkdir -p "$ROOT/etc/ssl/certs"
     cp /workspace/scripts/graphics/ca-bundle.pem "$ROOT/etc/ssl/certs/ca-certificates.crt"
-fi
-if [[ -f /etc/dbus-1/system.d/org.freedesktop.DisplayManager.conf ]]; then
-    mkdir -p "$ROOT/etc/dbus-1/system.d"
-    cp /etc/dbus-1/system.d/org.freedesktop.DisplayManager.conf "$ROOT/etc/dbus-1/system.d/"
 fi
 mkdir -p "$ROOT/usr/lib/locale"
 if [[ -f "$ROOT/usr/share/i18n/charmaps/UTF-8.gz" && ! -f "$ROOT/usr/share/i18n/charmaps/UTF-8" ]]; then
