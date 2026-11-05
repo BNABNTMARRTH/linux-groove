@@ -41,3 +41,24 @@ con ACPI activado, detección de GTDT y temporizador a 62,50 MHz, dos CPU y
 framebuffer VirtIO. En UTM con aceleración HVF y sin argumentos adicionales,
 el LiveUSB montó SquashFS/OverlayFS e inició `groove-init` y el prompt
 `groove@bluenote:~$`. El SHA256 de la ISO se actualizó y verificó.
+
+## Wayfire / GPU (candidata 0.3.0)
+
+La configuración de trabajo de 0.2.0 usa `virtio-gpu-pci`, SPICE sin GL y Weston
+Pixman: no acredita aceleración. Para Wayfire probar una VM separada con VirtIO
+GPU GL, UEFI/ACPI y Mesa VirGL del prefijo nuevo. Ejecutar `groove-gpu-info` dentro
+de la sesión y conservar su salida junto al log de Wayfire. No considerar
+llvmpipe/softpipe como GPU acelerada. La candidata conserva Weston como inicio
+normal hasta completar la aceptación; `groove.session=wayfire` elige el nuevo
+escritorio y `groove.text=1` mantiene prioridad de recuperación.
+
+## Refinamiento Blue Note — 2026-11-05
+
+Dirección aprobada: oscuro sobrio, terminal GTK opaca, controles monocromáticos
+a la derecha y cuatro lanzadores compartidos (Terminal, Archivos, Editor, Firefox).
+Barra 34 px con métricas en tooltip; dock 64 px con iconos propios de 40/80 px.
+Sustituye la apariencia de las candidatas anteriores. Wayfire sigue candidato
+hasta completar aceptación; Weston, XFCE y consola se conservan.
+Audacity, Blender, persistencia y gestor de aplicaciones quedan para después.
+
+Ver [spec 012](specs/012-blue-note-refinement-spec.md) y el informe de validación.

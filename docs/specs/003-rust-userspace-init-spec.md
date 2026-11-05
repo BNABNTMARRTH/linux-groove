@@ -1,4 +1,10 @@
 # Especificación Técnica 003: Rust Userspace & `groove-init` (PID 1)
+
+Actualización 2026-11-05: la [spec 011](011-wayfire-blue-note-glass-spec.md) añade
+Wayfire como sesión opcional y `groove.session=wayfire` como grafo independiente.
+Weston conserva el inicio normal hasta validar GPU/funcionalidad en UTM; el fondo
+piano se instala explícitamente. Esta etapa no implementa Rust/Smithay.
+
 *Documento de Diseño del Sistema — Spec-Driven Development (SDD)*
 
 ## Actualización de integración gráfica — 2026-11-04

@@ -1,5 +1,18 @@
 # Opciones de Evolución y Mejora del Entorno de Escritorio: Linux Groove OS
 
+## Decisión vigente — 2026-11-05
+
+Se seleccionó **Wayfire + Waybar** con wf-dock y efectos 3D expresivos, compilado
+desde fuentes. Labwc no se considera equivalente en efectos. Weston queda como
+alternativa y arranque normal hasta la aceptación UTM. El estilo es propio de
+Groove; no se adopta WhiteSur ni se copian recursos de Apple.
+
+Las alternativas siguientes son antecedentes: las afirmaciones de compatibilidad
+universal, memoria mínima, seguridad garantizada y 60 FPS no son resultados
+verificados. La [spec 011](../specs/011-wayfire-blue-note-glass-spec.md) y el
+[plan aprobado](WAYFIRE_BLUE_NOTE_GLASS_IMPLEMENTATION.md) prevalecen.
+
+
 Este documento recoge el análisis técnico y diagnóstico del escritorio gráfico de Linux Groove OS 0.2.0, así como las **tres opciones estratégicas de evolución** para reemplazar o mejorar la implementación inicial y lograr una experiencia visual de alta gama inspirada en **macOS + Glassmorphism Blue Note**, con alto rendimiento y fluidez.
 
 ---
@@ -148,9 +161,9 @@ A continuación se presentan las 3 alternativas técnicas viables, sus fortaleza
 | **Fidelidad macOS Glass** | ⭐⭐⭐⭐⭐ (Excelente, temas maduros) | ⭐⭐⭐⭐ (Muy buena con plugins) | ⭐⭐⭐⭐⭐ (Ilimitada, hecha a medida) |
 | **Consistencia de ventanas** | Universal (100% xfwm4) | Alta (vía decorador Wayland) | Total (definida por el compositor) |
 | **Efecto Blur / Vidrio Real** | Nativo vía Picom (Kawase) | Nativo vía Shaders GL | Nativo vía Shaders wgpu |
-| **Tiempo de desarrollo** | 1 a 2 días | 4 a 6 días | 2 a 4 semanas |
+| **Tiempo de desarrollo** | Sin estimación validada | En implementación | Etapa futura |
 | **Protocolo base** | X11 | Wayland | Wayland |
-| **Rendimiento y consumo** | Excelente (~180 MB RAM) | Muy ligero con GPU (~220 MB RAM) | Ultraligero (~120 MB RAM) |
+| **Rendimiento y consumo** | Pendiente de medición | Pendiente de medición en UTM | Pendiente de implementación |
 | **Estado actual en Groove** | Binarios ya listos en la ISO | Requiere compilar wlroots | Spec 008 diseñada en Rust |
 
 ---
@@ -163,3 +176,4 @@ A continuación se presentan las 3 alternativas técnicas viables, sus fortaleza
 
 2. **Medio/Largo Plazo (Identidad de Linux Groove OS):**
    Avanzar en paralelo con la **Opción 3 (Compositor Smithay en Rust)** como el verdadero compositor insigne de Linux Groove para versiones posteriores (0.3.0+).
+

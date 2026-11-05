@@ -78,3 +78,44 @@ UEFI en UTM, selector, ambas sesiones, teclado/ratón, logout, utilidades y HTTP
 Anotar versión/hash de la ISO y características de la VM. Un boot directo
 `-kernel` no sustituye el boot de la ISO. Consultar el tracker para resultados;
 no atribuir éxito a pruebas todavía pendientes.
+
+## Candidata Wayfire / Blue Note Glass
+
+```sh
+./scripts/build_wayfire_iso.sh sources  # prefijo separado, fuentes fijadas
+./scripts/build_wayfire_iso.sh package  # copia nueva del rootfs 0.2.0
+./scripts/build_wayfire_iso.sh          # ambas etapas
+```
+
+La candidata se publica como `linux-groove-0.3.0-aarch64.iso`, con checksum
+separado; una salida existente produce error y se conserva. `VERSION` permite
+nombrar una nueva candidata. Las dependencias y subproyectos están fijados en
+`wayfire.sources.lock.json`; los logs quedan en `/tmp/groove-wayfire-build` del
+constructor. El empaquetado necesita las fuentes y herramientas ya usadas para
+0.2.0, incluido el kernel preparado en `/tmp/graphical-images`.
+
+Weston sigue como opción inicial. Elegir la entrada Wayfire en GRUB o su sesión
+en LightDM. Para probar GPU usar una VM UTM separada con tarjeta GPU Supported
+(VirtIO GL), manteniendo UEFI/ACPI. Ejecutar dentro de esa sesión:
+
+```sh
+/opt/groove-wayfire/bin/groove-gpu-info
+```
+
+Guardar salida y log `~/.local/state/groove/wayfire.log`; la detección requiere
+VirGL y rechaza software. Las capturas por sí solas no prueban aceleración.
+El botón Movimiento alterna efectos completos/reducidos. Super+Shift+Escape
+cierra la sesión; desde LightDM devuelve al selector. Weston y consola siguen
+disponibles en GRUB. No cambiar el arranque por defecto hasta completar la
+[aceptación](specs/011-wayfire-blue-note-glass-spec.md).
+
+## Refinamiento Blue Note — 2026-11-05
+
+Dirección aprobada: oscuro sobrio, terminal GTK opaca, controles monocromáticos
+a la derecha y cuatro lanzadores compartidos (Terminal, Archivos, Editor, Firefox).
+Barra 34 px con métricas en tooltip; dock 64 px con iconos propios de 40/80 px.
+Sustituye la apariencia de las candidatas anteriores. Wayfire sigue candidato
+hasta completar aceptación; Weston, XFCE y consola se conservan.
+Audacity, Blender, persistencia y gestor de aplicaciones quedan para después.
+
+Ver [spec 012](specs/012-blue-note-refinement-spec.md) y el informe de validación.

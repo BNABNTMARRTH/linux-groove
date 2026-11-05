@@ -1,5 +1,5 @@
---- /tmp/weston-orig/weston-13.0.3/desktop-shell/shell.h	2024-06-05 11:59:31.000000000 +0000
-+++ /tmp/weston-test/weston-13.0.3/desktop-shell/shell.h	2026-11-05 08:05:47.460458657 +0000
+--- a/desktop-shell/shell.h
++++ b/desktop-shell/shell.h
 @@ -70,6 +70,10 @@
  	struct weston_view *panel_view;
  	struct wl_listener panel_surface_listener;
@@ -11,8 +11,8 @@
  
  	struct weston_surface *background_surface;
  	struct weston_view *background_view;
---- /tmp/weston-orig/weston-13.0.3/desktop-shell/shell.c	2024-06-05 11:59:31.000000000 +0000
-+++ /tmp/weston-test/weston-13.0.3/desktop-shell/shell.c	2026-11-05 08:06:13.742485268 +0000
+--- a/desktop-shell/shell.c
++++ b/desktop-shell/shell.c
 @@ -390,26 +390,12 @@
  	area->width = output->width;
  	area->height = output->height;
@@ -145,8 +145,8 @@
  }
  
  static int
---- /tmp/weston-orig/weston-13.0.3/clients/desktop-shell.c	2024-06-05 11:59:31.000000000 +0000
-+++ /tmp/weston-test/weston-13.0.3/clients/desktop-shell.c	2026-11-05 08:17:30.492142309 +0000
+--- a/clients/desktop-shell.c
++++ b/clients/desktop-shell.c
 @@ -127,6 +127,8 @@
  	uint32_t color;
  };
@@ -156,14 +156,14 @@
  struct output {
  	struct wl_output *output;
  	uint32_t server_output_id;
-@@ -135,9 +137,35 @@
+@@ -135,7 +137,33 @@
  	int x;
  	int y;
  	struct panel *panel;
 +	struct dock *dock;
  	struct background *background;
- };
- 
++};
++
 +struct dock {
 +	struct surface base;
 +
@@ -187,11 +187,9 @@
 +	struct custom_env env;
 +	char * const *argp;
 +	char * const *envp;
-+};
-+
+ };
+ 
  struct panel_launcher {
- 	struct widget *widget;
- 	struct panel *panel;
 @@ -168,8 +196,6 @@
  	struct desktop *desktop;
  };
@@ -210,7 +208,7 @@
  		if (output->background && !output->background->painted)
  			return 0;
  	}
-@@ -212,76 +240,33 @@
+@@ -212,76 +240,6 @@
  	}
  }
  
@@ -237,11 +235,10 @@
 -		exit(1);
 -	}
 -}
- 
- static void
+-
+-static void
 -panel_launcher_redraw_handler(struct widget *widget, void *data)
-+get_mem_info(char *buf, size_t max)
- {
+-{
 -	struct panel_launcher *launcher = data;
 -	struct rectangle allocation;
 -	cairo_t *cr;
@@ -260,19 +257,8 @@
 -	if (launcher->pressed) {
 -		allocation.x++;
 -		allocation.y++;
-+	FILE *f = fopen("/proc/meminfo", "r");
-+	unsigned long total = 0, avail = 0;
-+	char line[128];
-+
-+	if (f) {
-+		while (fgets(line, sizeof(line), f)) {
-+			if (sscanf(line, "MemTotal: %lu kB", &total) == 1) {
-+			} else if (sscanf(line, "MemAvailable: %lu kB", &avail) == 1) {
-+			}
-+		}
-+		fclose(f);
- 	}
- 
+-	}
+-
 -	cairo_set_source_surface(cr, launcher->icon,
 -				 allocation.x, allocation.y);
 -	cairo_paint(cr);
@@ -281,18 +267,11 @@
 -		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.4);
 -		cairo_mask_surface(cr, launcher->icon,
 -				   allocation.x, allocation.y);
-+	if (total > 0) {
-+		unsigned long used = (total > avail) ? (total - avail) : 0;
-+		snprintf(buf, max, "RAM: %.1fG / %.1fG",
-+			 (double)used / (1024.0 * 1024.0),
-+			 (double)total / (1024.0 * 1024.0));
-+	} else {
-+		snprintf(buf, max, "RAM: --");
- 	}
+-	}
 -
 -	cairo_destroy(cr);
- }
- 
+-}
+-
 -static int
 -panel_launcher_motion_handler(struct widget *widget, struct input *input,
 -			      uint32_t time, float x, float y, void *data)
@@ -306,7 +285,7 @@
  
  static void
  set_hex_color(cairo_t *cr, uint32_t color)
-@@ -299,12 +284,44 @@
+@@ -299,11 +257,43 @@
  	cairo_surface_t *surface;
  	cairo_t *cr;
  	struct panel *panel = data;
@@ -318,13 +297,13 @@
  	cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
 -	set_hex_color(cr, panel->color);
 +	/* Glass dark background: rgba(14, 18, 28, 0.82) */
-+	cairo_set_source_rgba(cr, 0.055, 0.070, 0.110, 0.82);
++	cairo_set_source_rgba(cr, 0.082, 0.094, 0.118, 0.94);
  	cairo_paint(cr);
- 
++
 +	cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 +
 +	/* Top subtle highlight line */
-+	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.14);
++	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.05);
 +	cairo_set_line_width(cr, 1.0);
 +	cairo_move_to(cr, 0, 0.5);
 +	cairo_line_to(cr, allocation.width, 0.5);
@@ -336,23 +315,22 @@
 +	cairo_line_to(cr, allocation.width, allocation.height - 0.5);
 +	cairo_stroke(cr);
 +
-+	/* Brand Title on Left: "LINUX GROOVE" and "• Blue Note Glass" */
 +	cairo_select_font_face(cr, "DejaVu Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-+	cairo_set_font_size(cr, 13.0);
-+	cairo_set_source_rgba(cr, 0.957, 0.937, 0.902, 0.95);
-+	cairo_move_to(cr, 16, 21);
-+	cairo_show_text(cr, "LINUX GROOVE");
-+
-+	cairo_select_font_face(cr, "DejaVu Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 +	cairo_set_font_size(cr, 12.0);
-+	cairo_set_source_rgba(cr, 1.0, 0.741, 0.180, 0.85);
-+	cairo_move_to(cr, 138, 21);
-+	cairo_show_text(cr, "•  Blue Note Glass");
++	cairo_set_source_rgb(cr, 0.91, 0.90, 0.88);
++	cairo_move_to(cr, 16, 21);
++	cairo_show_text(cr, "GROOVE");
++	cairo_select_font_face(cr, "DejaVu Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
++	cairo_set_source_rgb(cr, 0.65, 0.67, 0.70);
++	cairo_move_to(cr, 92, 21);
++	cairo_show_text(cr, "Weston");
 +
++	cairo_move_to(cr, allocation.width - 52, 21);
++	cairo_show_text(cr, "Salir");
+ 
  	cairo_destroy(cr);
  	surface = window_get_surface(panel->window);
- 	cairo_surface_destroy(surface);
-@@ -312,124 +329,10 @@
+@@ -312,124 +302,10 @@
  	check_desktop_ready(panel->window);
  }
  
@@ -477,20 +455,18 @@
  	widget_schedule_redraw(clock->widget);
  }
  
-@@ -441,33 +344,58 @@
+@@ -441,33 +317,33 @@
  	struct rectangle allocation;
  	cairo_text_extents_t extents;
  	time_t rawtime;
 -	struct tm * timeinfo;
 +	struct tm *timeinfo;
  	char string[128];
-+	char mem_string[64];
  
  	time(&rawtime);
  	timeinfo = localtime(&rawtime);
 -	strftime(string, sizeof string, clock->format_string, timeinfo);
 +	strftime(string, sizeof(string), clock->format_string, timeinfo);
-+	get_mem_info(mem_string, sizeof(mem_string));
  
  	widget_get_allocation(widget, &allocation);
  	if (allocation.width == 0)
@@ -499,29 +475,6 @@
  	cr = widget_cairo_create(clock->panel->widget);
 -	cairo_set_font_size(cr, 14);
 +
-+	/* 1. RAM Telemetry Capsule on left of clock widget area */
-+	double pill_w = 145.0;
-+	double pill_h = 22.0;
-+	double pill_x = allocation.x + 8.0;
-+	double pill_y = allocation.y + (allocation.height - pill_h) / 2.0;
-+
-+	rounded_rect(cr, pill_x, pill_y, pill_x + pill_w, pill_y + pill_h, 11);
-+	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.08);
-+	cairo_fill_preserve(cr);
-+	cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.18);
-+	cairo_set_line_width(cr, 1.0);
-+	cairo_stroke(cr);
-+
-+	cairo_select_font_face(cr, "DejaVu Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-+	cairo_set_font_size(cr, 11.0);
-+	cairo_text_extents(cr, mem_string, &extents);
-+	double mem_x = pill_x + (pill_w - extents.width) / 2.0;
-+	double mem_y = pill_y + (pill_h + extents.height) / 2.0 - 1.0;
-+	cairo_move_to(cr, mem_x, mem_y);
-+	cairo_set_source_rgba(cr, 0.957, 0.937, 0.902, 0.95);
-+	cairo_show_text(cr, mem_string);
-+
-+	/* 2. Clock Date/Time on right side */
 +	cairo_select_font_face(cr, "DejaVu Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 +	cairo_set_font_size(cr, 12.5);
  	cairo_text_extents(cr, string, &extents);
@@ -534,7 +487,7 @@
 -	allocation.y += allocation.height / 2 - 1 + extents.height / 2;
 -	cairo_move_to(cr, allocation.x + 1, allocation.y + 1);
 -	cairo_set_source_rgba(cr, 0, 0, 0, 0.85);
-+	double clock_x = allocation.x + allocation.width - extents.width - 16.0;
++	double clock_x = allocation.x + (allocation.width - extents.width) / 2.0;
 +	double clock_y = allocation.y + (allocation.height + extents.height) / 2.0 - 1.0;
 +
 +	cairo_move_to(cr, clock_x + 1.0, clock_y + 1.0);
@@ -550,7 +503,7 @@
  	cairo_destroy(cr);
  }
  
-@@ -484,7 +412,7 @@
+@@ -484,7 +360,7 @@
  	its.it_interval.tv_sec = clock->refresh_timer;
  	its.it_interval.tv_nsec = 0;
  	its.it_value.tv_sec = clock->refresh_timer - tm->tm_sec % clock->refresh_timer;
@@ -559,7 +512,7 @@
  	timespec_add_nsec(&its.it_value, &its.it_value, -ts.tv_nsec);
  
  	toytimer_arm(&clock->timer, &its);
-@@ -511,23 +439,20 @@
+@@ -511,23 +387,20 @@
  	switch (panel->clock_format) {
  	case CLOCK_FORMAT_MINUTES:
  		clock->format_string = "%a %b %d, %I:%M %p";
@@ -580,11 +533,11 @@
  	case CLOCK_FORMAT_NONE:
  		assert(!"not reached");
  	}
-+	clock->refresh_timer = 2;
++	clock->refresh_timer = 60;
  
  	toytimer_init(&clock->timer, CLOCK_MONOTONIC,
  		      window_get_display(panel->window), clock_func);
-@@ -541,43 +466,28 @@
+@@ -541,43 +414,28 @@
  panel_resize_handler(struct widget *widget,
  		     int32_t width, int32_t height, void *data)
  {
@@ -593,7 +546,7 @@
 -	int x = 0;
 +	int w = 360;
 +	int h = height;
-+	int x = width - w;
++	int x = (width - w) / 2;
  	int y = 0;
 -	int w = height > width ? width : height;
 -	int h = w;
@@ -624,11 +577,14 @@
  	if (panel->clock)
  		widget_set_allocation(panel->clock->widget,
 -				      x, y, w + 1, h + 1);
-+				      x, y, w, h);
- }
- 
- static void
+-}
+-
+-static void
 -panel_destroy(struct panel *panel);
++				      x, y, w, h);
++}
++
++static void
 +panel_destroy(struct panel *panel)
 +{
 +	if (panel->clock)
@@ -642,7 +598,7 @@
  
  static void
  panel_configure(void *data,
-@@ -585,76 +495,19 @@
+@@ -585,76 +443,37 @@
  		uint32_t edges, struct window *window,
  		int32_t width, int32_t height)
  {
@@ -718,18 +674,37 @@
 -
 -	free(panel);
 +	window_schedule_resize(panel->window, width, 34);
++}
++
++static void
++panel_button_handler(struct widget *widget, struct input *input,
++                     uint32_t time, uint32_t button,
++                     enum wl_pointer_button_state state, void *data)
++{
++    struct rectangle allocation;
++    float x, y;
++    widget_get_allocation(widget, &allocation);
++    input_get_position(input, &x, &y);
++    if (button != BTN_LEFT || state != WL_POINTER_BUTTON_STATE_RELEASED ||
++        x < allocation.width - 80) return;
++    pid_t pid = fork();
++    if (pid == 0) {
++        execl("/usr/libexec/groove-weston-logout", "groove-weston-logout", (char*)NULL);
++        _exit(1);
++    }
  }
  
  static struct panel *
-@@ -676,6 +529,7 @@
+@@ -676,6 +495,8 @@
  
  	widget_set_redraw_handler(panel->widget, panel_redraw_handler);
  	widget_set_resize_handler(panel->widget, panel_resize_handler);
++	widget_set_button_handler(panel->widget, panel_button_handler);
 +	widget_set_transparent(panel->widget, 1);
  
  	panel->panel_position = desktop->panel_position;
  	panel->clock_format = desktop->clock_format;
-@@ -684,9 +538,7 @@
+@@ -684,9 +505,7 @@
  
  	s = weston_config_get_section(desktop->config, "shell", NULL, NULL);
  	weston_config_section_get_color(s, "panel-color",
@@ -740,7 +715,7 @@
  
  	return panel;
  }
-@@ -706,14 +558,10 @@
+@@ -706,14 +525,10 @@
  	fprintf(stderr, "ERROR loading icon from file '%s', error: '%s'\n",
  		icon, cairo_status_to_string(status));
  
@@ -756,7 +731,7 @@
  	cairo_set_source_rgba(cr, 0, 0, 0, 1);
  	cairo_set_line_cap(cr, CAIRO_LINE_CAP_ROUND);
  	cairo_rectangle(cr, 0, 0, 20, 20);
-@@ -722,16 +570,165 @@
+@@ -722,16 +537,157 @@
  	cairo_move_to(cr, 4, 16);
  	cairo_line_to(cr, 16, 4);
  	cairo_stroke(cr);
@@ -768,9 +743,10 @@
  
  static void
 -panel_add_launcher(struct panel *panel, const char *icon, const char *path, const char *displayname)
-+dock_launcher_activate(struct dock_launcher *widget)
- {
+-{
 -	struct panel_launcher *launcher;
++dock_launcher_activate(struct dock_launcher *widget)
++{
 +	if (widget->argp[0][0] == '/') {
 +		if (access(widget->argp[0], X_OK) == 0)
 +			goto found;
@@ -823,28 +799,20 @@
 +	widget_get_allocation(widget, &allocation);
 +	int icon_w = cairo_image_surface_get_width(launcher->icon);
 +	int icon_h = cairo_image_surface_get_height(launcher->icon);
-+	int x = allocation.x + (allocation.width - icon_w) / 2;
-+	int y = allocation.y + (allocation.height - icon_h) / 2;
-+
-+	if (launcher->pressed) {
-+		y += 1;
-+	}
-+
++	double x = allocation.x + (allocation.width - 40) / 2.0;
++	double y = allocation.y + (allocation.height - 40) / 2.0;
++	if (launcher->pressed) y += 1;
 +	if (launcher->focused) {
-+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.16);
-+		rounded_rect(cr, allocation.x, allocation.y,
-+			     allocation.x + allocation.width,
-+			     allocation.y + allocation.height, 12);
++		rounded_rect(cr, allocation.x - 4, allocation.y - 4,
++		             allocation.x + allocation.width + 4,
++		             allocation.y + allocation.height + 4, 8);
++		cairo_set_source_rgba(cr, 1, 1, 1, 0.08);
 +		cairo_fill(cr);
 +	}
-+
-+	cairo_set_source_surface(cr, launcher->icon, x, y);
++	cairo_translate(cr, x, y);
++	cairo_scale(cr, 40.0 / icon_w, 40.0 / icon_h);
++	cairo_set_source_surface(cr, launcher->icon, 0, 0);
 +	cairo_paint(cr);
-+
-+	if (launcher->focused) {
-+		cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 0.20);
-+		cairo_mask_surface(cr, launcher->icon, x, y);
-+	}
 +
 +	cairo_destroy(cr);
 +}
@@ -925,15 +893,13 @@
  
  	launcher = xzalloc(sizeof *launcher);
  	launcher->icon = load_icon_or_fallback(icon);
-@@ -743,33 +740,219 @@
+@@ -743,33 +699,201 @@
  	launcher->envp = custom_env_get_envp(&launcher->env);
  	launcher->argp = custom_env_get_argp(&launcher->env);
  
 -	launcher->panel = panel;
 -	wl_list_insert(panel->launcher_list.prev, &launcher->link);
-+	launcher->dock = dock;
-+	wl_list_insert(dock->launcher_list.prev, &launcher->link);
- 
+-
 -	launcher->widget = widget_add_widget(panel->widget, launcher);
 -	widget_set_enter_handler(launcher->widget,
 -				 panel_launcher_enter_handler);
@@ -956,6 +922,11 @@
 -				  panel_launcher_redraw_handler);
 -	widget_set_motion_handler(launcher->widget,
 -				  panel_launcher_motion_handler);
+-}
+-
++	launcher->dock = dock;
++	wl_list_insert(dock->launcher_list.prev, &launcher->link);
++
 +	launcher->widget = widget_add_widget(dock->widget, launcher);
 +	widget_set_enter_handler(launcher->widget, dock_launcher_enter_handler);
 +	widget_set_leave_handler(launcher->widget, dock_launcher_leave_handler);
@@ -964,8 +935,8 @@
 +	widget_set_touch_up_handler(launcher->widget, dock_launcher_touch_up_handler);
 +	widget_set_redraw_handler(launcher->widget, dock_launcher_redraw_handler);
 +	widget_set_motion_handler(launcher->widget, dock_launcher_motion_handler);
- }
- 
++}
++
 +static void
 +dock_destroy_launcher(struct dock_launcher *launcher)
 +{
@@ -998,7 +969,6 @@
 +	cairo_surface_t *surface;
 +	cairo_t *cr;
 +	struct dock *dock = data;
-+	cairo_pattern_t *pat;
 +	double px = dock->pill_rect.x;
 +	double py = dock->pill_rect.y;
 +	double pw = dock->pill_rect.width;
@@ -1013,29 +983,12 @@
 +	cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 +
 +	if (pw > 0 && ph > 0) {
-+		/* 1. Drop shadow */
-+		rounded_rect(cr, px, py + 2.0, px + pw, py + ph + 2.0, 18);
-+		cairo_set_source_rgba(cr, 0.0, 0.0, 0.0, 0.40);
-+		cairo_fill(cr);
-+
-+		/* 2. Glassmorphic capsule */
-+		rounded_rect(cr, px, py, px + pw, py + ph, 18);
-+		pat = cairo_pattern_create_linear(px, py, px, py + ph);
-+		cairo_pattern_add_color_stop_rgba(pat, 0.0, 0.086, 0.110, 0.165, 0.82);
-+		cairo_pattern_add_color_stop_rgba(pat, 1.0, 0.039, 0.055, 0.086, 0.78);
-+		cairo_set_source(cr, pat);
++		rounded_rect(cr, px, py, px + pw, py + ph, 16);
++		cairo_set_source_rgba(cr, 0.125, 0.141, 0.169, 0.94);
 +		cairo_fill_preserve(cr);
-+		cairo_pattern_destroy(pat);
-+
-+		/* 3. Specular rim highlight border */
-+		pat = cairo_pattern_create_linear(px, py, px, py + ph);
-+		cairo_pattern_add_color_stop_rgba(pat, 0.0, 1.0, 1.0, 1.0, 0.28);
-+		cairo_pattern_add_color_stop_rgba(pat, 0.6, 1.0, 1.0, 1.0, 0.09);
-+		cairo_pattern_add_color_stop_rgba(pat, 1.0, 1.0, 1.0, 1.0, 0.03);
-+		cairo_set_source(cr, pat);
++		cairo_set_source_rgba(cr, 1, 1, 1, 0.10);
 +		cairo_set_line_width(cr, 1.0);
 +		cairo_stroke(cr);
-+		cairo_pattern_destroy(pat);
 +	}
 +
 +	cairo_destroy(cr);
@@ -1052,10 +1005,10 @@
 +	struct dock *dock = data;
 +	struct dock_launcher *launcher;
 +	int count = 0;
-+	int icon_size = 48;
-+	int icon_gap = 12;
-+	int pad_h = 16;
-+	int pill_height = 58;
++	int icon_size = 40;
++	int icon_gap = 8;
++	int pad_h = 12;
++	int pill_height = 64;
 +	int pill_width;
 +	int pill_x, pill_y;
 +	int cur_x;
@@ -1104,7 +1057,7 @@
 +		return;
 +	}
 +
-+	window_schedule_resize(dock->window, width, 68);
++	window_schedule_resize(dock->window, width, 74);
 +}
 +
 +static void
@@ -1169,7 +1122,7 @@
  enum {
  	BACKGROUND_SCALE,
  	BACKGROUND_SCALE_CROP,
-@@ -1255,6 +1438,8 @@
+@@ -1255,6 +1379,8 @@
  {
  	if (output->background)
  		background_destroy(output->background);
@@ -1178,19 +1131,19 @@
  	if (output->panel)
  		panel_destroy(output->panel);
  	wl_output_destroy(output->output);
-@@ -1341,6 +1526,11 @@
+@@ -1339,6 +1465,11 @@
+ 	if (desktop->want_panel) {
+ 		output->panel = panel_create(desktop, output);
  		surface = window_get_wl_surface(output->panel->window);
- 		weston_desktop_shell_set_panel(desktop->shell,
- 					       output->output, surface);
++		weston_desktop_shell_set_panel(desktop->shell,
++					       output->output, surface);
 +
 +		output->dock = dock_create(desktop, output);
 +		surface = window_get_wl_surface(output->dock->window);
-+		weston_desktop_shell_set_panel(desktop->shell,
-+					       output->output, surface);
+ 		weston_desktop_shell_set_panel(desktop->shell,
+ 					       output->output, surface);
  	}
- 
- 	output->background = background_create(desktop, output);
-@@ -1421,6 +1611,13 @@
+@@ -1421,6 +1552,13 @@
  			if (rep->panel)
  				rep->panel->owner = rep;
  		}
@@ -1204,10 +1157,13 @@
  	}
  
  	output_destroy(output);
-@@ -1462,50 +1659,6 @@
- 	}
- }
- 
+@@ -1459,50 +1597,6 @@
+ 				break;
+ 			}
+ 		}
+-	}
+-}
+-
 -static void
 -panel_add_launchers(struct panel *panel, struct desktop *desktop)
 -{
@@ -1249,270 +1205,6 @@
 -				   BINDIR "/weston-terminal",
 -				   "Terminal");
 -		free(name);
--	}
--}
--
- static void
- parse_panel_position(struct desktop *desktop, struct weston_config_section *s)
- {
---- /tmp/weston-orig/weston-13.0.3/shared/cairo-util.c	2024-06-05 11:59:31.000000000 +0000
-+++ /tmp/weston-test/weston-13.0.3/shared/cairo-util.c	2026-11-05 08:07:19.450551291 +0000
-@@ -405,12 +405,12 @@
- 
- 	if (flags & THEME_FRAME_ACTIVE) {
- 		pattern = cairo_pattern_create_linear(16, 16, 16, 112);
--		cairo_pattern_add_color_stop_rgb(pattern, 0.0, 1.0, 1.0, 1.0);
--		cairo_pattern_add_color_stop_rgb(pattern, 0.2, 0.8, 0.8, 0.8);
-+		cairo_pattern_add_color_stop_rgba(pattern, 0.0, 0.11, 0.14, 0.22, 0.96);
-+		cairo_pattern_add_color_stop_rgba(pattern, 1.0, 0.06, 0.08, 0.13, 0.98);
- 		cairo_set_source(cr, pattern);
- 		cairo_pattern_destroy(pattern);
- 	} else {
--		cairo_set_source_rgba(cr, 0.75, 0.75, 0.75, 1);
-+		cairo_set_source_rgba(cr, 0.05, 0.07, 0.11, 0.85);
  	}
  }
  
-@@ -424,8 +424,8 @@
- 
- 	t->margin = 32;
- 	t->width = 6;
--	t->titlebar_height = 27;
--	t->frame_radius = 3;
-+	t->titlebar_height = 32;
-+	t->frame_radius = 12;
- 	t->shadow = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 128, 128);
- 	cr = cairo_create(t->shadow);
- 	cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
-@@ -611,15 +611,12 @@
- 			x = (title_rect->x + title_rect->width) - text_width;
- 
- 		if (flags & THEME_FRAME_ACTIVE) {
--			cairo_move_to(cr, x + 1, y  + 1);
--			cairo_set_source_rgb(cr, 1, 1, 1);
--			SHOW_TEXT(cr);
- 			cairo_move_to(cr, x, y);
--			cairo_set_source_rgb(cr, 0, 0, 0);
-+			cairo_set_source_rgb(cr, 0.96, 0.94, 0.90);
- 			SHOW_TEXT(cr);
- 		} else {
- 			cairo_move_to(cr, x, y);
--			cairo_set_source_rgb(cr, 0.4, 0.4, 0.4);
-+			cairo_set_source_rgb(cr, 0.58, 0.64, 0.72);
- 			SHOW_TEXT(cr);
- 		}
- 
---- /tmp/weston-orig/weston-13.0.3/shared/frame.c	2024-06-05 11:59:31.000000000 +0000
-+++ /tmp/weston-test/weston-13.0.3/shared/frame.c	2026-11-05 08:08:01.562593254 +0000
-@@ -212,41 +212,72 @@
- frame_button_repaint(struct frame_button *button, cairo_t *cr)
- {
- 	int x, y;
-+	double cx, cy;
- 
--	if (!button->allocation.width)
--		return;
--	if (!button->allocation.height)
-+	if (!button->allocation.width || !button->allocation.height)
- 		return;
- 
- 	x = button->allocation.x;
- 	y = button->allocation.y;
-+	cx = x + 8.0;
-+	cy = y + 8.0;
- 
- 	cairo_save(cr);
- 
--	if (button->flags & FRAME_BUTTON_DECORATED) {
--		cairo_set_line_width(cr, 1);
--
--		cairo_set_source_rgb(cr, 0.0, 0.0, 0.0);
--		cairo_rectangle(cr, x, y, 25, 16);
--
--		cairo_stroke_preserve(cr);
--
--		if (button->press_count) {
--			cairo_set_source_rgb(cr, 0.7, 0.7, 0.7);
--		} else if (button->hover_count) {
--			cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
--		} else {
--			cairo_set_source_rgb(cr, 0.88, 0.88, 0.88);
-+	if (button->status_effect == FRAME_STATUS_CLOSE) {
-+		cairo_arc(cr, cx, cy, 6.0, 0, 2 * M_PI);
-+		cairo_set_source_rgb(cr, 1.0, 0.37, 0.34);
-+		cairo_fill_preserve(cr);
-+		cairo_set_source_rgb(cr, 0.88, 0.27, 0.24);
-+		cairo_set_line_width(cr, 1.0);
-+		cairo_stroke(cr);
-+
-+		if (button->hover_count || button->press_count) {
-+			cairo_set_source_rgb(cr, 0.35, 0.0, 0.0);
-+			cairo_set_line_width(cr, 1.2);
-+			cairo_move_to(cr, cx - 2.5, cy - 2.5);
-+			cairo_line_to(cr, cx + 2.5, cy + 2.5);
-+			cairo_move_to(cr, cx + 2.5, cy - 2.5);
-+			cairo_line_to(cr, cx - 2.5, cy + 2.5);
-+			cairo_stroke(cr);
- 		}
--
--		cairo_fill (cr);
--
--		x += 4;
-+	} else if (button->status_effect == FRAME_STATUS_MINIMIZE) {
-+		cairo_arc(cr, cx, cy, 6.0, 0, 2 * M_PI);
-+		cairo_set_source_rgb(cr, 1.0, 0.74, 0.18);
-+		cairo_fill_preserve(cr);
-+		cairo_set_source_rgb(cr, 0.87, 0.63, 0.14);
-+		cairo_set_line_width(cr, 1.0);
-+		cairo_stroke(cr);
-+
-+		if (button->hover_count || button->press_count) {
-+			cairo_set_source_rgb(cr, 0.40, 0.25, 0.0);
-+			cairo_set_line_width(cr, 1.4);
-+			cairo_move_to(cr, cx - 3.0, cy);
-+			cairo_line_to(cr, cx + 3.0, cy);
-+			cairo_stroke(cr);
-+		}
-+	} else if (button->status_effect == FRAME_STATUS_MAXIMIZE) {
-+		cairo_arc(cr, cx, cy, 6.0, 0, 2 * M_PI);
-+		cairo_set_source_rgb(cr, 0.15, 0.79, 0.25);
-+		cairo_fill_preserve(cr);
-+		cairo_set_source_rgb(cr, 0.10, 0.67, 0.16);
-+		cairo_set_line_width(cr, 1.0);
-+		cairo_stroke(cr);
-+
-+		if (button->hover_count || button->press_count) {
-+			cairo_set_source_rgb(cr, 0.0, 0.35, 0.0);
-+			cairo_set_line_width(cr, 1.2);
-+			cairo_move_to(cr, cx - 2.5, cy);
-+			cairo_line_to(cr, cx + 2.5, cy);
-+			cairo_move_to(cr, cx, cy - 2.5);
-+			cairo_line_to(cr, cx, cy + 2.5);
-+			cairo_stroke(cr);
-+		}
-+	} else {
-+		cairo_set_source_surface(cr, button->icon, x, y);
-+		cairo_paint(cr);
- 	}
- 
--	cairo_set_source_surface(cr, button->icon, x, y);
--	cairo_paint(cr);
--
- 	cairo_restore(cr);
- }
- 
-@@ -351,71 +382,31 @@
- 			goto free_frame;
- 	}
- 
--	if (title) {
--		if (icon) {
--			button = frame_button_create_from_surface(frame,
--			                                          icon,
--			                                          FRAME_STATUS_MENU,
--			                                          FRAME_BUTTON_CLICK_DOWN);
--		} else {
--			char *name = file_name_with_datadir("icon_window.png");
--
--			if (!name)
--				goto free_frame;
--
--			button = frame_button_create(frame,
--			                             name,
--			                             FRAME_STATUS_MENU,
--			                             FRAME_BUTTON_CLICK_DOWN);
--			free(name);
--		}
--		if (!button)
--			goto free_frame;
--	}
--
- 	if (buttons & FRAME_BUTTON_CLOSE) {
- 		char *name = file_name_with_datadir("sign_close.png");
--
- 		if (!name)
- 			goto free_frame;
--
--		button = frame_button_create(frame,
--					     name,
--					     FRAME_STATUS_CLOSE,
--					     FRAME_BUTTON_ALIGN_RIGHT |
--					     FRAME_BUTTON_DECORATED);
-+		button = frame_button_create(frame, name, FRAME_STATUS_CLOSE, 0);
- 		free(name);
- 		if (!button)
- 			goto free_frame;
- 	}
- 
--	if (buttons & FRAME_BUTTON_MAXIMIZE) {
--		char *name = file_name_with_datadir("sign_maximize.png");
--
-+	if (buttons & FRAME_BUTTON_MINIMIZE) {
-+		char *name = file_name_with_datadir("sign_minimize.png");
- 		if (!name)
- 			goto free_frame;
--
--		button = frame_button_create(frame,
--					     name,
--					     FRAME_STATUS_MAXIMIZE,
--					     FRAME_BUTTON_ALIGN_RIGHT |
--					     FRAME_BUTTON_DECORATED);
-+		button = frame_button_create(frame, name, FRAME_STATUS_MINIMIZE, 0);
- 		free(name);
- 		if (!button)
- 			goto free_frame;
- 	}
- 
--	if (buttons & FRAME_BUTTON_MINIMIZE) {
--		char *name = file_name_with_datadir("sign_minimize.png");
--
-+	if (buttons & FRAME_BUTTON_MAXIMIZE) {
-+		char *name = file_name_with_datadir("sign_maximize.png");
- 		if (!name)
- 			goto free_frame;
--
--		button = frame_button_create(frame,
--					     name,
--					     FRAME_STATUS_MINIMIZE,
--					     FRAME_BUTTON_ALIGN_RIGHT |
--					     FRAME_BUTTON_DECORATED);
-+		button = frame_button_create(frame, name, FRAME_STATUS_MAXIMIZE, 0);
- 		free(name);
- 		if (!button)
- 			goto free_frame;
---- /tmp/weston-orig/weston-13.0.3/clients/terminal.c	2024-06-05 11:59:31.000000000 +0000
-+++ /tmp/weston-test/weston-13.0.3/clients/terminal.c	2026-11-05 08:09:02.127653175 +0000
-@@ -907,7 +907,7 @@
- 
- struct color_scheme DEFAULT_COLORS = {
- 	{
--		{0,    0,    0,    1}, /* black */
-+		{0.043, 0.055, 0.090, 0.84}, /* dark glass */
- 		{0.66, 0,    0,    1}, /* red */
- 		{0  ,  0.66, 0,    1}, /* green */
- 		{0.66, 0.33, 0,    1}, /* orange (nicer than muddy yellow) */
-@@ -2947,11 +2947,11 @@
- 	terminal->margin_bottom = -1;
- 	terminal->window = window_create(display);
- 	terminal->widget = window_frame_create(terminal->window, terminal);
--	terminal->title = xstrdup("Wayland Terminal");
-+	terminal->title = xstrdup("Linux Groove Terminal");
- 	window_set_title(terminal->window, terminal->title);
- 	window_set_appid(terminal->window,
- 			 "org.freedesktop.weston.wayland-terminal");
--	widget_set_transparent(terminal->widget, 0);
-+	widget_set_transparent(terminal->widget, 1);
- 
- 	init_state_machine(&terminal->state_machine);
- 	init_color_table(terminal);
-@@ -3150,8 +3150,8 @@
- 	setlocale(LC_ALL, "");
- 
- 	option_shell = getenv("SHELL");
--	if (!option_shell)
--		option_shell = "/bin/sh";
-+	if (!option_shell || strcmp(option_shell, "/bin/sh") == 0)
-+		option_shell = "/bin/bash";
- 
- 	config_file = weston_config_get_name_from_env();
- 	config = weston_config_parse(config_file);

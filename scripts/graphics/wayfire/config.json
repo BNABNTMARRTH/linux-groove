@@ -1,0 +1,54 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 34,
+  "modules-left": [
+    "custom/groove",
+    "custom/workspaces"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "custom/system",
+    "tray",
+    "custom/motion",
+    "custom/logout"
+  ],
+  "custom/groove": {
+    "format": "GROOVE",
+    "tooltip": false
+  },
+  "clock": {
+    "format": "{:%a %d %b  %H:%M}",
+    "tooltip-format": "{:%Y-%m-%d}"
+  },
+  "tray": {
+    "icon-size": 16,
+    "spacing": 10
+  },
+  "custom/motion": {
+    "exec": "/usr/libexec/groove-motion-status",
+    "return-type": "json",
+    "interval": 1,
+    "on-click": "/usr/libexec/groove-motion-toggle"
+  },
+  "custom/logout": {
+    "format": "Salir",
+    "on-click": "/usr/libexec/groove-wayfire-logout",
+    "tooltip": false
+  },
+  "custom/workspaces": {
+    "exec": "/opt/groove-wayfire/bin/groove-workspace",
+    "return-type": "json",
+    "interval": 1,
+    "on-click": "/opt/groove-wayfire/bin/groove-workspace next",
+    "on-scroll-up": "/opt/groove-wayfire/bin/groove-workspace prev",
+    "on-scroll-down": "/opt/groove-wayfire/bin/groove-workspace next"
+  },
+  "custom/system": {
+    "exec": "/usr/libexec/groove-system-status",
+    "return-type": "json",
+    "interval": 5
+  }
+}

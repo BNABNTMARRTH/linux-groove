@@ -144,3 +144,13 @@ Escenario: Conservar el escritorio propio
   Entonces XFCE y Weston siguen siendo sesiones utilizables
   Y Groove Desktop solo aparece tras pasar los criterios de la spec 008.
 ```
+
+## Blue Note Glass / Wayfire — 2026-11-05
+
+- Como artista quiero ver el piano de Groove desde el primer arranque en Weston y Wayfire.
+- Como usuario quiero lanzar aplicaciones desde el dock, cambiar espacios y volver al selector.
+- Como usuario quiero efectos 3D expresivos y poder reducir el movimiento durante el trabajo.
+- Como desarrollador quiero distinguir aceleración VirGL real de renderizado por software.
+- Como usuario quiero recuperar Weston o una consola si la nueva sesión falla.
+
+Aceptación y evidencia: [spec 011](specs/011-wayfire-blue-note-glass-spec.md).

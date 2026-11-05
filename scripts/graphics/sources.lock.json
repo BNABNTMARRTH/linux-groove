@@ -1273,7 +1273,14 @@
       "url": "https://gitlab.freedesktop.org/wayland/weston/-/releases/13.0.3/downloads/weston-13.0.3.tar.xz",
       "version": "13.0.3",
       "filename": "weston-13.0.3.tar.xz",
-      "sha256": "27f68d96e3b97d98daadef13a202356524924fa381418fa6716b9136ef099093"
+      "sha256": "27f68d96e3b97d98daadef13a202356524924fa381418fa6716b9136ef099093",
+      "pre": "patch -p1 < \"$GROOVE_SOURCE_ROOT/scripts/graphics/patches/weston-13.0.3-glassmorphism.patch\"",
+      "patches": [
+        {
+          "path": "scripts/graphics/patches/weston-13.0.3-glassmorphism.patch",
+          "sha256": "f0f8efd7fb33e90894e0bd4965b7167b6b9838b9247e43b408d2ba1fd9a642ec"
+        }
+      ]
     },
     {
       "name": "dejavu-fonts",

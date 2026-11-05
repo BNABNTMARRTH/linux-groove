@@ -1,4 +1,17 @@
 # Linux Groove OS: Plan Maestro y Fases de Implementación
+
+## Entrega progresiva vigente — 2026-11-05
+
+1. Base funcional existente: Weston/LightDM/XFCE sobre LFS y groove-init.
+2. Blue Note Glass: Wayfire + Waybar, fondo piano, Mesa VirGL y efectos 3D;
+   promover tras aceptación UTM. Mientras tanto, el inicio normal sigue en Weston.
+3. Compositor propio Rust/Smithay con criterios de la spec 008.
+4. Suites creativas y validación de audio RT.
+
+Las cifras históricas de tamaño, RAM, arranque y audio son objetivos pendientes
+de medición. La especificación vigente de esta etapa es la
+[011](../specs/011-wayfire-blue-note-glass-spec.md).
+
 *The Blue Note Edition — A Rustified LFS Linux Distribution for Artists and Creators*
 
 ---
@@ -133,3 +146,14 @@ flowchart TD
   - Crate `crates/groove-installer`: "The Soundcheck Installer", instalador interactivo TUI/GUI con modo `--dry-run`.
   - Generación de `linux-groove-0.1.0-aarch64.iso` y `linux-groove-0.1.0-x86_64.iso` con bootloader híbrido UEFI/BIOS.
 
+
+## Refinamiento Blue Note — 2026-11-05
+
+Dirección aprobada: oscuro sobrio, terminal GTK opaca, controles monocromáticos
+a la derecha y cuatro lanzadores compartidos (Terminal, Archivos, Editor, Firefox).
+Barra 34 px con métricas en tooltip; dock 64 px con iconos propios de 40/80 px.
+Sustituye la apariencia de las candidatas anteriores. Wayfire sigue candidato
+hasta completar aceptación; Weston, XFCE y consola se conservan.
+Audacity, Blender, persistencia y gestor de aplicaciones quedan para después.
+
+Ver [spec 012](../specs/012-blue-note-refinement-spec.md) y el informe de validación.

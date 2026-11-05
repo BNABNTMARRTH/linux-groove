@@ -1,0 +1,355 @@
+{
+  "baseline": "BLFS 12.2 / existing Groove source prefix; additions pinned upstream",
+  "packages": [
+    {
+      "name": "libstdcxx",
+      "version": "12.2.0",
+      "url": "https://gcc.gnu.org/pub/gcc/releases/gcc-12.2.0/gcc-12.2.0.tar.xz",
+      "filename": "gcc-12.2.0.tar.xz",
+      "sha256": "e549cf9cf3594a00e27b6589d4322d70e0720cdd213f39beb4181e06926230ff",
+      "build": "custom",
+      "commands": "ln -s gthr-posix.h libgcc/gthr-default.h\nmkdir _build\ncd _build\n../libstdc++-v3/configure --prefix=\"$PREFIX\" --libdir=\"$PREFIX/lib\" --disable-multilib --disable-nls --disable-libstdcxx-pch --enable-symvers=gnu --enable-libstdcxx-threads\nmake -j \"$JOBS\"\nmake install\ncp config.log /tmp/groove-libstdcxx-config.log\ngrep -q \"^#define _GLIBCXX_HAS_GTHREADS 1\" include/bits/c++config.h"
+    },
+    {
+      "name": "libsigc++",
+      "version": "2.12.1",
+      "url": "https://download.gnome.org/sources/libsigc++/2.12/libsigc++-2.12.1.tar.xz",
+      "filename": "libsigc++-2.12.1.tar.gz",
+      "build": "meson",
+      "options": "-Dbuild-documentation=false -Dbuild-examples=false",
+      "sha256": "a9dbee323351d109b7aee074a9cb89ca3e7bcf8ad8edef1851f4cf359bd50843"
+    },
+    {
+      "name": "glibmm",
+      "version": "2.66.7",
+      "url": "https://download.gnome.org/sources/glibmm/2.66/glibmm-2.66.7.tar.xz",
+      "filename": "glibmm-2.66.7.tar.gz",
+      "build": "meson",
+      "options": "-Dbuild-documentation=false -Dbuild-examples=false",
+      "sha256": "fe02c1e5f5825940d82b56b6ec31a12c06c05c1583cfe62f934d0763e1e542b3"
+    },
+    {
+      "name": "cairomm",
+      "version": "1.14.5",
+      "url": "https://www.cairographics.org/releases/cairomm-1.14.5.tar.xz",
+      "filename": "cairomm-1.14.5.tar.gz",
+      "build": "meson",
+      "options": "-Dbuild-documentation=false -Dbuild-examples=false",
+      "sha256": "70136203540c884e89ce1c9edfb6369b9953937f6cd596d97c78c9758a5d48db"
+    },
+    {
+      "name": "pangomm",
+      "version": "2.46.4",
+      "url": "https://download.gnome.org/sources/pangomm/2.46/pangomm-2.46.4.tar.xz",
+      "filename": "pangomm-2.46.4.tar.gz",
+      "build": "meson",
+      "options": "-Dbuild-documentation=false",
+      "sha256": "b92016661526424de4b9377f1512f59781f41fb16c9c0267d6133ba1cd68db22"
+    },
+    {
+      "name": "atkmm",
+      "version": "2.28.4",
+      "url": "https://download.gnome.org/sources/atkmm/2.28/atkmm-2.28.4.tar.xz",
+      "filename": "atkmm-2.28.4.tar.gz",
+      "build": "meson",
+      "options": "-Dbuild-documentation=false",
+      "sha256": "0a142a8128f83c001efb8014ee463e9a766054ef84686af953135e04d28fdab3"
+    },
+    {
+      "name": "gtkmm",
+      "version": "3.24.9",
+      "url": "https://download.gnome.org/sources/gtkmm/3.24/gtkmm-3.24.9.tar.xz",
+      "filename": "gtkmm-3.24.9.tar.gz",
+      "build": "meson",
+      "options": "-Dbuild-documentation=false -Dbuild-demos=false -Dbuild-tests=false",
+      "sha256": "30d5bfe404571ce566a8e938c8bac17576420eb508f1e257837da63f14ad44ce"
+    },
+    {
+      "name": "gtk-layer-shell",
+      "version": "0.8.2",
+      "url": "https://codeload.github.com/wmww/gtk-layer-shell/tar.gz/v0.8.2",
+      "filename": "gtk-layer-shell-0.8.2.tar.gz",
+      "build": "meson",
+      "options": "-Dexamples=false -Dtests=false -Ddocs=false -Dintrospection=false -Dvapi=false",
+      "sha256": "254dd246303127c5d5236ea640f01a82e35d2d652a48d139dd669c832a0f0dce"
+    },
+    {
+      "name": "libliftoff",
+      "version": "0.4.1",
+      "url": "https://gitlab.freedesktop.org/emersion/libliftoff/-/archive/v0.4.1/libliftoff-v0.4.1.tar.gz",
+      "filename": "libliftoff-0.4.1.tar.gz",
+      "build": "meson",
+      "options": "",
+      "sha256": "44ec5cfdd0df040d1023d4d6a48b23c31f21ce61ee2347da9e1ca244fe24dd1c"
+    },
+    {
+      "name": "hwdata",
+      "version": "0.385",
+      "url": "https://codeload.github.com/vcrhonek/hwdata/tar.gz/v0.385",
+      "filename": "hwdata-0.385.tar.gz",
+      "build": "custom",
+      "options": "",
+      "commands": "./configure --prefix=\"$PREFIX\" --datadir=\"$PREFIX/share\"\nmake install",
+      "sha256": "577219d44d9686e8177f6291adbff7bacdd785ad4e8a8d0c4b2a14dbf850d6ac"
+    },
+    {
+      "name": "mesa",
+      "version": "24.1.5",
+      "url": "https://archive.mesa3d.org/mesa-24.1.5.tar.xz",
+      "filename": "mesa-24.1.5.tar.gz",
+      "build": "meson",
+      "options": "-Dplatforms=x11,wayland -Dgallium-drivers=swrast,virgl -Dvulkan-drivers= -Dllvm=disabled -Dshared-llvm=disabled -Dvalgrind=disabled -Dglx=dri -Degl=enabled -Dgbm=enabled -Dvideo-codecs= -Dbuild-tests=false",
+      "sha256": "02761ffd965dd64b95421ebfca1191d73724aba00f30034009237564f34cf976"
+    },
+    {
+      "name": "wlroots",
+      "version": "0.17.4",
+      "url": "https://gitlab.freedesktop.org/wlroots/wlroots/-/archive/0.17.4/wlroots-0.17.4.tar.gz",
+      "filename": "wlroots-0.17.4.tar.gz",
+      "build": "meson",
+      "options": "-Dexamples=false -Dxwayland=disabled -Drenderers=gles2 -Dbackends=drm,libinput -Dsession=enabled",
+      "sha256": "f424eadc64be3056542f98146707d5815d01ac8f6f745bcd8c5796b25058857a"
+    },
+    {
+      "name": "glm",
+      "version": "1.0.1",
+      "url": "https://codeload.github.com/g-truc/glm/tar.gz/1.0.1",
+      "filename": "glm-1.0.1.tar.gz",
+      "build": "cmake",
+      "options": "-DGLM_BUILD_TESTS=OFF",
+      "sha256": "9f3174561fd26904b23f0db5e560971cbf9b3cbda0b280f04d5c379d03bf234c"
+    },
+    {
+      "name": "nlohmann-json",
+      "version": "3.11.3",
+      "url": "https://codeload.github.com/nlohmann/json/tar.gz/v3.11.3",
+      "filename": "nlohmann-json-3.11.3.tar.gz",
+      "build": "cmake",
+      "options": "-DJSON_BuildTests=OFF",
+      "sha256": "0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406"
+    },
+    {
+      "name": "wf-config",
+      "version": "0.9.0",
+      "url": "https://codeload.github.com/WayfireWM/wf-config/tar.gz/v0.9.0",
+      "filename": "wf-config-0.9.0.tar.gz",
+      "build": "meson",
+      "options": "-Dtests=disabled",
+      "sha256": "973a47795d3397d281d89c561903867f691c9fe8c3d141ba887afd12902c790d"
+    },
+    {
+      "name": "wayfire",
+      "version": "0.9.0",
+      "url": "https://codeload.github.com/WayfireWM/wayfire/tar.gz/v0.9.0",
+      "filename": "wayfire-0.9.0.tar.gz",
+      "build": "meson",
+      "options": "-Duse_system_wlroots=enabled -Duse_system_wfconfig=enabled -Dxwayland=disabled -Dtests=disabled -Dprint_trace=false -Denable_gles32=false -Denable_openmp=false",
+      "bundled_sources": [
+        {
+          "name": "wf-utils",
+          "version": "08553c418f164bf5e84613d27447a32e380b75f0",
+          "url": "https://codeload.github.com/WayfireWM/wf-utils/tar.gz/08553c418f164bf5e84613d27447a32e380b75f0",
+          "filename": "wf-utils-08553c418f164bf5e84613d27447a32e380b75f0.tar.gz",
+          "destination": "subprojects/wf-utils",
+          "sha256": "a271a567b4512a523c07e98fe724ee2d30c903751e6ebee47b80ed58c468c073"
+        },
+        {
+          "name": "wf-touch",
+          "version": "b8b844fa873871f90a9cf0768c8ae8c92ad49f34",
+          "url": "https://codeload.github.com/WayfireWM/wf-touch/tar.gz/b8b844fa873871f90a9cf0768c8ae8c92ad49f34",
+          "filename": "wf-touch-b8b844fa873871f90a9cf0768c8ae8c92ad49f34.tar.gz",
+          "destination": "subprojects/wf-touch",
+          "sha256": "6cc22527bd46716515052d2a5086149143af6fb4ea0206bae3ae8ef6ce7db851"
+        }
+      ],
+      "sha256": "233fa0cf1c967a48d40a075ea7e34132e80ad30c2aef5e306c4466be1e585acb"
+    },
+    {
+      "name": "libdbusmenu",
+      "version": "16.04.0",
+      "url": "https://launchpad.net/libdbusmenu/16.04/16.04.0/+download/libdbusmenu-16.04.0.tar.gz",
+      "filename": "libdbusmenu-16.04.0.tar.gz",
+      "build": "auto",
+      "options": "--disable-tests --disable-gtk-doc --disable-dumper --disable-introspection --with-gtk=3 --disable-vala",
+      "pre": "export CFLAGS=\"$CFLAGS -Wno-error\"\n# Upstream configure leaves this conditional unset when tests are disabled.\nexport HAVE_VALGRIND_TRUE='#' HAVE_VALGRIND_FALSE=''",
+      "sha256": "b9cc4a2acd74509435892823607d966d424bd9ad5d0b00938f27240a1bfa878a"
+    },
+    {
+      "name": "wf-shell",
+      "version": "0.9.0",
+      "url": "https://codeload.github.com/WayfireWM/wf-shell/tar.gz/v0.9.0",
+      "filename": "wf-shell-0.9.0.tar.gz",
+      "build": "meson",
+      "options": "-Dpulse=disabled -Dwayland-logout=false",
+      "sha256": "71d14174c08cf51334ff8ec10aa5e055340bf291b993fef85d15f51892098e82",
+      "pre": "patch -p1 < \"$GROOVE_SOURCE_ROOT/scripts/graphics/patches/wf-shell-0.9.0-groove-launchers.patch\"",
+      "patches": [
+        {
+          "path": "scripts/graphics/patches/wf-shell-0.9.0-groove-launchers.patch",
+          "sha256": "39cfb9e84c503e22b85e0af884c2d1a7934468c27ad2ac84eb608f5c2a22fe6a"
+        }
+      ]
+    },
+    {
+      "name": "gsettings-desktop-schemas",
+      "version": "46.1",
+      "url": "https://download.gnome.org/sources/gsettings-desktop-schemas/46/gsettings-desktop-schemas-46.1.tar.xz",
+      "filename": "gsettings-desktop-schemas-46.1.tar.xz",
+      "sha256": "9b88101437a6958ebe6bbd812e49bbf1d09cc667011e415559d847e870468a61",
+      "build": "meson",
+      "options": "-Dintrospection=false",
+      "post": "glib-compile-schemas \"$PREFIX/share/glib-2.0/schemas\""
+    },
+    {
+      "name": "pixdecor",
+      "version": "d172e8438ee97edb50f0c31edd901ddf7940085d",
+      "url": "https://codeload.github.com/soreau/pixdecor/tar.gz/d172e8438ee97edb50f0c31edd901ddf7940085d",
+      "filename": "pixdecor-d172e8438ee97edb50f0c31edd901ddf7940085d.tar.gz",
+      "build": "meson",
+      "options": "",
+      "sha256": "05e511b909c1c71df76d01f803b208361d21df0523f238fb9b3fb773f09dbdf8",
+      "pre": "patch -p1 < \"$GROOVE_SOURCE_ROOT/scripts/graphics/patches/pixdecor-gles-fragment-rounded.patch\"\npatch -p1 < \"$GROOVE_SOURCE_ROOT/scripts/graphics/patches/pixdecor-hidpi-text.patch\"",
+      "patches": [
+        {
+          "path": "scripts/graphics/patches/pixdecor-gles-fragment-rounded.patch",
+          "sha256": "751f76930291df79f00bd3afba6c54d12b46d666de73e9b05dd9e0c7473ea1ac"
+        },
+        {
+          "path": "scripts/graphics/patches/pixdecor-hidpi-text.patch",
+          "sha256": "c2f5dc929ab068d02dd06c88ce3a3fbdff1291d778c8570af0f24cdfd4c3029e"
+        }
+      ]
+    },
+    {
+      "name": "fmt",
+      "version": "10.2.1",
+      "url": "https://codeload.github.com/fmtlib/fmt/tar.gz/10.2.1",
+      "filename": "fmt-10.2.1.tar.gz",
+      "build": "cmake",
+      "options": "-DFMT_TEST=OFF -DFMT_DOC=OFF -DBUILD_SHARED_LIBS=ON",
+      "sha256": "1250e4cc58bf06ee631567523f48848dc4596133e163f02615c97f78bab6c811"
+    },
+    {
+      "name": "spdlog",
+      "version": "1.14.1",
+      "url": "https://codeload.github.com/gabime/spdlog/tar.gz/v1.14.1",
+      "filename": "spdlog-1.14.1.tar.gz",
+      "build": "cmake",
+      "options": "-DSPDLOG_FMT_EXTERNAL=ON -DSPDLOG_BUILD_SHARED=ON -DSPDLOG_BUILD_TESTS=OFF",
+      "sha256": "1586508029a7d0670dfcb2d97575dcdc242d3868a259742b69f100801ab4e16b"
+    },
+    {
+      "name": "jsoncpp",
+      "version": "1.9.5",
+      "url": "https://codeload.github.com/open-source-parsers/jsoncpp/tar.gz/1.9.5",
+      "filename": "jsoncpp-1.9.5.tar.gz",
+      "build": "cmake",
+      "options": "-DJSONCPP_WITH_TESTS=OFF -DJSONCPP_WITH_POST_BUILD_UNITTEST=OFF",
+      "sha256": "f409856e5920c18d0c2fb85276e24ee607d2a09b5e7d5f0a371368903c275da2"
+    },
+    {
+      "name": "date",
+      "version": "3.0.1",
+      "url": "https://codeload.github.com/HowardHinnant/date/tar.gz/v3.0.1",
+      "filename": "date-3.0.1.tar.gz",
+      "build": "cmake",
+      "options": "-DBUILD_TZ_LIB=ON -DUSE_SYSTEM_TZ_DB=ON -DBUILD_SHARED_LIBS=ON",
+      "sha256": "7a390f200f0ccd207e8cff6757e04817c1a0aec3e327b006b7eb451c57ee3538"
+    },
+    {
+      "name": "waybar",
+      "version": "0.10.4",
+      "url": "https://codeload.github.com/Alexays/Waybar/tar.gz/0.10.4",
+      "filename": "waybar-0.10.4.tar.gz",
+      "build": "meson",
+      "options": "-Dauto_features=disabled -Ddbusmenu-gtk=enabled -Dlibudev=enabled",
+      "sha256": "ad1ead64aec35bc589207ea1edce90e848620d578985967d44a850a66b5ef829"
+    },
+    {
+      "name": "grim",
+      "version": "1.4.1",
+      "url": "https://git.sr.ht/~emersion/grim/archive/v1.4.1.tar.gz",
+      "filename": "grim-1.4.1.tar.gz",
+      "build": "meson",
+      "options": "-Dman-pages=disabled",
+      "sha256": "5ed8e70fcd83a7e203e92d34dbb82a1342d3f13ad98a6b0310cc97e1a9342ded"
+    },
+    {
+      "name": "tzcode",
+      "version": "2024a",
+      "url": "https://data.iana.org/time-zones/releases/tzcode2024a.tar.gz",
+      "filename": "tzcode-2024a.tar.gz",
+      "sha256": "80072894adff5a458f1d143e16e4ca1d8b2a122c9c5399da482cb68cba6a1ff8",
+      "build": "custom",
+      "commands": "printf \"2024a\\n\" > version\nmake -o version -j \"$JOBS\" zic\ninstall -Dm755 zic \"$PREFIX/bin/zic\""
+    },
+    {
+      "name": "tzdata",
+      "version": "2024a",
+      "url": "https://data.iana.org/time-zones/releases/tzdata2024a.tar.gz",
+      "filename": "tzdata-2024a.tar.gz",
+      "sha256": "0d0434459acbd2059a7a8da1f3304a84a86591f6ed69c6248fffa502b6edffe3",
+      "build": "custom",
+      "commands": "mkdir -p \"$PREFIX/share/zoneinfo\"\n\"$PREFIX/bin/zic\" -d \"$PREFIX/share/zoneinfo\" africa antarctica asia australasia europe northamerica southamerica etcetera backward\ncp zone1970.tab zone.tab iso3166.tab \"$PREFIX/share/zoneinfo/\"\nprintf \"# version 2024a\\n\" > \"$PREFIX/share/zoneinfo/tzdata.zi\"\ncat africa antarctica asia australasia europe northamerica southamerica etcetera backward >> \"$PREFIX/share/zoneinfo/tzdata.zi\""
+    },
+    {
+      "name": "gmp",
+      "source": "lfs:gmp",
+      "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz",
+      "upstream_md5": "956dc04e864001a9c22429f761f2c283",
+      "version": "6.3.0",
+      "book": "LFS 12.2",
+      "filename": "gmp-6.3.0.tar.xz",
+      "sha256": "a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898"
+    },
+    {
+      "name": "libunistring",
+      "url": "https://ftp.gnu.org/gnu/libunistring/libunistring-1.2.tar.xz",
+      "upstream_md5": "6b4ea63617bf09d76e5234379e75e7f9",
+      "version": "1.2",
+      "book": "BLFS 12.2 general/genlib/libunistring.xml",
+      "filename": "libunistring-1.2.tar.xz",
+      "sha256": "632bd65ed74a881ca8a0309a1001c428bd1cbd5cd7ddbf8cedcd2e65f4dcdc44"
+    },
+    {
+      "name": "libtasn1",
+      "options": "--disable-doc",
+      "url": "https://ftp.gnu.org/gnu/libtasn1/libtasn1-4.19.0.tar.gz",
+      "upstream_md5": "f701ab57eb8e7d9c105b2cd5d809b29a",
+      "version": "4.19.0",
+      "book": "BLFS 12.2 general/genlib/libtasn1.xml",
+      "filename": "libtasn1-4.19.0.tar.gz",
+      "sha256": "1613f0ac1cf484d6ec0ce3b8c06d56263cc7242f1c23b30d82d23de345a63f7a"
+    },
+    {
+      "name": "nettle",
+      "url": "https://ftp.gnu.org/gnu/nettle/nettle-3.10.tar.gz",
+      "upstream_md5": "c61453139d5fb44e9cdcc5b684b26e55",
+      "version": "3.10",
+      "book": "BLFS 12.2 postlfs/security/nettle.xml",
+      "filename": "nettle-3.10.tar.gz",
+      "sha256": "b4c518adb174e484cb4acea54118f02380c7133771e7e9beb98a0787194ee47c"
+    },
+    {
+      "name": "gnutls",
+      "options": "--without-p11-kit --disable-guile --disable-doc --disable-tests --disable-tools --disable-libdane",
+      "url": "https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-3.8.7.1.tar.xz",
+      "upstream_md5": "46777802233eb7203d47a8b8880c8c90",
+      "version": "3.8.7.1",
+      "book": "BLFS 12.2 postlfs/security/gnutls.xml",
+      "filename": "gnutls-3.8.7.1.tar.xz",
+      "sha256": "9ca0ddaccce28a74fa18d738744190afb3b0daebef74e6ad686bf7bef99abd60"
+    },
+    {
+      "name": "vte",
+      "build": "meson",
+      "options": "-Dgtk3=true -Dgtk4=false -Dgir=false -Dvapi=false -Ddocs=false -Dgnutls=true -Dicu=false -D_systemd=false -Dglade=false",
+      "url": "https://gitlab.gnome.org/GNOME/vte/-/archive/0.76.4/vte-0.76.4.tar.gz",
+      "upstream_md5": "5d1a548ad131664e8a638da24fbfd3e9",
+      "version": "0.76.4",
+      "book": "BLFS 12.2 gnome/platform/vte.xml",
+      "filename": "vte-0.76.4.tar.gz",
+      "sha256": "88979af0b02bac3c6d0bc95fcbeaf0ee025a7fc7a5b127155188b90718af0e78"
+    }
+  ]
+}

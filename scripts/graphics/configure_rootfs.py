@@ -39,13 +39,22 @@ def main():
     export FONTCONFIG_FILE={PREFIX}/etc/fonts/fonts.conf
     export GDK_PIXBUF_MODULE_FILE={PREFIX}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
     export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
-    export LIBGL_ALWAYS_SOFTWARE=1
+    if [ "${{XDG_CURRENT_DESKTOP:-}}" = Wayfire ]; then
+        export PATH=/opt/groove-wayfire/bin:$PATH
+        export XDG_DATA_DIRS=/opt/groove-wayfire/share:$XDG_DATA_DIRS
+        export GSETTINGS_SCHEMA_DIR=/opt/groove-wayfire/share/glib-2.0/schemas
+        unset LIBGL_ALWAYS_SOFTWARE
+    else
+        export LIBGL_ALWAYS_SOFTWARE=1
+    fi
     export GTK_THEME=GrooveBlueNote
     export LANG=es_MX.UTF-8
     '''
     script('groove-session-wrapper',environment+'''
     export XDG_RUNTIME_DIR=/run/user/$(id -u)
     [ -d "$XDG_RUNTIME_DIR" ] && [ -O "$XDG_RUNTIME_DIR" ] || exit 1
+    # Wayfire owns the same bus lifecycle in standalone and LightDM modes.
+    if [ "${1:-}" = /usr/libexec/groove-wayfire ]; then exec "$@"; fi
     unset DBUS_SESSION_BUS_ADDRESS
     exec dbus-run-session -- "$@"
     ''')
@@ -64,6 +73,7 @@ def main():
         sleep 0.1
         waited=$((waited + 1))
     done
+    printf '%s\\n' "$$" > "$XDG_RUNTIME_DIR/groove-weston.pid"
     exec {PREFIX}/bin/weston --backend=drm --renderer=pixman --config=/etc/xdg/weston/weston.ini
     ''')
     script('groove-greeter',environment+f'exec {PREFIX}/sbin/lightdm-gtk-greeter\n')
@@ -150,47 +160,36 @@ def main():
     background-color=0xff000000
     panel-color=0xbb0e121c
     panel-position=top
-    clock-format=seconds
+    clock-format=minutes-24h
     locking=false
 
     [launcher]
-    icon=/usr/share/icons/groove-glass/terminal.png
-    path={PREFIX}/bin/weston-terminal
+    icon=/usr/share/icons/groove-glass/terminal@2x.png
+    path=/usr/libexec/groove-terminal
     displayname=Terminal
 
     [launcher]
-    icon=/usr/share/icons/groove-glass/files.png
+    icon=/usr/share/icons/groove-glass/files@2x.png
     path=/usr/libexec/groove-files
     displayname=Archivos
 
     [launcher]
-    icon=/usr/share/icons/groove-glass/editor.png
+    icon=/usr/share/icons/groove-glass/editor@2x.png
     path=/usr/libexec/groove-editor
     displayname=Editor
 
     [launcher]
-    icon=/usr/share/icons/groove-glass/browser.png
+    icon=/usr/share/icons/groove-glass/browser@2x.png
     path=/usr/libexec/groove-browser
     displayname=Navegador
 
-    [launcher]
-    icon=/usr/share/icons/groove-glass/wallpaper.png
-    path=/usr/libexec/groove-wallpaper-next
-    displayname=Fondos
-
-    [launcher]
-    icon=/usr/share/icons/groove-glass/system.png
-    path=/usr/libexec/groove-system-info
-    displayname=Sistema
     ''')
     script('groove-files',environment+f'''
     export GDK_BACKEND=wayland,x11
-    export XDG_CURRENT_DESKTOP=Weston
     exec {PREFIX}/bin/thunar "$@"
     ''')
     script('groove-editor',environment+f'''
     export GDK_BACKEND=wayland,x11
-    export XDG_CURRENT_DESKTOP=Weston
     exec {PREFIX}/bin/mousepad "$@"
     ''')
     script('groove-browser',environment+f'''
@@ -224,39 +223,23 @@ EOF
     printf "\\033[38;5;255m"
     echo "   OS:          Linux Groove OS 0.2.0 (aarch64)"
     echo "   Kernel:      $(uname -r)"
-    echo "   Display:     Weston 13.0.3 (Wayland Pixman Software Glass)"
-    echo "   Theme:       macOS-inspired Blue Note Glassmorphism"
-    echo "   RAM:         $(free -h | awk '/^Mem:/{print $3 " / " $2}')"
-    echo "   CPU:         $(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 || lscpu 2>/dev/null | grep 'Model name' | cut -d: -f2 || echo 'ARMv8 64-bit Core')"
+    echo "   Display:     ${XDG_CURRENT_DESKTOP:-consola} (${XDG_SESSION_TYPE:-tty})"
+    echo "   Theme:       Groove Blue Note Glass"
+    total=0; available=0
+    while read -r key value rest; do
+        case "$key" in MemTotal:) total=$value ;; MemAvailable:) available=$value ;; esac
+    done < /proc/meminfo
+    echo "   RAM:         $(((total - available) / 1024)) / $((total / 1024)) MiB"
+    echo "   CPU:         $(uname -m)"
     printf "\\033[38;5;75m"
     echo "  ================================================================"
     printf "\\033[38;5;214m\\n  Presiona Enter para cerrar esta ventana...\\033[0m"
     read -r _
     ''',0o755)
-    prompt_str = "export PS1='\\[\\033[38;5;214m\\]╭─ 🎷 groove@bluenote \\[\\033[38;5;75m\\][\\w]\\[\\033[0m\\]\\n\\[\\033[38;5;214m\\]╰─❯ \\[\\033[0m\\] '\n"
+    prompt_str = "export PS1='\\[\\033[38;5;214m\\]╭─ ♬ groove@bluenote \\[\\033[38;5;75m\\][\\w]\\[\\033[0m\\]\\n\\[\\033[38;5;214m\\]╰─❯ \\[\\033[0m\\] '\n"
     put('/etc/profile.d/groove-prompt.sh', prompt_str)
     put('/home/groove/.bashrc', prompt_str + "alias ll='ls -la --color=auto'\n")
     put('/root/.bashrc', prompt_str + "alias ll='ls -la --color=auto'\n")
-    icons_svg = {
-        'terminal.svg': '''<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#0b101b"/></linearGradient><linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/><circle cx="9" cy="9" r="1.8" fill="#ff5f56"/><circle cx="15" cy="9" r="1.8" fill="#ffbd2e"/><circle cx="21" cy="9" r="1.8" fill="#27c93f"/><path d="M12 18 L22 26 L12 34" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><line x1="26" y1="34" x2="36" y2="34" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/></svg>''',
-        'files.svg': '''<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#082f49"/></linearGradient><linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.08"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/><path d="M8 14 C8 12.5 9 11.5 10.5 11.5 L18 11.5 L22 15 L37.5 15 C39 15 40 16 40 17.5 L40 34 C40 35.5 39 36.5 37.5 36.5 L10.5 36.5 C9 36.5 8 35.5 8 34 Z" fill="#38bdf8" fill-opacity="0.85"/><path d="M8 20 C8 18.5 9.2 17.5 10.5 17.5 L37.5 17.5 C38.8 17.5 40 18.5 40 20 L40 34 C40 35.5 38.8 36.5 37.5 36.5 L10.5 36.5 C9.2 36.5 8 35.5 8 34 Z" fill="#bae6fd" fill-opacity="0.95"/><path d="M22 24 L30 22 L30 28 M22 24 L22 30" stroke="#0369a1" stroke-width="1.8" stroke-linecap="round"/><circle cx="20" cy="30" r="2.2" fill="#0369a1"/><circle cx="28" cy="28" r="2.2" fill="#0369a1"/></svg>''',
-        'editor.svg': '''<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#1e1b4b"/></linearGradient><linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/><rect x="11" y="9" width="26" height="30" rx="3" fill="#f8fafc"/><line x1="16" y1="16" x2="32" y2="16" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="21" x2="28" y2="21" stroke="#38bdf8" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="26" x2="30" y2="26" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/><line x1="16" y1="31" x2="24" y2="31" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/><polygon points="34,26 38,30 30,38 26,38 26,34" fill="#f59e0b"/></svg>''',
-        'browser.svg': '''<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#1d4ed8"/><stop offset="100%" stop-color="#0f172a"/></linearGradient><linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.4"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.08"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/><circle cx="24" cy="24" r="14" fill="none" stroke="#60a5fa" stroke-width="2"/><ellipse cx="24" cy="24" rx="7" ry="14" fill="none" stroke="#38bdf8" stroke-width="1.5"/><line x1="10" y1="24" x2="38" y2="24" stroke="#93c5fd" stroke-width="1.5"/><polygon points="24,14 27,23 24,21 21,23" fill="#f43f5e"/><polygon points="24,34 27,25 24,27 21,25" fill="#f8fafc"/></svg>''',
-        'wallpaper.svg': '''<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#701a75"/><stop offset="100%" stop-color="#18181b"/></linearGradient><linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient><linearGradient id="wave" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f59e0b"/><stop offset="50%" stop-color="#ec4899"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/><rect x="10" y="24" width="3.5" height="10" rx="1.7" fill="url(#wave)"/><rect x="15" y="19" width="3.5" height="18" rx="1.7" fill="url(#wave)"/><rect x="20" y="14" width="3.5" height="26" rx="1.7" fill="url(#wave)"/><rect x="25" y="10" width="3.5" height="32" rx="1.7" fill="url(#wave)"/><rect x="30" y="16" width="3.5" height="22" rx="1.7" fill="url(#wave)"/><rect x="35" y="22" width="3.5" height="13" rx="1.7" fill="url(#wave)"/></svg>''',
-        'system.svg': '''<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#334155"/><stop offset="100%" stop-color="#0f172a"/></linearGradient><linearGradient id="rim" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient></defs><rect x="2" y="2" width="44" height="44" rx="10" fill="url(#bg)" stroke="url(#rim)" stroke-width="1.2"/><rect x="14" y="14" width="20" height="20" rx="4" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5"/><circle cx="24" cy="24" r="4.5" fill="#f59e0b"/><line x1="18" y1="9" x2="18" y2="14" stroke="#94a3b8" stroke-width="1.5"/><line x1="24" y1="9" x2="24" y2="14" stroke="#94a3b8" stroke-width="1.5"/><line x1="30" y1="9" x2="30" y2="14" stroke="#94a3b8" stroke-width="1.5"/><line x1="18" y1="34" x2="18" y2="39" stroke="#94a3b8" stroke-width="1.5"/><line x1="24" y1="34" x2="24" y2="39" stroke="#94a3b8" stroke-width="1.5"/><line x1="30" y1="34" x2="30" y2="39" stroke="#94a3b8" stroke-width="1.5"/><line x1="9" y1="18" x2="14" y2="18" stroke="#94a3b8" stroke-width="1.5"/><line x1="9" y1="24" x2="14" y2="24" stroke="#94a3b8" stroke-width="1.5"/><line x1="9" y1="30" x2="14" y2="30" stroke="#94a3b8" stroke-width="1.5"/><line x1="34" y1="18" x2="39" y2="18" stroke="#94a3b8" stroke-width="1.5"/><line x1="34" y1="24" x2="39" y2="24" stroke="#94a3b8" stroke-width="1.5"/><line x1="34" y1="30" x2="39" y2="30" stroke="#94a3b8" stroke-width="1.5"/></svg>'''
-    }
-    icons_dir = root/'usr/share/icons/groove-glass'
-    icons_dir.mkdir(parents=True, exist_ok=True)
-    rsvg=root/PREFIX.lstrip('/')/'bin/rsvg-convert'
-    rsvg_env=os.environ.copy()
-    rsvg_env['LD_LIBRARY_PATH']=str(root/PREFIX.lstrip('/')/'lib')
-    for iname, isvg in icons_svg.items():
-        isvg_path = icons_dir/iname
-        ipng_path = icons_dir/(iname.replace('.svg','.png'))
-        isvg_path.write_text(isvg)
-        if rsvg.exists():
-            subprocess.run([str(rsvg),'-w','48','-h','48','-f','png',str(isvg_path),'-o',str(ipng_path)],env=rsvg_env,check=False)
-
     put('/usr/share/backgrounds/groove-blue-note.svg','''
     <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
       <rect width="1920" height="1080" fill="#0b0e17"/>
@@ -285,11 +268,16 @@ EOF
             for bg in extra_bg_dir.glob('*.png'):
                 if not bg.name.startswith('._'):
                     shutil.copy2(bg,root/'usr/share/backgrounds'/bg.name)
-    default_bg = root/'usr/share/backgrounds/groove-default.png'
-    if not default_bg.exists():
-        src_default = Path('/workspace/backgrouds_groove/groove-default.png')
-        if src_default.exists():
-            shutil.copy2(src_default, default_bg)
+    # Resolve relative to the repository, never an incidental builder mount.
+    # Always replace the old default when repackaging an existing staging root.
+    src_default = Path(__file__).resolve().parents[2]/'backgrouds_groove/groove-piano-background-4k.png'
+    if not src_default.is_file():
+        raise SystemExit('Missing required Groove piano wallpaper: '+str(src_default))
+    shutil.copy2(src_default, root/'usr/share/backgrounds'/src_default.name)
+    shutil.copy2(src_default, root/'usr/share/backgrounds/groove-default.png')
+    # Source files on the host ExFAT disk may be 0700; desktop assets must be readable by groove.
+    for background in (root/'usr/share/backgrounds').glob('*'):
+        if background.is_file():background.chmod(0o644)
     css='''
     @import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");
     @define-color theme_bg_color #141926;
@@ -380,5 +368,16 @@ EOF
         if not path.exists() and not path.is_symlink():path.symlink_to(target)
     marker=root/'run/groove/live'
     if marker.exists() or marker.is_symlink():marker.unlink()
+    if (root/'opt/groove-wayfire/bin/wayfire').is_file():
+        from configure_wayfire import install
+        install(root, environment, service)
+    from configure_blue_note import install as install_blue_note
+    install_blue_note(root, environment)
+    from configure_xfce_macos import install as install_xfce_macos
+    install_xfce_macos(root)
+    version=os.environ.get('VERSION','0.2.0')
+    for name in ['etc/os-release','usr/bin/groove-sysinfo']:
+        target=root/name
+        target.write_text(target.read_text().replace('0.2.0',version))
     print('Configured staging root:',root)
 if __name__=='__main__':main()

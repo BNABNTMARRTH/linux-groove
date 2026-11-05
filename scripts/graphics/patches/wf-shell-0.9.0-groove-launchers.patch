@@ -1,0 +1,166 @@
+--- a/src/dock/dock.cpp
++++ b/src/dock/dock.cpp
+@@ -1,4 +1,11 @@
+ #include <gtkmm/window.h>
++#include <gtkmm/button.h>
++#include <gtkmm/image.h>
++#include <gtkmm/messagedialog.h>
++#include <glibmm/keyfile.h>
++#include <glibmm/spawn.h>
++#include <vector>
++#include <sstream>
+ #include <glibmm/main.h>
+ #include <gdk/gdkwayland.h>
+ 
+@@ -20,6 +27,40 @@
+     wl_surface *_wl_surface;
+ 
+     Gtk::HBox box;
++    std::vector<std::pair<std::string, Gtk::Button*>> pins;
++    std::map<Gtk::Widget*, std::string> applications;
++
++    static std::string app_name(const std::string& ids)
++    {
++        std::istringstream stream(ids);
++        std::string id;
++        while (stream >> id)
++        {
++            if (id == "xfce4-terminal" || id == "org.xfce.terminal") return "terminal";
++            if (id == "thunar" || id == "Thunar") return "files";
++            if (id == "mousepad" || id == "org.xfce.mousepad") return "editor";
++            if (id == "firefox" || id == "firefox-default" || id == "org.mozilla.firefox") return "browser";
++        }
++        return "";
++    }
++
++    void refresh_pins()
++    {
++        int position = 0;
++        for (auto& pin : pins)
++        {
++            bool running = false;
++            for (auto& app : applications)
++            {
++                if (app.second != pin.first) continue;
++                running = true;
++                box.reorder_child(*app.first, position++);
++            }
++            box.reorder_child(*pin.second, position++);
++            pin.second->set_visible(!running);
++        }
++    }
++
+ 
+     WfOption<std::string> css_path{"dock/css_path"};
+     WfOption<int> dock_height{"dock/dock_height"};
+@@ -37,6 +78,36 @@
+         window->signal_size_allocate().connect_notify(
+             sigc::mem_fun(this, &WfDock::impl::on_allocation));
+         window->add(box);
++        for (const auto& name : {"terminal", "files", "editor", "browser"})
++        {
++            Glib::KeyFile entry;
++            entry.load_from_file(std::string("/usr/share/applications/groove-launcher-") + name + ".desktop");
++            auto button = Gtk::manage(new Gtk::Button());
++            auto image = Gtk::manage(new Gtk::Image());
++            std::string icon = entry.get_string("Desktop Entry", "Icon");
++            auto redraw = [image, icon] {
++                int scale = image->get_scale_factor();
++                auto pixbuf = Gdk::Pixbuf::create_from_file(icon, 40 * scale, 40 * scale, true);
++                set_image_pixbuf(*image, pixbuf, scale);
++            };
++            redraw();
++            image->property_scale_factor().signal_changed().connect(redraw);
++            button->add(*image);
++            std::string label = entry.get_string("Desktop Entry", "Name");
++            button->set_tooltip_text(label);
++            std::string command = entry.get_string("Desktop Entry", "Exec");
++            button->signal_clicked().connect([command, label] {
++                try { Glib::spawn_command_line_async(command); }
++                catch (const Glib::Error& error) {
++                    Gtk::MessageDialog dialog("No se pudo abrir " + label, false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
++                    dialog.set_secondary_text(error.what());
++                    dialog.run();
++                }
++            });
++            pins.emplace_back(name, button);
++            box.pack_start(*button, Gtk::PACK_SHRINK);
++        }
++
+ 
+         if ((std::string)css_path != "")
+         {
+@@ -57,12 +128,22 @@
+ 
+     void add_child(Gtk::Widget& widget)
+     {
+-        box.pack_end(widget);
++        box.pack_start(widget, Gtk::PACK_SHRINK);
+         box.show_all();
++        refresh_pins();
++    }
++
++    void set_app(Gtk::Widget& widget, const std::string& app_id)
++    {
++        applications[&widget] = app_name(app_id);
++        widget.get_style_context()->add_class("running");
++        refresh_pins();
+     }
+ 
+     void rem_child(Gtk::Widget& widget)
+     {
++        applications.erase(&widget);
++        refresh_pins();
+         this->box.remove(widget);
+ 
+         /* We now need to resize the dock so it fits the remaining widgets. */
+@@ -117,3 +198,8 @@
+ {
+     return pimpl->get_wl_surface();
+ }
++
++void WfDock::set_app(Gtk::Widget& widget, const std::string& app_id)
++{
++    pimpl->set_app(widget, app_id);
++}
+--- a/src/dock/dock.hpp
++++ b/src/dock/dock.hpp
+@@ -16,6 +16,7 @@
+ 
+     void add_child(Gtk::Widget& widget);
+     void rem_child(Gtk::Widget& widget);
++    void set_app(Gtk::Widget& widget, const std::string& app_id);
+ 
+     wl_surface *get_wl_surface();
+     class impl;
+--- a/src/dock/toplevel-icon.cpp
++++ b/src/dock/toplevel-icon.cpp
+@@ -28,7 +28,7 @@
+     zwlr_foreign_toplevel_handle_v1 *handle;
+     wl_output *output;
+ 
+-    uint32_t state;
++    uint32_t state = 0;
+ 
+     Gtk::Button button;
+     Gtk::Image image;
+@@ -60,6 +60,10 @@
+ 
+     void on_clicked()
+     {
++        if (state & WF_TOPLEVEL_STATE_MINIMIZED)
++        {
++            zwlr_foreign_toplevel_handle_v1_unset_minimized(handle);
++        }
+         if (!(state & WF_TOPLEVEL_STATE_ACTIVATED))
+         {
+             auto gseat = Gdk::Display::get_default()->get_default_seat();
+@@ -91,6 +95,8 @@
+     void set_app_id(std::string app_id)
+     {
+         this->app_id = app_id;
++        auto dock = WfDockApp::get().dock_for_wl_output(output);
++        if (dock) dock->set_app(button, app_id);
+         IconProvider::set_image_from_icon(image,
+             app_id,
+             icon_height,

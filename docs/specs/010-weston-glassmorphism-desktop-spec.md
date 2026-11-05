@@ -1,5 +1,11 @@
 # Spec 010 — Entorno de Escritorio Blue Note Glass (Weston Wayland)
 
+Actualización 2026-11-05: la [spec 011](011-wayfire-blue-note-glass-spec.md) añade
+Wayfire como sesión opcional y `groove.session=wayfire` como grafo independiente.
+Weston conserva el inicio normal hasta validar GPU/funcionalidad en UTM; el fondo
+piano se instala explícitamente. Esta etapa no implementa Rust/Smithay.
+
+
 Estado: aprobado. Fecha: 2026-11-05.
 Referencias: [Spec 007](007-graphical-sessions-spec.md), [Spec 009](009-wayland-standalone-and-session-handoff-spec.md), [Plan de Integración](../plans/weston_macos_glass_desktop_plan.md), [PRD](../PRD.md).
 

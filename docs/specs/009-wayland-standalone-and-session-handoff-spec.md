@@ -1,5 +1,11 @@
 # Spec 009 — Arranque Wayland Dedicado y Traspaso de Sesión Gráfica
 
+Actualización 2026-11-05: la [spec 011](011-wayfire-blue-note-glass-spec.md) añade
+Wayfire como sesión opcional y `groove.session=wayfire` como grafo independiente.
+Weston conserva el inicio normal hasta validar GPU/funcionalidad en UTM; el fondo
+piano se instala explícitamente. Esta etapa no implementa Rust/Smithay.
+
+
 Estado: en implementación. Fecha: 2026-11-05.
 Referencias: [Spec 007](007-graphical-sessions-spec.md), [Plan de Integración](../plans/DEDICATED_WESTON_WAYLAND_PLAN.md), [PRD](../PRD.md).
 
@@ -58,7 +64,7 @@ Al conmutar de la sesión greeter (X11 en VT 1) a una sesión Wayland (VT 2):
 ## 5. Pruebas de Aceptación
 
 1. **Prueba de DAG:** `/sbin/groove-init --check-services /etc/groove/wayland-services` debe salir con código 0 y sin ciclos.
-2. **Prueba Standalone:** Al elegir la entrada *"Compositor Weston (Wayland puro)"* en GRUB, el sistema arranca directamente a la interfaz de Weston en `tty1` en menos de 5 segundos.
-3. **Prueba de Selector:** Al elegir *"Weston"* desde LightDM, el compositor carga el fondo Blue Note en PNG, lanza la barra superior y abre `weston-terminal` sin congelar el sistema ni cerrar sesión abruptamente.
+2. **Prueba Standalone:** Al elegir la entrada *"Compositor Weston (Wayland puro)"* en GRUB, el sistema arranca directamente a la interfaz de Weston en `tty1` y se registra su duración real, sin dar por medido un umbral.
+3. **Prueba de Selector:** Al elegir *"Weston"* desde LightDM, el compositor carga el fondo Blue Note en PNG, lanza la barra superior y permite abrir `xfce4-terminal` sin congelar el sistema ni cerrar sesión abruptamente.
 4. **Prueba de Aislamiento VT:** `agetty` en `tty3` responde a `Ctrl+Alt+F3` sin interferir con la sesión gráfica en `tty1`/`tty2`.
 

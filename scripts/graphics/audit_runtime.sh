@@ -13,6 +13,6 @@ while IFS= read -r -d '' binary; do
         echo "$tree" >> "$report"
         failed=1
     fi
-done < <(find "$ROOT$PREFIX/bin" "$ROOT$PREFIX/sbin" "$ROOT$PREFIX/lib" -type f -print0)
+done < <(find "$ROOT$PREFIX/bin" "$ROOT$PREFIX/sbin" "$ROOT$PREFIX/lib" ${WAYFIRE_AUDIT_ROOT:+"$WAYFIRE_AUDIT_ROOT"} -type f -print0)
 if [[ "$failed" != 0 ]]; then cat "$report"; exit 1; fi
 echo 'ELF runtime dependencies resolved inside the staging root' | tee -a "$report"

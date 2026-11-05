@@ -1,0 +1,8 @@
+* { font-family: "DejaVu Sans"; font-size: 12px; min-height: 0; }
+window#waybar { background: rgba(21,24,30,0.94); color: #e8e6e0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+#custom-groove { color: #e8e6e0; font-weight: 600; padding: 0 16px; }
+#custom-workspaces { color: #b6a471; padding: 0 12px; }
+#clock { font-weight: 400; color: #d3d3ce; }
+#custom-system, #tray, #custom-motion, #custom-logout { padding: 0 12px; color: #a6abb3; }
+#custom-logout:hover, #custom-motion:hover { color: #e8e6e0; background: rgba(255,255,255,0.06); }
+tooltip { background: #20242b; color: #e8e6e0; border: 1px solid #393e46; border-radius: 8px; }

@@ -1,0 +1,102 @@
+--- a/src/deco-effects.cpp
++++ b/src/deco-effects.cpp
+@@ -2149,6 +2149,38 @@
+ {
+     destroy_programs();
+     OpenGL::render_begin();
++    // Groove: the UTM Metal/VirGL path exposes GLES 3.0, not compute shaders.
++    // Draw the rounded frame and its shadow with an ordinary GPU fragment pass.
++    if (std::string(effect_type) == "none" && std::string(overlay_engine) == "rounded_corners")
++    {
++        render_overlay_program = OpenGL::compile_program(R"GLSL(
++            #version 100
++            attribute vec2 position;
++            varying vec2 uv;
++            void main() { uv = position * 0.5 + 0.5; gl_Position = vec4(position, 0.0, 1.0); }
++        )GLSL", R"GLSL(
++            #version 100
++            precision highp float;
++            varying vec2 uv;
++            uniform vec2 size;
++            uniform float corner_radius;
++            uniform float shadow_radius;
++            uniform vec4 frame_color;
++            uniform vec4 shadow_color;
++            void main() {
++                vec2 half_size = max(size * 0.5 - vec2(shadow_radius * 2.0), vec2(1.0));
++                float radius = min(corner_radius, min(half_size.x, half_size.y));
++                vec2 q = abs((uv - 0.5) * size) - half_size + vec2(radius);
++                float d = length(max(q, vec2(0.0))) + min(max(q.x, q.y), 0.0) - radius;
++                float cover = 1.0 - smoothstep(-0.5, 0.5, d);
++                float alpha = shadow_radius > 0.0 ? shadow_color.a * exp(-3.0 * pow(max(d, 0.0) / shadow_radius, 2.0)) : 0.0;
++                vec4 fill = vec4(frame_color.rgb * frame_color.a, frame_color.a);
++                gl_FragColor = fill * cover + vec4(shadow_color.rgb * alpha, alpha) * (1.0 - cover);
++            }
++        )GLSL");
++        OpenGL::render_end();
++        return;
++    }
+     if ((std::string(effect_type) == "smoke") || (std::string(effect_type) == "ink"))
+     {
+         setup_shader(&motion_program, motion_source);
+@@ -2343,6 +2375,12 @@
+     GL_CALL(glBindTexture(GL_TEXTURE_2D, texture));
+     GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+     GL_CALL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
++    if (std::string(effect_type) == "none" && std::string(overlay_engine) == "rounded_corners")
++    {
++        GL_CALL(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rectangle.width, rectangle.height,
++            0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
++        return;
++    }
+     GL_CALL(glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, rectangle.width, rectangle.height));
+     if ((std::string(effect_type) != "smoke") && (std::string(effect_type) != "ink"))
+     {
+@@ -2420,6 +2458,47 @@
+         return;
+     }
+ 
++    if (std::string(effect_type) == "none" && std::string(overlay_engine) == "rounded_corners")
++    {
++        OpenGL::render_begin(fb);
++        if (rectangle.width != saved_width || rectangle.height != saved_height)
++        {
++            saved_width = rectangle.width; saved_height = rectangle.height;
++            recreate_textures(rectangle);
++        }
++        GLint old_fbo, viewport[4], old_array_buffer;
++        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &old_fbo);
++        glGetIntegerv(GL_VIEWPORT, viewport);
++        glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &old_array_buffer);
++        GLboolean blend = glIsEnabled(GL_BLEND), scissor = glIsEnabled(GL_SCISSOR_TEST);
++        GLuint fbo; glGenFramebuffers(1, &fbo); glBindFramebuffer(GL_FRAMEBUFFER, fbo);
++        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
++        glViewport(0, 0, rectangle.width, rectangle.height);
++        glDisable(GL_BLEND); glDisable(GL_SCISSOR_TEST);
++        glUseProgram(render_overlay_program);
++        glUniform2f(glGetUniformLocation(render_overlay_program, "size"), rectangle.width, rectangle.height);
++        glUniform1f(glGetUniformLocation(render_overlay_program, "corner_radius"), rounded_corner_radius);
++        glUniform1f(glGetUniformLocation(render_overlay_program, "shadow_radius"), shadow_radius);
++        glUniform4f(glGetUniformLocation(render_overlay_program, "frame_color"), decor_color.r, decor_color.g, decor_color.b, decor_color.a);
++        wf::color_t shadow = this->shadow_color;
++        glUniform4f(glGetUniformLocation(render_overlay_program, "shadow_color"), shadow.r, shadow.g, shadow.b, shadow.a);
++        const GLfloat vertices[] = {-1,-1, 1,-1, 1,1, -1,1};
++        GLint position = glGetAttribLocation(render_overlay_program, "position");
++        glBindBuffer(GL_ARRAY_BUFFER, 0);
++        glEnableVertexAttribArray(position);
++        glVertexAttribPointer(position, 2, GL_FLOAT, GL_FALSE, 0, vertices);
++        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
++        glDisableVertexAttribArray(position);
++        glBindBuffer(GL_ARRAY_BUFFER, old_array_buffer);
++        glUseProgram(0);
++        glBindFramebuffer(GL_FRAMEBUFFER, old_fbo); glDeleteFramebuffers(1, &fbo);
++        glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
++        if (blend) glEnable(GL_BLEND);
++        if (scissor) glEnable(GL_SCISSOR_TEST);
++        OpenGL::render_end();
++        return;
++    }
++
+     int radius = shadow_radius;
+     int diffuse_iterations = 2;
+ 

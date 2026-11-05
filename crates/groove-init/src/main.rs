@@ -531,6 +531,8 @@ pub fn service_dir_from_cmdline(cmdline: &str) -> &'static str {
     let tokens: Vec<&str> = cmdline.split_whitespace().collect();
     if tokens.iter().any(|s| ["single", "groove.text=1"].contains(s)) {
         "/etc/groove/recovery-services"
+    } else if tokens.contains(&"groove.session=wayfire") {
+        "/etc/groove/wayfire-services"
     } else if tokens.iter().any(|s| ["groove.wayland=1", "groove.session=weston"].contains(s)) {
         "/etc/groove/wayland-services"
     } else {
@@ -728,6 +730,9 @@ mod tests {
     #[test]
     fn parses_service_dir_from_kernel_cmdline() {
         assert_eq!(service_dir_from_cmdline(""), "/etc/groove/services");
+        assert_eq!(service_dir_from_cmdline("groove.wayland=1 groove.session=wayfire"), "/etc/groove/wayfire-services");
+        assert_eq!(service_dir_from_cmdline("groove.session=wayfire groove.text=1"), "/etc/groove/recovery-services");
+        assert_eq!(service_dir_from_cmdline("prefix=groove.session=wayfire"), "/etc/groove/services");
         assert_eq!(
             service_dir_from_cmdline("console=tty0 root=/dev/sr0"),
             "/etc/groove/services"

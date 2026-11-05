@@ -1,4 +1,13 @@
 # Product Requirements Document (PRD)
+
+## Evolución Blue Note macOS Glass — 2026-11-05
+
+La entrega 0.3.0 implementa una arquitectura híbrida en 3 fases:
+- **Fase 1 (Arranque predeterminado en ISO 0.3.0-rc13):** Sesión XFCE 4.18/4.20 + Picom (Xorg) con decoración universal `xfwm4` (botones semáforo rojo `#FF5F56`, amarillo `#FFBD2E`, verde `#27C93F` a la izquierda con hover glyphs en todas las ventanas), compositor Picom (sombras suaves de 24px, esquinas redondeadas de 12px, transparencias de cristal), Dock flotante `groove-dock` con zoom / magnificación gaussiana 60 FPS e indicadores de ventanas activas, y fondo predeterminado Piano Keys Neon 4K.
+- **Fase 2 (Wayfire Wayland Acelerado):** Preservada e integrada en la misma ISO y seleccionable desde GRUB (`groove.session=wayfire`) y LightDM.
+- **Fase 3 (Compositor Propio Rust / Smithay):** Hoja de ruta técnica (Spec 008) para soberanía completa del renderizado.
+Consultar [Opciones de Evolución](plans/DESKTOP_EVOLUTION_OPTIONS.md) y [Plan Híbrido](plans/hybrid_macos_glass_evolution_plan.md).
+
 ## Linux Groove OS — "The Blue Note Edition"
 *A Minimal, High-Performance Linux Distribution Built from Scratch in Rust for Digital Artists and Creators*
 
@@ -122,3 +131,14 @@ El sistema está optimizado para flujos de trabajo artísticos profesionales (**
   - Particionado guiado con soporte para NVMe, SSD y discos virtuales QEMU/UTM.
   - Selección de Ensembles modulares durante el proceso de instalación.
 
+
+## Refinamiento Blue Note — 2026-11-05
+
+Dirección aprobada: oscuro sobrio, terminal GTK opaca, controles monocromáticos
+a la derecha y cuatro lanzadores compartidos (Terminal, Archivos, Editor, Firefox).
+Barra 34 px con métricas en tooltip; dock 64 px con iconos propios de 40/80 px.
+Sustituye la apariencia de las candidatas anteriores. Wayfire sigue candidato
+hasta completar aceptación; Weston, XFCE y consola se conservan.
+Audacity, Blender, persistencia y gestor de aplicaciones quedan para después.
+
+Ver [spec 012](specs/012-blue-note-refinement-spec.md) y el informe de validación.
