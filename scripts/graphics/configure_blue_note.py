@@ -69,8 +69,12 @@ else
 fi
 ''', 0o755)
     put('/usr/libexec/groove-office', '''#!/bin/sh
+export LD_PRELOAD=/opt/groove-apps/lib/libgroove-gtkfix.so:${LD_PRELOAD:-}
 export LD_LIBRARY_PATH=/opt/groove-graphics/opt/onlyoffice/desktopeditors:/opt/groove-apps/lib:/opt/groove-graphics/lib:${LD_LIBRARY_PATH:-}
 exec /usr/libexec/groove-launch "OnlyOffice" office /opt/groove-graphics/opt/onlyoffice/desktopeditors/DesktopEditors "$@"
+''', 0o755)
+    put('/usr/libexec/groove-effects-info', '''#!/bin/sh
+exec /opt/groove-graphics/bin/groove-effects-dialog "$@"
 ''', 0o755)
     put('/usr/libexec/groove-system-status', '''#!/bin/sh
 set -eu

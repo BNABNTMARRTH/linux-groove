@@ -12,20 +12,17 @@ FONTS_ARCHIVE_DIR = Path('/backup/sources/fonts')
 APPS_ARCHIVE_DIR = Path('/backup/sources/apps')
 WALLPAPERS_SOURCE_DIR = Path('/tmp/groove-wayfire-inputs/backgrouds_groove')
 
-def create_svg_button(color, border_color, bg_color='#20242b', border_top='#2e3849', border_bot='#141720', glyph=None, glyph_color=None):
+def create_svg_button(color, border_color, glyph=None, glyph_color=None):
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="32" viewBox="0 0 22 32">',
-        f'  <rect width="22" height="32" fill="{bg_color}"/>',
-        f'  <rect width="22" height="1" fill="{border_top}"/>',
-        f'  <rect y="31" width="22" height="1" fill="{border_bot}"/>',
-        f'  <circle cx="11" cy="16" r="6.2" fill="{color}" stroke="{border_color}" stroke-width="0.8"/>'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="32" viewBox="0 0 20 32">',
+        f'  <circle cx="10" cy="16" r="6.2" fill="{color}" stroke="{border_color}" stroke-width="0.8"/>'
     ]
     if glyph == 'x':
-        svg.append(f'  <path d="M8.5 13.5l5 5m0-5l-5 5" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M7.8 13.8l4.4 4.4m0-4.4l-4.4 4.4" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     elif glyph == '-':
-        svg.append(f'  <path d="M8 16h6" fill="none" stroke="{glyph_color}" stroke-width="1.4" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M7.4 16h5.2" fill="none" stroke="{glyph_color}" stroke-width="1.3" stroke-linecap="round"/>')
     elif glyph == '+':
-        svg.append(f'  <path d="M11 13v6m-3-3h6" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M10 13.4v5.2m-2.6-2.6h5.2" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     svg.append('</svg>')
     return '\n'.join(svg)
 
@@ -165,12 +162,15 @@ def install(root):
     if WALLPAPERS_SOURCE_DIR.is_dir():
         for wp in WALLPAPERS_SOURCE_DIR.glob('*.*'):
             if wp.suffix.lower() in ('.png', '.jpg', '.jpeg'):
-                shutil.copy2(wp, bg_groove_dir / wp.name)
+                target_wp = bg_groove_dir / wp.name
+                shutil.copy2(wp, target_wp)
+                target_wp.chmod(0o644)
     # Default wallpaper: Piano 4k (matches package_iso.sh audit contract)
     piano_wp = WALLPAPERS_SOURCE_DIR / 'groove-piano-background-4k.png'
     default_wp = root / 'usr/share/backgrounds/groove-default.png'
     if piano_wp.exists():
         shutil.copy2(piano_wp, default_wp)
+        default_wp.chmod(0o644)
 
     welcome_src = Path(__file__).resolve().parent / 'welcome.html'
     if welcome_src.exists():
@@ -192,12 +192,14 @@ def install(root):
         if oo_bin.exists():
             oo_bin.chmod(0o755)
 
-    src_apps_lib = Path('/opt/groove-apps/lib')
     dst_apps_lib = root / 'opt/groove-apps/lib'
-    if src_apps_lib.is_dir():
-        dst_apps_lib.mkdir(parents=True, exist_ok=True)
-        for lib_file in src_apps_lib.iterdir():
-            shutil.copy2(lib_file, dst_apps_lib / lib_file.name)
+    dst_apps_lib.mkdir(parents=True, exist_ok=True)
+    for sdir in (Path('/opt/groove-apps/lib'), Path('/backup/sources/apps/lib')):
+        if sdir.is_dir():
+            for lib_file in sdir.iterdir():
+                dest_file = dst_apps_lib / lib_file.name
+                if not dest_file.exists():
+                    shutil.copy2(lib_file, dest_file)
 
     theme_dir = root / 'usr/share/themes/GrooveBlueNote/xfwm4'
     theme_dir.mkdir(parents=True, exist_ok=True)
@@ -221,39 +223,35 @@ def install(root):
     '''
     put('/usr/share/themes/GrooveBlueNote/xfwm4/themerc', themerc)
 
-    # 2. Render traffic-light buttons via rsvg-convert with SOLID titlebar background (8-bit anti-aliasing)
+    # 2. Render native macOS monochrome buttons via rsvg-convert with 100% alpha transparency
     button_specs = [
-        # Close: Red
-        ('close-active', '#FF5F56', '#E0443E', None, None),
-        ('close-prelight', '#FF5F56', '#E0443E', 'x', '#4C0002'),
-        ('close-pressed', '#BF4942', '#8A322C', 'x', '#300001'),
-        ('close-inactive', '#4A4D54', '#3E4046', None, None),
-        # Hide/Minimize: Yellow
-        ('hide-active', '#FFBD2E', '#DEA123', None, None),
-        ('hide-prelight', '#FFBD2E', '#DEA123', '-', '#593A00'),
-        ('hide-pressed', '#BF8E22', '#8A6615', '-', '#362300'),
-        ('hide-inactive', '#4A4D54', '#3E4046', None, None),
-        # Maximize: Green
-        ('maximize-active', '#27C93F', '#1AAB29', None, None),
-        ('maximize-prelight', '#27C93F', '#1AAB29', '+', '#00400C'),
-        ('maximize-pressed', '#1E9730', '#136B20', '+', '#002607'),
-        ('maximize-inactive', '#4A4D54', '#3E4046', None, None),
+        # Close: Monochromatic slate / graphite
+        ('close-active', '#64748b', '#475569', None, None),
+        ('close-prelight', '#94a3b8', '#64748b', 'x', '#0f172a'),
+        ('close-pressed', '#475569', '#334155', 'x', '#020617'),
+        ('close-inactive', '#334155', '#1e293b', None, None),
+        # Hide/Minimize: Monochromatic slate / graphite
+        ('hide-active', '#64748b', '#475569', None, None),
+        ('hide-prelight', '#94a3b8', '#64748b', '-', '#0f172a'),
+        ('hide-pressed', '#475569', '#334155', '-', '#020617'),
+        ('hide-inactive', '#334155', '#1e293b', None, None),
+        # Maximize: Monochromatic slate / graphite
+        ('maximize-active', '#64748b', '#475569', None, None),
+        ('maximize-prelight', '#94a3b8', '#64748b', '+', '#0f172a'),
+        ('maximize-pressed', '#475569', '#334155', '+', '#020617'),
+        ('maximize-inactive', '#334155', '#1e293b', None, None),
     ]
 
     tmp_dir = root / 'tmp/groove-xfwm4-svg'
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     for name, col, border, glyph, glyph_col in button_specs:
-        is_inactive = 'inactive' in name
-        bg_col = '#1a1d23' if is_inactive else '#20242b'
-        b_top = '#242b38' if is_inactive else '#2e3849'
-        b_bot = '#101217' if is_inactive else '#141720'
-        svg_content = create_svg_button(col, border, bg_color=bg_col, border_top=b_top, border_bot=b_bot, glyph=glyph, glyph_color=glyph_col)
+        svg_content = create_svg_button(col, border, glyph=glyph, glyph_color=glyph_col)
         svg_path = tmp_dir / f'{name}.svg'
         svg_path.write_text(svg_content)
         png_path = theme_dir / f'{name}.png'
         if converter.exists():
-            subprocess.run([str(converter), '-w', '22', '-h', '32',
+            subprocess.run([str(converter), '-w', '20', '-h', '32',
                             str(svg_path), '-o', str(png_path)], env=env, check=True)
             png_path.chmod(0o644)
 
@@ -441,6 +439,8 @@ def install(root):
     frame-opacity = 0.92;
 
     opacity-rule = [
+      "80:class_g = 'xfce4-panel'",
+      "80:class_g = 'Xfce4-panel'",
       "100:class_g = 'groove-dock'",
       "100:class_g = 'Brave-browser'",
       "100:class_g = 'brave-browser'",
@@ -552,6 +552,35 @@ def install(root):
     </channel>
     '''
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
+    put(PREFIX + '/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
+    put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
+    put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
+
+    # Autostart wallpaper script to guarantee matching any dynamic RandR monitor
+    wallpaper_script = '''#!/bin/sh
+WP="/usr/share/backgrounds/groove-default.png"
+[ -f "$WP" ] || WP="/usr/share/backgrounds/groove-blue-note.png"
+
+sleep 1
+if command -v xrandr >/dev/null 2>&1; then
+    for mon in $(xrandr --query 2>/dev/null | awk '/ connected/ {print $1}'); do
+        xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor${mon}/workspace0/last-image" -s "$WP" --create -t string 2>/dev/null || true
+        xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor${mon}/workspace0/image-style" -s 5 --create -t int 2>/dev/null || true
+    done
+fi
+for mon in 0 Virtual-1 Virtual-0 Virtual1 monitor0 default Default eDP-1; do
+    xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor${mon}/workspace0/last-image" -s "$WP" --create -t string 2>/dev/null || true
+    xfconf-query -c xfce4-desktop -p "/backdrop/screen0/monitor${mon}/workspace0/image-style" -s 5 --create -t int 2>/dev/null || true
+done
+'''
+    put('/usr/libexec/groove-wallpaper-autostart', wallpaper_script, 0o755)
+    put('/etc/xdg/autostart/groove-wallpaper.desktop', '''[Desktop Entry]
+Type=Application
+Name=Groove Wallpaper Autostart
+Exec=/usr/libexec/groove-wallpaper-autostart
+OnlyShowIn=XFCE;
+RunHook=0
+''')
 
     # 9. Single 32px Top Menu Bar (xfce4-panel.xml) with Custom Warm Soundwave Logo
     panel_xml = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -566,6 +595,8 @@ def install(root):
           <property name="position-locked" type="bool" value="true"/>
           <property name="icon-size" type="uint" value="20"/>
           <property name="size" type="uint" value="32"/>
+          <property name="enter-opacity" type="uint" value="90"/>
+          <property name="leave-opacity" type="uint" value="75"/>
           <property name="plugin-ids" type="array">
             <value type="int" value="1"/>
             <value type="int" value="2"/>
@@ -665,10 +696,13 @@ def install(root):
     * {
         font-family: 'Inter', 'DejaVu Sans', sans-serif;
     }
+    #XfcePanelWindow,
     .xfce4-panel,
+    .xfce4-panel.panel,
     panel-toplevel {
-        background-color: rgba(16, 20, 30, 0.78);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        background-color: rgba(16, 20, 30, 0.72) !important;
+        background-image: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14) !important;
         color: #f4efe6;
     }
     .xfce4-panel button {

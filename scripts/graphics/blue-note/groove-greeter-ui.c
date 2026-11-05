@@ -122,8 +122,13 @@ static gboolean update_clock(gpointer user_data) {
     return G_SOURCE_CONTINUE;
 }
 
+static gboolean login_requested = FALSE;
+
 static void on_login_clicked(GtkButton *btn, gpointer user_data) {
     (void)btn; (void)user_data;
+    if (login_requested) return;
+    login_requested = TRUE;
+
     gtk_widget_set_sensitive(login_button, FALSE);
     gtk_button_set_label(GTK_BUTTON(login_button), "Iniciando sesión...");
 
@@ -149,13 +154,14 @@ static void on_show_prompt(LightDMGreeter *g, const gchar *text, LightDMPromptTy
 
 static void on_authentication_complete(LightDMGreeter *g, gpointer data) {
     (void)data;
-    if (lightdm_greeter_get_is_authenticated(g)) {
+    if (login_requested && lightdm_greeter_get_is_authenticated(g)) {
         const gchar *selected_session = gtk_combo_box_get_active_id(GTK_COMBO_BOX(session_combo));
         if (!selected_session || strlen(selected_session) == 0) {
             selected_session = "groove-xfce";
         }
         lightdm_greeter_start_session_sync(g, selected_session, NULL);
-    } else {
+    } else if (!lightdm_greeter_get_is_authenticated(g)) {
+        login_requested = FALSE;
         gtk_widget_set_sensitive(login_button, TRUE);
         gtk_button_set_label(GTK_BUTTON(login_button), "▶ Entrar a Linux Groove");
     }
@@ -249,9 +255,6 @@ int main(int argc, char *argv[]) {
 
     if (!lightdm_greeter_connect_sync(greeter, &err)) {
         g_warning("Could not connect to LightDM daemon: %s", err ? err->message : "unknown");
-    } else {
-        /* Pre-authenticate user groove so entering is instant */
-        lightdm_greeter_authenticate(greeter, "groove", NULL);
     }
 
     /* Main Fullscreen Window */
@@ -329,8 +332,8 @@ int main(int argc, char *argv[]) {
     session_combo = gtk_combo_box_text_new();
     gtk_widget_set_name(session_combo, "session-combo");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-xfce", "Groove · macOS Glass (XFCE)");
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-wayfire", "Groove · Wayfire 3D");
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "weston", "Groove · Weston");
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-wayfire", "Groove · Wayfire 3D (Cubo y Efectos)");
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "weston", "Groove · Weston (Wayland básico)");
     gtk_combo_box_set_active_id(GTK_COMBO_BOX(session_combo), "groove-xfce");
     gtk_box_pack_start(GTK_BOX(card_box), session_combo, FALSE, FALSE, 0);
 

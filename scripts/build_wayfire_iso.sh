@@ -60,6 +60,10 @@ docker exec -e GROOVE_SOURCE_ROOT="$SOURCE_ROOT" "$BUILDER" bash -euc '
         $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs liblightdm-gobject-1 gtk+-3.0) \
         -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
         -o /opt/groove-graphics/bin/groove-greeter-ui
+    cc -O2 -Wall -Wextra "$GROOVE_SOURCE_ROOT"/scripts/graphics/blue-note/groove-effects-dialog.c \
+        $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs gtk+-3.0) \
+        -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
+        -o /opt/groove-graphics/bin/groove-effects-dialog
     cc -D_GNU_SOURCE -O2 -I/opt/groove-wayfire/include -I/opt/groove-graphics/include \
        "$GROOVE_SOURCE_ROOT"/scripts/graphics/wayfire/groove-gpu-info.c \
        -L/opt/groove-wayfire/lib -Wl,-rpath,/opt/groove-wayfire/lib \

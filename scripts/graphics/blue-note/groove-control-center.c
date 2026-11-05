@@ -25,6 +25,7 @@ static const ControlAction actions[] = {
     {"input-keyboard", "Teclado", "Distribución de teclas y atajos", "/opt/groove-graphics/bin/xfce4-keyboard-settings"},
     {"input-mouse", "Ratón", "Velocidad del puntero y touchpad", "/opt/groove-graphics/bin/xfce4-mouse-settings"},
     {"utilities-terminal", "Terminal", "Línea de comandos Groove", "/usr/libexec/groove-terminal"},
+    {"preferences-system", "Efectos 3D", "Cubo 3D, Wobbly y rotación Wayfire", "/usr/libexec/groove-effects-info"},
     {"drive-harddisk", "Instalar OS", "Instalar Linux Groove en disco", "/usr/libexec/groove-installer-gui"}
 };
 static const int num_actions = sizeof(actions) / sizeof(actions[0]);
