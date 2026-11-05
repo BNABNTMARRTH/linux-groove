@@ -15,13 +15,13 @@ como [registro sin validación](progress/LEGACY_PROGRESS_2026-11-04.md).
 | Fuentes BLFS y construcción reproducible | verificado | Recetas compiladas en /opt/groove-graphics; lockfile y hashes verificados |
 | Kernel con INPUT_EVDEV | verificado | Kernel 6.12 compilado con CONFIG_INPUT_EVDEV=y, ACPI=y y USER_NS=y |
 | Bibliotecas, Xorg, Mesa, GTK y entrada | verificado | Auditoría ELF audit_runtime.sh 100% superada sin dependencias faltantes |
-| Selector LightDM / apariencia Blue Note | en implementación | Empacado en preview ISO; pendiente verificación interactiva en UTM |
-| Sesión XFCE y utilidades | en implementación | Empacado en preview ISO; pendiente prueba en UTM |
-| Sesión Weston | en implementación | Empacado en preview ISO; pendiente prueba en UTM |
+| Selector LightDM / apariencia Blue Note | en implementación | Empacado en ISO 0.2.0 (VT1 directo, D-Bus resuelto); pendiente confirmación en UTM |
+| Sesión XFCE y utilidades | en implementación | Empacado en ISO 0.2.0; pendiente prueba en UTM |
+| Sesión Weston | en implementación | Empacado en ISO 0.2.0; pendiente prueba en UTM |
 | Acceso sin contraseña solo LiveUSB | verificado | test_live_access.sh superó pruebas PAM de seguridad y restricción LiveUSB |
-| Firefox ESR, DHCP/DNS y HTTPS | en implementación | Compilación activa desde fuentes en curso (minuto 45+) |
+| Firefox ESR, DHCP/DNS y HTTPS | verificado | Firefox ESR 153.6.0 compilado e instalado en /opt/groove-graphics (836MB ISO) |
 | Recuperación y manejo de fallos | verificado | groove.text=1 y consola de recuperación configuradas en GRUB |
-| ISO gráfica y checksums | en implementación | linux-groove-0.2.0-preview.iso generada (743MB) con SHA256 verificado |
+| ISO gráfica y checksums | verificado | linux-groove-0.2.0-aarch64.iso (836MB) generada con SHA256 cb6d0662... |
 | Compositor propio Rust/Smithay | pendiente | Spec 008; no registrar todavía una sesión no funcional |
 | Audio RT, suites y rendimiento | pendiente | Auditoría funcional y mediciones reales; no usar valores simulados |
 
