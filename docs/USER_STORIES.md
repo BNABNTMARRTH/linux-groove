@@ -114,3 +114,33 @@ Escenario: Simulación de instalación sin riesgo (Dry-Run)
   Y muestra un resumen en consola sin alterar ningún byte del disco físico.
 ```
 
+
+
+## Entrega gráfica inicial — aceptación vigente (2026-11-04)
+
+Las metas de tiempo/audio anteriores son requisitos pendientes de medición.
+
+```gherkin
+Escenario: Elegir un escritorio en LiveUSB
+  Dado un arranque UEFI en la VM ARM64 de aceptación
+  Cuando aparece el selector LightDM
+  Entonces puedo elegir Groove XFCE o Weston
+  Y entrar como groove sin contraseña únicamente en LiveUSB
+  Y al cerrar sesión vuelvo al selector.
+
+Escenario: Usar aplicaciones reales
+  Dado que entré en Groove XFCE
+  Entonces puedo abrir terminal, archivos, editor y ajustes
+  Y Firefox carga una página HTTPS con certificados válidos.
+
+Escenario: Recuperación sin gráficos
+  Dado un fallo del selector o compositor
+  Cuando arranco la entrada de recuperación de GRUB
+  Entonces dispongo de una consola
+  Y los logs permiten identificar el fallo sin reinicios ilimitados.
+
+Escenario: Conservar el escritorio propio
+  Dado que Groove Desktop todavía está en desarrollo
+  Entonces XFCE y Weston siguen siendo sesiones utilizables
+  Y Groove Desktop solo aparece tras pasar los criterios de la spec 008.
+```

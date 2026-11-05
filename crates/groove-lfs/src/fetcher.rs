@@ -1,8 +1,8 @@
+use colored::*;
+use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{copy, BufReader};
 use std::path::{Path, PathBuf};
-use sha2::{Digest, Sha256};
-use colored::*;
 
 pub struct TarballFetcher;
 
@@ -23,7 +23,7 @@ impl TarballFetcher {
         }
 
         println!("  [➜] Descargando desde {}...", url.truecolor(212, 175, 55));
-        
+
         let status = std::process::Command::new("curl")
             .args(["-L", "-o", dest.to_str().unwrap(), url])
             .status()?;
@@ -36,7 +36,10 @@ impl TarballFetcher {
             println!("  [✓] Descarga y suma SHA-256 verificadas exitosamente.");
             Ok(true)
         } else {
-            Err("Error crítico: la suma SHA-256 no coincide con el manifiesto oficial de LFS 12.2.".into())
+            Err(
+                "Error crítico: la suma SHA-256 no coincide con el manifiesto oficial de LFS 12.2."
+                    .into(),
+            )
         }
     }
 
@@ -49,4 +52,3 @@ impl TarballFetcher {
         Ok(hash.eq_ignore_ascii_case(expected))
     }
 }
-

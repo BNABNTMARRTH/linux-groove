@@ -1,6 +1,5 @@
 # Target de compilación en disco rápido/ExFAT
 target/
-Cargo.lock
 
 # Archivos de sistema y logs
 *.log
@@ -27,3 +26,7 @@ images/
 modules.order
 Module.symvers
 
+
+# Python build/integration helpers
+__pycache__/
+*.pyc

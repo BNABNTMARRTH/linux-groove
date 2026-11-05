@@ -1,0 +1,11 @@
+# Build tools only. Runtime software is compiled from the locked LFS/BLFS sources.
+FROM linux-groove-builder:latest
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    meson ninja-build pkg-config autoconf automake libtool gettext gperf \
+    bison flex libxml2-utils xsltproc docbook-xml docbook-xsl intltool itstool \
+    python3-mako python3-jinja2 python3-packaging python3-ply python3-setuptools \
+    python3-pip python3-venv cmake unzip zip patch xz-utils curl file pax-utils \
+    qemu-system-arm qemu-efi-aarch64 busybox-static grub-efi-arm64-bin \
+    && python3 -m pip install --break-system-packages meson==1.5.2 \
+    && rm -rf /var/lib/apt/lists/*

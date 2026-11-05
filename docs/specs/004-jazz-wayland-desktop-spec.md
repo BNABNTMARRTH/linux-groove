@@ -1,6 +1,19 @@
 # Especificación Técnica 004: The Jazz Desktop & `groove-compositor`
 *Documento de Diseño del Sistema — Spec-Driven Development (SDD)*
 
+## Estado real y entregas — 2026-11-04
+
+El contenido siguiente describe la visión del escritorio propio. Actualmente
+groove-compositor implementa una TUI y una demo minifb para macOS; todavía no
+usa Smithay ni actúa como servidor Wayland. Los vúmetros y cifras de la demo
+son simulados y no prueban audio ni rendimiento real.
+
+La primera entrega gráfica está definida en la spec 007: XFCE/X11 y Weston en
+sesiones separadas mediante LightDM. La spec 008 conserva y ordena el trabajo
+del compositor Rust/Smithay. WGPU es una evaluación posterior al primer backend
+funcional, no requisito de la primera ventana. Solo se registrará «Groove
+Desktop» en el selector cuando cumpla sus pruebas de integración.
+
 ---
 
 ## 1. Alcance y Arquitectura Gráfica

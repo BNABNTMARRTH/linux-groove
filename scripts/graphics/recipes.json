@@ -1,0 +1,640 @@
+[
+  {
+    "name": "zlib",
+    "build": "custom",
+    "options": "",
+    "source": "lfs:zlib",
+    "commands": "./configure --prefix=\"$PREFIX\"\nmake -j \"$JOBS\"\nmake install"
+  },
+  {
+    "name": "libffi",
+    "build": "auto",
+    "options": "--disable-exec-static-tramp",
+    "source": "lfs:libffi"
+  },
+  {
+    "name": "bzip2",
+    "build": "custom",
+    "options": "",
+    "source": "lfs:bzip2",
+    "commands": "make -f Makefile-libbz2_so\nmake -j \"$JOBS\"\nmake PREFIX=\"$PREFIX\" install\ncp -a libbz2.so* \"$PREFIX/lib/\"\nln -sf libbz2.so.1.0.8 \"$PREFIX/lib/libbz2.so.1\"\nln -sf libbz2.so.1.0.8 \"$PREFIX/lib/libbz2.so\""
+  },
+  {
+    "name": "xz",
+    "build": "auto",
+    "options": "--disable-doc",
+    "source": "lfs:xz"
+  },
+  {
+    "name": "zstd",
+    "build": "custom",
+    "options": "",
+    "source": "lfs:zstd",
+    "commands": "make -j \"$JOBS\" PREFIX=\"$PREFIX\"\nmake PREFIX=\"$PREFIX\" install"
+  },
+  {
+    "name": "libxcrypt",
+    "build": "auto",
+    "options": "--enable-obsolete-api=no",
+    "source": "lfs:libxcrypt"
+  },
+  {
+    "name": "expat",
+    "build": "auto",
+    "options": "--without-docbook",
+    "url": "https://github.com/libexpat/libexpat/releases/download/R_2_6_2/expat-2.6.2.tar.xz",
+    "version": "2.6.2",
+    "upstream_md5": "0cb75c8feb842c0794ba89666b762a2d"
+  },
+  {
+    "name": "libxml2",
+    "build": "auto",
+    "options": "--without-python --without-icu --with-lzma"
+  },
+  {
+    "name": "libxslt",
+    "build": "auto",
+    "options": "--without-python --without-crypto"
+  },
+  {
+    "name": "pcre2",
+    "build": "auto",
+    "options": "--enable-unicode --enable-jit --disable-pcre2grep-libz --disable-pcre2grep-libbz2"
+  },
+  {
+    "name": "util-linux",
+    "build": "auto",
+    "options": "--disable-all-programs --enable-libblkid --enable-libmount --enable-libuuid --enable-agetty --enable-mount --enable-umount --without-python --without-systemd --disable-makeinstall-chown --disable-makeinstall-setuid",
+    "source": "lfs:util-linux"
+  },
+  {
+    "name": "glib2",
+    "build": "meson",
+    "options": "-Dintrospection=disabled -Dtests=false -Dlibmount=disabled -Dselinux=disabled -Dxattr=false -Dman-pages=disabled -Ddtrace=false -Dsystemtap=false -Dnls=enabled"
+  },
+  {
+    "name": "dbus",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --localstatedir=/var --disable-systemd --disable-tests --disable-xml-docs --disable-doxygen-docs --with-system-pid-file=/run/dbus/pid --with-system-socket=/run/dbus/system_bus_socket --with-systemdsystemunitdir=no --with-systemduserunitdir=no"
+  },
+  {
+    "name": "dbus-glib",
+    "build": "auto",
+    "options": "--disable-gtk-doc --disable-tests"
+  },
+  {
+    "name": "alsa-lib",
+    "build": "auto",
+    "options": "--disable-python"
+  },
+  {
+    "name": "linux-pam",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --disable-doc --disable-nis --disable-audit --enable-securedir=\"$PREFIX/lib/security\" --includedir=\"$PREFIX/include/security\""
+  },
+  {
+    "name": "shadow",
+    "source": "lfs:shadow",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --with-libpam --without-libbsd --without-libcrack --without-selinux --disable-man --disable-nls --disable-subordinate-ids --without-yescrypt"
+  },
+  {
+    "name": "eudev",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --with-rootprefix=\"$PREFIX\" --with-rootlibdir=\"$PREFIX/lib\" --with-rootrundir=/run --disable-manpages --disable-introspection --disable-kmod",
+    "url": "https://github.com/eudev-project/eudev/releases/download/v3.2.14/eudev-3.2.14.tar.gz",
+    "version": "3.2.14"
+  },
+  {
+    "name": "libevdev",
+    "build": "auto",
+    "options": "--disable-tests --disable-documentation"
+  },
+  {
+    "name": "mtdev",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "libinput",
+    "build": "meson",
+    "options": "-Ddocumentation=false -Ddebug-gui=false -Dtests=false -Dlibwacom=false"
+  },
+  {
+    "name": "seatd",
+    "build": "meson",
+    "options": "-Dlibseat-logind=disabled -Dlibseat-seatd=enabled -Dman-pages=disabled -Dexamples=disabled",
+    "url": "https://git.sr.ht/~kennylevinsen/seatd/archive/0.8.0.tar.gz",
+    "version": "0.8.0"
+  },
+  {
+    "name": "libpng",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "libjpeg",
+    "build": "cmake",
+    "options": "-DENABLE_STATIC=OFF -DWITH_JAVA=OFF -DCMAKE_INSTALL_LIBDIR=\"$PREFIX/lib\"",
+    "source": "libjpeg"
+  },
+  {
+    "name": "freetype2",
+    "build": "auto",
+    "options": "--with-harfbuzz=no --with-brotli=no"
+  },
+  {
+    "name": "fontconfig",
+    "build": "auto",
+    "options": "--disable-docs --enable-libxml2 --with-add-fonts=\"$PREFIX/share/fonts\" --with-cache-dir=/var/cache/fontconfig"
+  },
+  {
+    "name": "pixman",
+    "build": "meson",
+    "options": "-Dtests=disabled -Ddemos=disabled"
+  },
+  {
+    "name": "xorgproto",
+    "build": "meson",
+    "options": "-Dlegacy=true"
+  },
+  {
+    "name": "xtrans",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:xtrans"
+  },
+  {
+    "name": "libXau",
+    "build": "auto",
+    "options": "",
+    "source": "libXau"
+  },
+  {
+    "name": "libXdmcp",
+    "build": "auto",
+    "options": "",
+    "source": "libXdmcp"
+  },
+  {
+    "name": "xcb-proto",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "libxcb",
+    "build": "auto",
+    "options": "--enable-xinput --without-doxygen"
+  },
+  {
+    "name": "libX11",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libX11"
+  },
+  {
+    "name": "libXext",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXext"
+  },
+  {
+    "name": "libICE",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libICE"
+  },
+  {
+    "name": "libSM",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libSM"
+  },
+  {
+    "name": "libXfixes",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXfixes"
+  },
+  {
+    "name": "libXrender",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXrender"
+  },
+  {
+    "name": "libXcursor",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXcursor"
+  },
+  {
+    "name": "libXdamage",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXdamage"
+  },
+  {
+    "name": "libfontenc",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libfontenc"
+  },
+  {
+    "name": "libXfont2",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXfont2"
+  },
+  {
+    "name": "libXft",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXft"
+  },
+  {
+    "name": "libXi",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXi"
+  },
+  {
+    "name": "libXinerama",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXinerama"
+  },
+  {
+    "name": "libXrandr",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXrandr"
+  },
+  {
+    "name": "libXcomposite",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXcomposite"
+  },
+  {
+    "name": "libXtst",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXtst"
+  },
+  {
+    "name": "libXScrnSaver",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libXScrnSaver"
+  },
+  {
+    "name": "libxkbfile",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libxkbfile"
+  },
+  {
+    "name": "libxshmfence",
+    "build": "auto",
+    "options": "",
+    "source": "xlib:libxshmfence"
+  },
+  {
+    "name": "libpciaccess",
+    "build": "meson",
+    "options": "",
+    "source": "xlib:libpciaccess"
+  },
+  {
+    "name": "libdrm",
+    "build": "meson",
+    "options": "-Dintel=disabled -Dradeon=disabled -Damdgpu=disabled -Dnouveau=disabled -Dvmwgfx=disabled -Dfreedreno=disabled -Dvc4=disabled -Dvalgrind=disabled -Dtests=false"
+  },
+  {
+    "name": "wayland",
+    "build": "meson",
+    "options": "-Ddocumentation=false -Dtests=false -Ddtd_validation=false"
+  },
+  {
+    "name": "wayland-protocols",
+    "build": "meson",
+    "options": "-Dtests=false"
+  },
+  {
+    "name": "libXxf86vm",
+    "source": "xlib:libXxf86vm",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "mesa",
+    "build": "meson",
+    "options": "-Dplatforms=x11,wayland -Dgallium-drivers=swrast -Dvulkan-drivers= -Dllvm=disabled -Dshared-llvm=disabled -Dvalgrind=disabled -Dglx=dri -Degl=enabled -Dgbm=enabled -Dvideo-codecs= -Dbuild-tests=false"
+  },
+  {
+    "name": "libxkbcommon",
+    "build": "meson",
+    "options": "-Denable-docs=false -Denable-tools=false -Denable-x11=false -Dxkb-config-root=\"$PREFIX/share/X11/xkb\""
+  },
+  {
+    "name": "xkeyboard-config",
+    "build": "meson",
+    "options": ""
+  },
+  {
+    "name": "libxcvt",
+    "build": "meson",
+    "options": ""
+  },
+  {
+    "name": "libgpg-error",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "libgcrypt",
+    "build": "auto",
+    "options": "--disable-doc --disable-static"
+  },
+  {
+    "name": "xorg-server",
+    "build": "meson",
+    "options": "-Dxorg=true -Dxnest=false -Dxvfb=false -Dglamor=false -Dglx=false -Dudev=true -Dudev_kms=true -Dsystemd_logind=false -Dxcsecurity=true -Dxkb_dir=\"$PREFIX/share/X11/xkb\" -Dxkb_output_dir=/var/lib/xkb -Dxkb_bin_dir=\"$PREFIX/bin\" -Ddefault_font_path=\"$PREFIX/share/fonts\" -Dsuid_wrapper=false -Ddocs=false -Ddevel-docs=false -Dsecure-rpc=false -Dsha1=libgcrypt"
+  },
+  {
+    "name": "xorg-libinput-driver",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "libXt",
+    "source": "xlib:libXt",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "libXmu",
+    "source": "xlib:libXmu",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "xkbcomp",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xkbcomp"
+  },
+  {
+    "name": "xauth",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xauth"
+  },
+  {
+    "name": "xrdb",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xrdb"
+  },
+  {
+    "name": "xrandr",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xrandr"
+  },
+  {
+    "name": "xset",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xset"
+  },
+  {
+    "name": "xprop",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xprop"
+  },
+  {
+    "name": "xmodmap",
+    "build": "auto",
+    "options": "",
+    "source": "xapp:xmodmap"
+  },
+  {
+    "name": "fribidi",
+    "build": "meson",
+    "options": "-Ddocs=false"
+  },
+  {
+    "name": "harfbuzz",
+    "build": "meson",
+    "options": "-Ddocs=disabled -Dtests=disabled -Dintrospection=disabled -Dicu=disabled -Dglib=enabled -Dgobject=enabled"
+  },
+  {
+    "name": "cairo",
+    "build": "meson",
+    "options": "-Dtests=disabled -Dgtk_doc=false -Dspectre=disabled -Dsymbol-lookup=disabled"
+  },
+  {
+    "name": "pango",
+    "build": "meson",
+    "options": "-Dintrospection=disabled -Dgtk_doc=false -Dbuild-testsuite=false -Dbuild-examples=false"
+  },
+  {
+    "name": "shared-mime-info",
+    "build": "meson",
+    "options": "-Dbuild-tools=true -Dupdate-mimedb=true -Dbuild-tests=false"
+  },
+  {
+    "name": "gdk-pixbuf",
+    "build": "meson",
+    "options": "-Dintrospection=disabled -Dman=false -Dgtk_doc=false -Dinstalled_tests=false -Dtests=false -Dothers=enabled -Dbuiltin_loaders=all"
+  },
+  {
+    "name": "at-spi2-core",
+    "build": "meson",
+    "options": "-Dintrospection=disabled -Ddocs=false -Datk_only=false -Duse_systemd=false -Dgtk2_atk_adaptor=false"
+  },
+  {
+    "name": "libepoxy",
+    "build": "meson",
+    "options": "-Dtests=false -Dglx=yes -Degl=yes"
+  },
+  {
+    "name": "gtk3",
+    "build": "meson",
+    "options": "-Dintrospection=false -Dgtk_doc=false -Dman=false -Dtests=false -Dexamples=false -Ddemos=false -Dx11_backend=true -Dwayland_backend=true -Dprint_backends=file"
+  },
+  {
+    "name": "hicolor-icon-theme",
+    "build": "meson",
+    "options": ""
+  },
+  {
+    "name": "librsvg",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc --disable-vala"
+  },
+  {
+    "name": "adwaita-icon-theme",
+    "build": "meson",
+    "options": ""
+  },
+  {
+    "name": "libxfce4util",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc"
+  },
+  {
+    "name": "xfconf",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc --disable-perl-bindings"
+  },
+  {
+    "name": "libxfce4ui",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc --disable-glade --disable-startup-notification"
+  },
+  {
+    "name": "exo",
+    "build": "auto",
+    "options": "--disable-gtk-doc"
+  },
+  {
+    "name": "garcon",
+    "build": "auto",
+    "options": "--disable-gtk-doc"
+  },
+  {
+    "name": "libwnck",
+    "build": "meson",
+    "options": "-Dintrospection=disabled -Dgtk_doc=false -Dstartup_notification=disabled"
+  },
+  {
+    "name": "xfce4-panel",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc"
+  },
+  {
+    "name": "thunar",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc --disable-gudev --disable-gio-unix"
+  },
+  {
+    "name": "xfce4-settings",
+    "build": "auto",
+    "options": "--disable-colord --disable-libnotify --disable-upower-glib"
+  },
+  {
+    "name": "xfdesktop",
+    "build": "auto",
+    "options": "--disable-notifications --disable-desktop-icons"
+  },
+  {
+    "name": "xfwm4",
+    "build": "auto",
+    "options": "--disable-startup-notification --disable-epoxy --disable-xpresent"
+  },
+  {
+    "name": "iceauth",
+    "source": "xapp:iceauth",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "xfce4-session",
+    "build": "auto",
+    "options": "--disable-polkit --disable-legacy-sm --disable-libnotify"
+  },
+  {
+    "name": "lz4",
+    "source": "lfs:lz4",
+    "build": "custom",
+    "options": "",
+    "commands": "make -j \"$JOBS\"\nmake PREFIX=\"$PREFIX\" LIBDIR=\"$PREFIX/lib\" install"
+  },
+  {
+    "name": "vte",
+    "build": "meson",
+    "options": "-Dgtk3=true -Dgtk4=false -Dgir=false -Dvapi=false -Ddocs=false -Dgnutls=false -Dicu=false -D_systemd=false -Dglade=false"
+  },
+  {
+    "name": "xfce4-terminal",
+    "build": "auto",
+    "options": "--disable-utempter"
+  },
+  {
+    "name": "gtksourceview4",
+    "build": "meson",
+    "options": "-Dgir=false -Dgtk_doc=false -Dvapi=false",
+    "source": "gtksourceview4"
+  },
+  {
+    "name": "mousepad",
+    "build": "auto",
+    "options": "--disable-gspell --disable-polkit"
+  },
+  {
+    "name": "iso-codes",
+    "build": "auto",
+    "options": "",
+    "url": "https://salsa.debian.org/iso-codes-team/iso-codes/-/archive/v4.16.0/iso-codes-v4.16.0.tar.gz",
+    "version": "4.16.0",
+    "pre": "autoreconf -fi"
+  },
+  {
+    "name": "libxklavier",
+    "build": "auto",
+    "options": "--disable-introspection --disable-gtk-doc --with-xkb-base=\"$PREFIX/share/X11/xkb\""
+  },
+  {
+    "name": "lightdm",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --localstatedir=/var --disable-static --disable-tests --disable-liblightdm-qt5 --disable-introspection --with-greeter-user=lightdm --with-greeter-session=lightdm-gtk-greeter --with-user-session=groove-xfce"
+  },
+  {
+    "name": "xfce4-dev-tools",
+    "build": "auto",
+    "options": ""
+  },
+  {
+    "name": "lightdm-gtk-greeter",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --disable-indicator-services-command --disable-libindicator",
+    "url": "https://github.com/Xubuntu/lightdm-gtk-greeter/releases/download/lightdm-gtk-greeter-2.0.9/lightdm-gtk-greeter-2.0.9.tar.gz",
+    "version": "2.0.9",
+    "upstream_md5": "35752d730f39293c2bbe884ef6963830"
+  },
+  {
+    "name": "hwdata",
+    "build": "custom",
+    "options": "",
+    "commands": "./configure --prefix=\"$PREFIX\"\nmake install"
+  },
+  {
+    "name": "libdisplay-info",
+    "build": "meson",
+    "options": ""
+  },
+  {
+    "name": "weston",
+    "build": "meson",
+    "options": "-Dbackend-drm=true -Dbackend-drm-screencast-vaapi=false -Dbackend-x11=false -Dbackend-wayland=false -Dbackend-rdp=false -Dbackend-vnc=false -Dbackend-pipewire=false -Dbackend-headless=true -Drenderer-gl=false -Dcolor-management-lcms=false -Dsystemd=false -Dremoting=false -Dpipewire=false -Dxwayland=false -Dscreenshare=false -Dtest-junit-xml=false -Ddemo-clients=true -Dshell-desktop=true -Dshell-fullscreen=false -Dshell-ivi=false -Dshell-kiosk=false -Dsimple-clients=shm,damage -Dtools=terminal,info,debug -Dimage-webp=false -Dwcap-decode=false",
+    "url": "https://gitlab.freedesktop.org/wayland/weston/-/releases/13.0.3/downloads/weston-13.0.3.tar.xz",
+    "version": "13.0.3"
+  },
+  {
+    "name": "dejavu-fonts",
+    "build": "custom",
+    "options": "",
+    "url": "https://github.com/dejavu-fonts/dejavu-fonts/releases/download/version_2_37/dejavu-fonts-ttf-2.37.tar.bz2",
+    "version": "2.37",
+    "commands": "mkdir -p \"$PREFIX/share/fonts/dejavu\"\ncp ttf/*.ttf \"$PREFIX/share/fonts/dejavu/\"\nfc-cache -f"
+  },
+  {
+    "name": "dhcpcd",
+    "build": "auto",
+    "options": "--sysconfdir=/etc --libexecdir=\"$PREFIX/libexec\" --dbdir=/var/lib/dhcpcd --runstatedir=/run --disable-privsep"
+  }
+]

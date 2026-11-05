@@ -8,9 +8,10 @@ use std::time::Duration;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.iter().any(|a| a == "--tui") {
-        run_tui();
-    } else {
+    
+    // En Linux dentro del sistema o LiveUSB, siempre ejecutar la TUI interactiva de Blue Note.
+    // La GUI de minifb está disponible si se pasa --gui en macOS con servidor gráfico.
+    if args.iter().any(|a| a == "--gui") && cfg!(target_os = "macos") {
         println!("{}", "🎷 ======================================================================".truecolor(212, 175, 55));
         println!("  {} - \"The Blue Note Shell\"", "ABRIENDO VENTANA NATIVA DE RUST".bold().truecolor(244, 239, 230));
         println!("{}", "==========================================================================".truecolor(212, 175, 55));
@@ -22,6 +23,8 @@ fn main() {
         println!("{}", "==========================================================================".truecolor(212, 175, 55));
         
         gui::run_native_gui();
+    } else {
+        run_tui();
     }
 }
 
@@ -37,8 +40,16 @@ fn run_tui() {
         io::stdout().flush().unwrap();
 
         let mut input = String::new();
-        if io::stdin().read_line(&mut input).is_err() {
-            break;
+        match io::stdin().read_line(&mut input) {
+            Ok(0) => {
+                thread::sleep(Duration::from_millis(500));
+                continue;
+            }
+            Err(_) => {
+                thread::sleep(Duration::from_millis(500));
+                continue;
+            }
+            Ok(_) => {}
         }
 
         let cmd = input.trim();

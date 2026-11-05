@@ -1,87 +1,66 @@
-# 🎷 Linux Groove OS — "The Blue Note Edition"
+# Linux Groove OS — The Blue Note Edition
 
-> **A minimal, ultra-fast Linux distribution built from scratch in Rust following the official LFS 12.2 specification, crafted for digital artists, musicians, and creators.**
+Distribución ARM64 basada en LFS 12.2, con PID 1 y herramientas propias en Rust.
+El escritorio Wayland propio con Smithay es parte de la hoja de ruta.
 
----
+## Estado real
 
-## 🌟 Highlights
+La ISO **0.1.0** arranca mediante UEFI/ACPI en UTM y ofrece la TUI Blue Note.
+`groove-compositor` todavía contiene una TUI y una demo gráfica minifb para macOS;
+no es aún un compositor Wayland funcional. Los indicadores de la demostración
+son simulados. Audio RT, suites creativas y métricas requieren validación real.
 
-- **Bebop Efficiency:** Base LiveUSB `< 800 MB`, idle RAM `< 220 MB`, sub-3s boot time.
-- **Real-Time Soundstage:** Linux 6.12 LTS with `PREEMPT_RT` patch + custom Rust kernel driver (`/dev/groove_rt`) guaranteeing `< 2.5 ms` latency at 48kHz (64 samples).
-- **Rustified Userspace:** Custom PID 1 `groove-init`, official `uutils/coreutils` (Rust), `sudo-rs`, `ripgrep`, `fd`.
-- **The Jazz Desktop:** Custom Wayland compositor (`groove-compositor` on Smithay + WGPU) with classic Blue Note analog aesthetics, live stereo VU meter, DSP latency monitor, and hybrid tiling/floating modes (`Super + Space`).
-- **Groove Ensembles:** Modular SquashFS suites mounted on-demand via OverlayFS for **Audio/DAW**, **Visual Design**, **Cinema/Video**, **Darkroom/Photo**, and **Rust Development**.
-- **The Soundcheck Installer:** Intuitive TUI & GUI installer in Rust with UEFI/BIOS live USB support.
+La entrega **0.2.0 gráfica está en implementación**: selector LightDM, XFCE/X11,
+Weston como sesión alternativa, utilidades y Firefox ESR. Las dependencias se
+compilan desde fuentes siguiendo BLFS; no se sustituye la base por otra distro.
+Consultar el [check de avance con evidencia](docs/PROGRESS_TRACKER.md).
 
----
+## Documentación
 
-## 📁 Repository Structure
+- [Plan de implementación](docs/plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md).
+- [PRD](docs/PRD.md) y [plan maestro](docs/phases/MASTER_PLAN_PHASES.md).
+- [Spec 007: sesiones gráficas](docs/specs/007-graphical-sessions-spec.md).
+- [Spec 008: escritorio Rust/Smithay](docs/specs/008-smithay-desktop-roadmap-spec.md).
+- [Diagnóstico del arranque UTM/ACPI](docs/UTM_BOOT.md).
+- [Construcción gráfica desde fuentes](docs/GRAPHICAL_BUILD.md).
 
-```
-├── Cargo.toml                  # Cargo Multi-crate Workspace
-├── groove-config.toml          # Dual-disk orchestrator configuration
-├── docs/
-│   ├── PRD.md                  # Product Requirements Document
-│   ├── USER_STORIES.md         # Gherkin User Stories & Acceptance Criteria
-│   ├── PROGRESS_TRACKER.md     # Phase checklist & LFS 12.2 progress
-│   ├── phases/                 # Master Plan across the 8 phases
-│   └── specs/                  # Technical SDD Specifications (001 - 006)
-├── crates/
-│   ├── groove-common/          # Shared types, palette & config
-│   ├── groove-lfs/             # LFS 12.2 Step-by-step build orchestrator CLI
-│   ├── groove-init/            # PID 1 System Init & service supervisor
-│   ├── groove-compositor/      # Wayland Compositor (Blue Note UI)
-│   ├── groove-session/         # Artist profile & ensemble manager
-│   └── groove-installer/       # The Soundcheck LiveUSB installer
-├── driver/
-│   └── groove_rt_kmod/         # Rust-for-Linux RT latency & priority kernel module
-└── lfs/
-    └── chapters/               # Declarative TOML manifests for LFS 12.2
-```
+## Desarrollo
 
----
-
-## 🚀 Quick Start (Development & Inspection)
-
-```bash
-# Check system status and storage layout
+```sh
+cargo test -p groove-init
+cargo run -p groove-init -- --check-services /ruta/a/manifiestos
 cargo run -p groove-lfs -- status
-
-# Verify all SDD specs and architecture documents
-cargo run -p groove-lfs -- verify-specs
-
-# Launch the interactive terminal dashboard
-cargo run -p groove-lfs -- dashboard
-
-# Simulate OS installation safely
 cargo run -p groove-installer -- --dry-run
-
-# Run full ISO checksum and integrity suite
-./scripts/verify_system_suite.sh
 ```
 
----
+Validar servicios no los inicia ni requiere modificar el sistema anfitrión.
+Los comandos de inspección y simulación no acreditan una instalación completa.
 
-## 💿 Bootable ISO & Release Information
+## Construcción de la ISO gráfica
 
-The official bootable LiveUSB ISO image is built and verified:
+El código permanece en este repositorio y los artefactos grandes en
+`/Volumes/Backup/linux_groove_terabit`. Se requiere Docker ARM64 y la ISO base
+0.1.0 verificada; la compilación ocurre en un contenedor y un rootfs de staging.
 
-- **Image:** `linux-groove-0.1.0-aarch64.iso` (594 MB)
-- **Target Architecture:** `aarch64-unknown-linux-gnu`
-- **Release Notes:** [RELEASE_NOTES_v0.1.0.md](RELEASE_NOTES_v0.1.0.md)
-- **Checksums:** [SHA256SUMS.txt](SHA256SUMS.txt)
-
-```text
-9b778d805960f12983d7ce2c22841711ab11fa78585435d5cc7d855d6f6717ed  linux-groove-0.1.0-aarch64.iso
+```sh
+./scripts/build_graphical_iso.sh
 ```
 
-### Flashing to USB (LiveUSB Mode)
-```bash
-sudo dd if=/Volumes/Backup/linux_groove_terabit/iso/linux-groove-0.1.0-aarch64.iso of=/dev/rdiskX bs=4M status=progress conv=fsync
-```
+El script genera una **ISO candidata nueva**, sin sobrescribir la base 0.1.0.
+Antes de declararla verificada se debe probar el arranque UEFI, ambas sesiones,
+entrada, logout, recuperación y navegación HTTPS en UTM.
 
----
+En LiveUSB se permite iniciar como `groove` sin contraseña desde el selector;
+esta excepción requiere una marca creada durante el arranque y no aplica a
+instalaciones normales. Los cambios del LiveUSB se pierden al reiniciar.
 
-## 📜 License
-Licensed under Apache-2.0 or MIT at your option.
+## Estructura
 
+`crates/` contiene las herramientas Rust; `kernel/`, la configuración ARM64;
+`lfs/`, los manifiestos base; `scripts/graphics/`, las recetas, configuración y
+pruebas de integración gráfica; `docs/`, las specs y evidencia.
+
+Las metas anteriores de tamaño, memoria, latencia y arranque se mantienen como
+objetivos medibles, no como resultados garantizados de la ISO gráfica.
+
+Licencia: Apache-2.0 o MIT.

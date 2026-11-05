@@ -1,6 +1,26 @@
 # Especificación Técnica 006: LiveUSB, Generación de ISO e Instalador
 *Documento de Diseño del Sistema — Spec-Driven Development (SDD)*
 
+## Actualización del arranque gráfico — 2026-11-04
+
+La implementación actual usa GRUB2 ARM64/UEFI e initramfs shell con BusyBox
+empaquetado en cpio.gz; el diagrama Rust/zstd siguiente es una visión futura.
+La detección busca groove/rootfs.squashfs y activa OverlayFS. Conservar ACPI:
+sin CONFIG_ACPI=y, EDK2 puede causar un panic temprano del temporizador ARM.
+
+Para la entrega gráfica se crea /run/groove/live únicamente tras montar el
+medio LiveUSB, y se trasladan /proc, /sys, /dev y /run al nuevo root antes de
+switch_root. PID 1 debe preservar los montajes existentes. La marca no forma
+parte del SquashFS ni de una instalación normal.
+
+La entrada normal inicia el selector LightDM; la entrada single/groove.text=1
+inicia recuperación. Conservar la ISO anterior y construir una imagen nueva.
+Copiar siempre kernel/initramfs actualizados antes de regenerar la ISO híbrida,
+verificar su arranque UEFI y publicar sus SHA256. Ver spec 007.
+
+Las capacidades del instalador descritas después son requisitos; su modo de
+simulación no acredita particionado, instalación ni política PAM funcionales.
+
 ---
 
 ## 1. Alcance y Arquitectura de Booteo

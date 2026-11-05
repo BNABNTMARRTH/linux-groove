@@ -73,12 +73,13 @@ qemu-system-aarch64 \
 ## 🔐 Sumas Criptográficas SHA-256
 
 ```text
-9b778d805960f12983d7ce2c22841711ab11fa78585435d5cc7d855d6f6717ed  iso/linux-groove-0.1.0-aarch64.iso
-7b9157daf5752547183567ea2196cf18f529bda9318b3e457bec6ac755dea912  images/vmlinuz-6.12-groove-rt
-bbfdb9f3d17611b52d54130dfaa2a8483faad15b4a10500659e883da3d15ffd7  images/initramfs-6.12-groove.cpio.gz
+dc80337db1740acb0cd9c1244eefc6ccd82668968b64fbfbed600555605dfdb8  iso/linux-groove-0.1.0-aarch64.iso
+12d496292f9368ef3e357137e4a97a72fe92edc61982ad0b89425eb1f3f8a290  images/vmlinuz-6.12-groove-rt
+29da8b92da91b238ec7eeacd6b973cae8a15f730462f8e54bcae2dd5036b38f2  images/initramfs-6.12-groove.cpio.gz
 7ab0dbd82dbfd3df637c552ac85a7bd067ea6b61d40c4f307554b94e86721270  ensembles/cinema-video.ensemble
 bd979e66f152b863afefa1f314d58835cc7f19855f714e386f42bb233fa846bf  ensembles/darkroom-photo.ensemble
 d3a8ad085c02f04de248b0b09ae9cb823868dc5f5c91fbfad02c3ef1d12f92ec  ensembles/jazz-audio.ensemble
 05b1f75c41dcdcda786d465f1097903799a0e13f270284da7d04ef6600edb435  ensembles/rust-dev.ensemble
 43c3530099eca84923e6783fa4c07aa2d26a00d861456bf230716dfa9358b304  ensembles/visual-design.ensemble
 ```
+

@@ -2,15 +2,19 @@ mod fetcher;
 
 use clap::{Parser, Subcommand};
 use colored::*;
-use groove_common::GrooveConfig;
 use fetcher::TarballFetcher;
+use groove_common::GrooveConfig;
 use std::process::Command;
 
 #[derive(Parser)]
 #[command(name = "groove-lfs")]
 #[command(about = "Orquestador de compilación LFS 12.2 + Rustification para Linux Groove OS", long_about = None)]
 struct Cli {
-    #[arg(short, long, default_value = "/Volumes/HDEXTERNO/linux_groove/groove-config.toml")]
+    #[arg(
+        short,
+        long,
+        default_value = "/Volumes/HDEXTERNO/linux_groove/groove-config.toml"
+    )]
     config: String,
 
     #[command(subcommand)]
@@ -39,28 +43,65 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match cli.command {
         Commands::Status => {
-            println!("\n{}", "📊 ESTADO DE ALMACENAMIENTO Y ENTORNO:".bold().truecolor(212, 175, 55));
-            println!("  • Workspace Root (FAT32): {}", config.storage.workspace_root.display());
-            println!("  • Terabit Root   (ExFAT): {}", config.storage.terabit_root.display());
-            println!("  • Imagen LFS EXT4 (40 GB): {}", config.storage.lfs_image_path.display());
-            println!("    - Existe: {}", if config.storage.lfs_image_path.exists() { "SÍ (Listo)".green() } else { "NO (Ejecuta 'init-terabit')".yellow() });
-            println!("  • Caché de Fuentes: {}", config.storage.sources_dir.display());
+            println!(
+                "\n{}",
+                "📊 ESTADO DE ALMACENAMIENTO Y ENTORNO:"
+                    .bold()
+                    .truecolor(212, 175, 55)
+            );
+            println!(
+                "  • Workspace Root (FAT32): {}",
+                config.storage.workspace_root.display()
+            );
+            println!(
+                "  • Terabit Root   (ExFAT): {}",
+                config.storage.terabit_root.display()
+            );
+            println!(
+                "  • Imagen LFS EXT4 (40 GB): {}",
+                config.storage.lfs_image_path.display()
+            );
+            println!(
+                "    - Existe: {}",
+                if config.storage.lfs_image_path.exists() {
+                    "SÍ (Listo)".green()
+                } else {
+                    "NO (Ejecuta 'init-terabit')".yellow()
+                }
+            );
+            println!(
+                "  • Caché de Fuentes: {}",
+                config.storage.sources_dir.display()
+            );
             println!("  • Directorio ISOs : {}", config.storage.iso_dir.display());
-            println!("  • Ensembles Creativos: {}", config.storage.ensembles_dir.display());
+            println!(
+                "  • Ensembles Creativos: {}",
+                config.storage.ensembles_dir.display()
+            );
 
-            println!("\n{}", "🎷 FASES DEL PROYECTO (LFS 12.2 + RUSTIFICATION):".bold().truecolor(212, 175, 55));
-            println!("  [✓] Fase 1: Ingeniería SDD, PRD & Check de Avance (100% Completada)");
-            println!("  [✓] Fase 2: Infraestructura Dual-Disk & Motor groove-lfs (100% Completada)");
-            println!("  [✓] Fase 3: Cross-Toolchain LFS (Glibc 2.40, Libstdc++, M4, Ncurses, Bash)");
-            println!("  [✓] Fase 4: Chroot, Base Rust & groove-init (PID 1 Oficial Instalado)");
-            println!("  [✓] Fase 5: Kernel Linux RT 6.12 & Driver groove_rt_kmod (Compilado)");
-            println!("  [✓] Fase 6: The Jazz Desktop (groove-compositor Wayland Smithay)");
-            println!("  [✓] Fase 7: Suites para Artistas (Groove Ensembles Modulares)");
-            println!("  [✓] Fase 8: LiveUSB, Initramfs en Rust & Generación de ISO 588 MB");
+            println!("\nAVANCE DOCUMENTADO (verificado / en implementación / pendiente):");
+            let tracker = config
+                .storage
+                .workspace_root
+                .join("docs/PROGRESS_TRACKER.md");
+            match std::fs::read_to_string(&tracker) {
+                Ok(content) => {
+                    for line in content.lines().filter(|line| line.starts_with('|')) {
+                        println!("{line}");
+                    }
+                }
+                Err(error) => eprintln!("No se pudo leer {}: {error}", tracker.display()),
+            }
+            println!("Los estados requieren evidencia; la presencia de un binario no acredita integración.");
         }
         Commands::InitTerabit => {
-            println!("\n{}", "🛠️  INICIALIZANDO ALMACENAMIENTO TERABIT...".bold().truecolor(212, 175, 55));
-            
+            println!(
+                "\n{}",
+                "🛠️  INICIALIZANDO ALMACENAMIENTO TERABIT..."
+                    .bold()
+                    .truecolor(212, 175, 55)
+            );
+
             // Crear directorios si no existen
             std::fs::create_dir_all(&config.storage.sources_dir)?;
             std::fs::create_dir_all(&config.storage.images_dir)?;
@@ -68,7 +109,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::fs::create_dir_all(&config.storage.ensembles_dir)?;
             std::fs::create_dir_all(&config.storage.cargo_target_dir)?;
 
-            println!("  [✓] Directorios creados en {}", config.storage.terabit_root.display());
+            println!(
+                "  [✓] Directorios creados en {}",
+                config.storage.terabit_root.display()
+            );
 
             let img_path = &config.storage.lfs_image_path;
             if !img_path.exists() {
@@ -83,7 +127,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
         Commands::VerifySpecs => {
-            println!("\n{}", "📑 VERIFICANDO ESPECIFICACIONES SDD Y ARTEFACTOS...".bold().truecolor(212, 175, 55));
+            println!(
+                "\n{}",
+                "📑 VERIFICANDO ESPECIFICACIONES SDD Y ARTEFACTOS..."
+                    .bold()
+                    .truecolor(212, 175, 55)
+            );
             let specs = [
                 "docs/PRD.md",
                 "docs/USER_STORIES.md",
@@ -95,26 +144,46 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "docs/specs/004-jazz-wayland-desktop-spec.md",
                 "docs/specs/005-creator-studio-profiles-spec.md",
                 "docs/specs/006-liveusb-iso-installer-spec.md",
+                "docs/specs/007-graphical-sessions-spec.md",
+                "docs/specs/008-smithay-desktop-roadmap-spec.md",
+                "docs/plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md",
+                "docs/GRAPHICAL_BUILD.md",
             ];
 
             let root = &config.storage.workspace_root;
+            let mut missing = 0;
             for s in &specs {
                 let p = root.join(s);
                 if p.exists() {
                     println!("  [✓] {}", s.green());
                 } else {
+                    missing += 1;
                     println!("  [✗] {}", format!("{} (Falta)", s).red());
                 }
             }
+            if missing != 0 {
+                return Err(format!("Faltan {missing} documentos requeridos").into());
+            }
         }
         Commands::FetchRustRepos => {
-            println!("\n{}", "📦 PREPARANDO DESCARGA DE REPOS OFICIALES DE RUST...".bold().truecolor(212, 175, 55));
+            println!(
+                "\n{}",
+                "📦 PREPARANDO DESCARGA DE REPOS OFICIALES DE RUST..."
+                    .bold()
+                    .truecolor(212, 175, 55)
+            );
             let rust_repos_dir = config.storage.sources_dir.join("rust-repos");
             std::fs::create_dir_all(&rust_repos_dir)?;
 
             let repos = [
-                ("uutils-coreutils", "https://github.com/uutils/coreutils.git"),
-                ("sudo-rs", "https://github.com/trifectatechfoundation/sudo-rs.git"),
+                (
+                    "uutils-coreutils",
+                    "https://github.com/uutils/coreutils.git",
+                ),
+                (
+                    "sudo-rs",
+                    "https://github.com/trifectatechfoundation/sudo-rs.git",
+                ),
             ];
 
             for (name, url) in repos {
@@ -125,8 +194,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .args(["clone", "--depth", "1", url, target.to_str().unwrap()])
                         .status();
                     match status {
-                        Ok(s) if s.success() => println!("  [✓] {} clonado exitosamente.", name.green()),
-                        _ => println!("  [!] No se pudo clonar {} (se reintentará en compilación).", name.yellow()),
+                        Ok(s) if s.success() => {
+                            println!("  [✓] {} clonado exitosamente.", name.green())
+                        }
+                        _ => println!(
+                            "  [!] No se pudo clonar {} (se reintentará en compilación).",
+                            name.yellow()
+                        ),
                     }
                 } else {
                     println!("  [✓] {} ya presente en disco.", name.green());
@@ -135,14 +209,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Commands::Dashboard => {
             println!("\n  ┌────────────────────────────────────────────────────────┐");
-            println!("  │  {}       │", "MIDNIGHT JAZZ STUDIO - LIVE DASHBOARD".bold().truecolor(212, 175, 55));
+            println!(
+                "  │  {}       │",
+                "MIDNIGHT JAZZ STUDIO - DEMO SIMULADA"
+                    .bold()
+                    .truecolor(212, 175, 55)
+            );
             println!("  ├────────────────────────────────────────────────────────┤");
             println!("  │  Now Playing:  Miles Davis - 'So What' (Simulated)     │");
-            println!("  │  DSP Latency:  {}                        │", "0.8 ms @ 48kHz (64 samples)".truecolor(224, 90, 71));
+            println!(
+                "  │  DSP Latency:  {}                        │",
+                "0.8 ms @ 48kHz (64 samples)".truecolor(224, 90, 71)
+            );
             println!("  │  VU Left :     [||||||||||||||||........] -6 dB        │");
             println!("  │  VU Right:     [||||||||||||||..........] -8 dB        │");
             println!("  │  Active Take:  Take 1: Rhythm & Recording              │");
-            println!("  │  Memory Idle:  {}                                   │", "198 MB / 16 GB".truecolor(244, 239, 230));
+            println!(
+                "  │  Memory Idle:  {}                                   │",
+                "198 MB / 16 GB".truecolor(244, 239, 230)
+            );
             println!("  └────────────────────────────────────────────────────────┘");
         }
     }

@@ -30,6 +30,22 @@
 
 ---
 
+## Entrega progresiva vigente — 2026-11-04
+
+Las ocho fases siguientes describen la visión original, no una certificación
+de que todas estén completadas. El estado auditable está en el tracker.
+
+1. Base gráfica: compilación BLFS, LightDM con selector, XFCE/X11, Weston,
+   utilidades y Firefox; integración con groove-init y LiveUSB.
+2. Escritorio propio: Smithay anidado, backend DRM/KMS, shell Blue Note y
+   registro de «Groove Desktop» cuando ejecute aplicaciones reales.
+3. Estudio creativo: servicios de audio reales, telemetría medida y suites
+   verificadas. Las demostraciones actuales no acreditan esta etapa.
+
+Ver [plan de implementación](../plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md),
+[spec 007](../specs/007-graphical-sessions-spec.md) y
+[spec 008](../specs/008-smithay-desktop-roadmap-spec.md).
+
 ## 2. Mapa Detallado de las 8 Fases del Proyecto
 
 ```mermaid

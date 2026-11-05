@@ -1,6 +1,29 @@
 # Especificación Técnica 003: Rust Userspace & `groove-init` (PID 1)
 *Documento de Diseño del Sistema — Spec-Driven Development (SDD)*
 
+## Actualización de integración gráfica — 2026-11-04
+
+Esta spec define el comportamiento objetivo de PID 1. El código anterior solo
+lanzaba procesos y simulaba servicios ausentes; no implementaba la supervisión
+indicada en el diagrama. La integración gráfica completa esa base.
+
+Los manifiestos conservan sus campos existentes y añaden service.kind
+(simple/oneshot), service.ready_path, service.timeout_ms y exec.console.
+requires implica orden y disponibilidad; after solo ordena servicios presentes.
+Un ciclo, dependencia requerida ausente, nombre duplicado o política inválida
+impide iniciar el grafo. Un fallo real nunca cuenta como servicio listo.
+
+El supervisor aplica UID/GID/grupos, limita reinicios, recoge hijos y termina
+los grupos de procesos en orden inverso al apagar. Un daemon terminado no
+satisface requires, aunque salga con código 0; un oneshot exitoso sí.
+Servicios daemon escriben logs independientes; console=true conserva la consola.
+--check-services DIRECTORY valida manifiestos sin montar ni iniciar servicios.
+
+La sesión gráfica depende de dispositivos/D-Bus, no de PipeWire. single o
+groove.text=1 selecciona manifiestos de recuperación. La disponibilidad de
+un socket no sustituye una comprobación funcional del servicio.
+Ver spec 007 y el tracker para estado y evidencia.
+
 ---
 
 ## 1. Alcance y Propósito

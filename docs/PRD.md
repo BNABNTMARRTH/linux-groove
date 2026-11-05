@@ -4,6 +4,28 @@
 
 ---
 
+## Estado y entrega gráfica acordada — 2026-11-04
+
+La ISO ARM64 actual arranca mediante UEFI/ACPI en UTM y alcanza la TUI.
+La primera entrega gráfica incorpora LightDM con selector XFCE/X11 y Weston,
+utilidades y Firefox ESR; los componentes se compilan desde fuentes usando
+BLFS 12.2 System V como referencia y groove-init como PID 1.
+
+El acceso de groove sin contraseña se limita al LiveUSB, sin autologin.
+La persistencia, x86_64 y nuevas suites creativas quedan fuera de esta entrega.
+El escritorio Rust/Smithay continúa como etapa posterior; la TUI y la demo
+minifb existentes no acreditan un compositor Wayland funcional.
+
+Las métricas siguientes son objetivos de producto, no resultados actuales.
+La ISO gráfica puede superar 800 MB; tamaño, RAM, arranque, FPS y latencia se
+medirán con el hardware y procedimiento registrados. No se garantizan cero
+xruns ni tiempos de arranque a partir de simulaciones.
+
+Referencias: [plan](plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md),
+[sesiones gráficas](specs/007-graphical-sessions-spec.md),
+[hoja de ruta Smithay](specs/008-smithay-desktop-roadmap-spec.md) y
+[avance con evidencia](PROGRESS_TRACKER.md).
+
 ## 1. Introducción y Visión del Producto
 
 ### 1.1 Declaración de Misión
@@ -18,11 +40,11 @@ El sistema está optimizado para flujos de trabajo artísticos profesionales (**
 | Métrica | Objetivo LFS Estándar | Objetivo Linux Groove OS | Justificación Técnica |
 | :--- | :--- | :--- | :--- |
 | **Tamaño Base ISO** | ~1.8 GB - 3.2 GB | **< 800 MB** | Sistema modular con Ensembles externos en SquashFS. |
-| **Consumo RAM (Idle)** | ~550 MB - 900 MB | **< 220 MB** | Init propio en Rust (`groove-init`) + compositor Smithay sin bloatware de X11/Systemd. |
+| **Consumo RAM (Idle)** | ~550 MB - 900 MB | **< 220 MB** | Init propio en Rust (`groove-init`) + compositor Smithay (objetivo del compositor propio; XFCE usa X11). |
 | **Tiempo de Booteo** | 12s - 25s | **< 3.0s** (en SSD/NVMe) | Inicialización en paralelo basada en grafo acíclico dirigido (DAG) en Rust. |
 | **Latencia de Audio** | 10 ms - 20 ms | **< 2.5 ms** @ 48kHz (64 samples) | Kernel Linux `PREEMPT_RT` + driver `groove_rt_kmod` en Rust + PipeWire RT. |
-| **Xruns en 60 mins** | Frecuentes (> 10) | **0 xruns garantizados** | Memlock ilimitado, prioridad FIFO 98 y aislamiento de hilos de audio. |
-| **Frame Pacing UI** | Inconsistente (X11) | **60 / 120 FPS fijos** | Protocolos Wayland directos sobre WGPU y DRM/KMS. |
+| **Xruns en 60 mins** | Frecuentes (> 10) | **0 xruns como objetivo medible** | Memlock ilimitado, prioridad FIFO 98 y aislamiento de hilos de audio. |
+| **Frame Pacing UI** | Inconsistente (X11) | **60 / 120 FPS como objetivo** | Protocolos Wayland directos sobre WGPU y DRM/KMS. |
 
 ---
 
