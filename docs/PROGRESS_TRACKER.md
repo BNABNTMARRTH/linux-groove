@@ -9,7 +9,7 @@ como [registro sin validación](progress/LEGACY_PROGRESS_2026-11-04.md).
 |---|---|---|
 | Arranque ARM64 UEFI con ACPI | verificado | Prueba previa de ISO en UTM: prompt groove@bluenote; docs/UTM_BOOT.md |
 | TUI y demostración minifb | verificado | Código de groove-compositor; capacidades simuladas identificadas |
-| Plan de entrega gráfica | verificado | docs/plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md y DEDICATED_WESTON_WAYLAND_PLAN.md |
+| Plan de entrega gráfica | verificado | docs/plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md, DEDICATED_WESTON_WAYLAND_PLAN.md y DESKTOP_EVOLUTION_OPTIONS.md |
 | Specs de sesiones y Smithay | verificado | Specs 007, 008, 009 y 010; estado e interfaces documentados |
 | Supervisor real de groove-init | verificado | Validación DAG en chroot superada; soporte de wayland-services y recuperación |
 | Fuentes BLFS y construcción reproducible | verificado | Recetas compiladas en /opt/groove-graphics; lockfile y hashes verificados |
