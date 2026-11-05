@@ -619,6 +619,7 @@
   },
   {
     "name": "weston",
+    "pre": "[ ! -f /workspace/scripts/graphics/patches/weston-13.0.3-glassmorphism.patch ] || patch -p1 < /workspace/scripts/graphics/patches/weston-13.0.3-glassmorphism.patch",
     "build": "meson",
     "options": "-Dbackend-drm=true -Dbackend-drm-screencast-vaapi=false -Dbackend-x11=false -Dbackend-wayland=false -Dbackend-rdp=false -Dbackend-vnc=false -Dbackend-pipewire=false -Dbackend-headless=true -Drenderer-gl=false -Dcolor-management-lcms=false -Dsystemd=false -Dremoting=false -Dpipewire=false -Dxwayland=false -Dscreenshare=false -Dtest-junit-xml=false -Ddemo-clients=true -Dshell-desktop=true -Dshell-fullscreen=false -Dshell-ivi=false -Dshell-kiosk=false -Dsimple-clients=shm,damage -Dtools=terminal,info,debug -Dimage-webp=false -Dwcap-decode=false",
     "url": "https://gitlab.freedesktop.org/wayland/weston/-/releases/13.0.3/downloads/weston-13.0.3.tar.xz",

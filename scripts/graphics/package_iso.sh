@@ -60,12 +60,12 @@ if [ -f /boot/grub/fonts/unicode.pf2 ]; then
         terminal_output gfxterm console
     fi
 fi
-menuentry "Linux Groove 0.2.0 - Selector XFCE / Weston (LightDM)" {
-    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0
+menuentry "Linux Groove 0.2.0 - Blue Note Glass Desktop (Wayland)" {
+    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.wayland=1
     initrd /boot/initramfs.cpio.gz
 }
-menuentry "Linux Groove 0.2.0 - Compositor Weston (Wayland puro)" {
-    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.wayland=1
+menuentry "Linux Groove 0.2.0 - Selector XFCE / Weston (LightDM)" {
+    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0
     initrd /boot/initramfs.cpio.gz
 }
 menuentry "Linux Groove - Consola de recuperacion" {
