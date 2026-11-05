@@ -27,7 +27,7 @@ docker exec "$BUILDER" mkdir -p "$SOURCE_ROOT/scripts/graphics" "$SOURCE_ROOT/ke
 docker cp "$WORKSPACE/scripts/graphics/." "$BUILDER:$SOURCE_ROOT/scripts/graphics/"
 docker cp "$WORKSPACE/scripts/build_initramfs.sh" "$BUILDER:$SOURCE_ROOT/scripts/"
 docker cp "$WORKSPACE/kernel/groove_arm64_defconfig" "$BUILDER:$SOURCE_ROOT/kernel/"
-docker cp "$WORKSPACE/backgrouds_groove/groove-piano-background-4k.png" "$BUILDER:$SOURCE_ROOT/backgrouds_groove/"
+docker cp "$WORKSPACE/backgrouds_groove/." "$BUILDER:$SOURCE_ROOT/backgrouds_groove/"
 docker cp "$WORKSPACE/crates/." "$BUILDER:$SOURCE_ROOT/crates/"
 docker cp "$WORKSPACE/Cargo.toml" "$BUILDER:$SOURCE_ROOT/"
 docker cp "$WORKSPACE/Cargo.lock" "$BUILDER:$SOURCE_ROOT/"
@@ -56,6 +56,10 @@ docker exec -e GROOVE_SOURCE_ROOT="$SOURCE_ROOT" "$BUILDER" bash -euc '
         $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs gtk+-3.0) \
         -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
         -o /opt/groove-graphics/bin/groove-control-center
+    cc -O2 -Wall -Wextra "$GROOVE_SOURCE_ROOT"/scripts/graphics/blue-note/groove-greeter-ui.c \
+        $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs liblightdm-gobject-1 gtk+-3.0) \
+        -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
+        -o /opt/groove-graphics/bin/groove-greeter-ui
     cc -D_GNU_SOURCE -O2 -I/opt/groove-wayfire/include -I/opt/groove-graphics/include \
        "$GROOVE_SOURCE_ROOT"/scripts/graphics/wayfire/groove-gpu-info.c \
        -L/opt/groove-wayfire/lib -Wl,-rpath,/opt/groove-wayfire/lib \

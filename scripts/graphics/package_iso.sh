@@ -33,6 +33,9 @@ cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-dock.c" \
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-control-center.c" \
     $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs gtk+-3.0) \
     -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-control-center"
+cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-greeter-ui.c" \
+    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs liblightdm-gobject-1 gtk+-3.0) \
+    -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-greeter-ui"
 # Copy only the compiled source prefix. Never copy libraries from builder /usr.
 "$PREFIX/bin/gdk-pixbuf-query-loaders" > "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache.tmp"
 mv "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache.tmp" "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"

@@ -10,7 +10,8 @@ APPLICATIONS = (
     ('terminal', 'Terminal', 'xfce4-terminal --disable-server --working-directory=/home/groove'),
     ('files', 'Archivos', 'thunar'),
     ('editor', 'Editor', 'mousepad'),
-    ('browser', 'Firefox', 'firefox'),
+    ('browser', 'Brave', 'firefox'),
+    ('office', 'OnlyOffice', '/opt/groove-graphics/opt/onlyoffice/desktopeditors/DesktopEditors'),
 )
 
 def install(root, environment):
@@ -45,9 +46,10 @@ fi
 exit "$result"
 ''', 0o755)
     for name, label, command in APPLICATIONS:
+        cmd_path = command if command.startswith('/') else PREFIX + '/bin/' + command
         put('/usr/libexec/groove-' + name,
             '#!/bin/sh\nexec /usr/libexec/groove-launch "' + label + '" ' + name +
-            ' ' + PREFIX + '/bin/' + command + ' "$@"\n', 0o755)
+            ' ' + cmd_path + ' "$@"\n', 0o755)
         put('/usr/share/applications/groove-launcher-' + name + '.desktop', f'''
         [Desktop Entry]
         Type=Application
@@ -58,6 +60,18 @@ exit "$result"
         Terminal=false
         Categories=Utility;
         ''')
+    put('/usr/libexec/groove-browser', '''#!/bin/sh
+export LD_LIBRARY_PATH=/opt/groove-apps/lib:/opt/groove-graphics/lib:${LD_LIBRARY_PATH:-}
+if [ -x /opt/groove-graphics/opt/brave/brave ]; then
+    exec /usr/libexec/groove-launch "Brave" browser /opt/groove-graphics/opt/brave/brave --no-sandbox --disable-gpu-sandbox --no-first-run --no-default-browser-check file:///usr/share/groove/welcome.html "$@"
+else
+    exec /usr/libexec/groove-launch "Firefox" browser /opt/groove-graphics/bin/firefox file:///usr/share/groove/welcome.html "$@"
+fi
+''', 0o755)
+    put('/usr/libexec/groove-office', '''#!/bin/sh
+export LD_LIBRARY_PATH=/opt/groove-graphics/opt/onlyoffice/desktopeditors:/opt/groove-apps/lib:/opt/groove-graphics/lib:${LD_LIBRARY_PATH:-}
+exec /usr/libexec/groove-launch "OnlyOffice" office /opt/groove-graphics/opt/onlyoffice/desktopeditors/DesktopEditors "$@"
+''', 0o755)
     put('/usr/libexec/groove-system-status', '''#!/bin/sh
 set -eu
 total=0; available=0

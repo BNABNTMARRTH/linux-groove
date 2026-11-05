@@ -8,18 +8,24 @@ import textwrap
 PREFIX = '/opt/groove-graphics'
 CUSTOM_ICONS_DIR = Path(__file__).resolve().parent / 'custom-icons'
 THEMES_ARCHIVE_DIR = Path('/backup/sources/themes')
+FONTS_ARCHIVE_DIR = Path('/backup/sources/fonts')
+APPS_ARCHIVE_DIR = Path('/backup/sources/apps')
+WALLPAPERS_SOURCE_DIR = Path('/tmp/groove-wayfire-inputs/backgrouds_groove')
 
-def create_svg_button(color, border_color, glyph=None, glyph_color=None):
+def create_svg_button(color, border_color, bg_color='#20242b', border_top='#2e3849', border_bot='#141720', glyph=None, glyph_color=None):
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">',
-        f'  <circle cx="9" cy="9" r="6" fill="{color}" stroke="{border_color}" stroke-width="0.75"/>'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="32" viewBox="0 0 22 32">',
+        f'  <rect width="22" height="32" fill="{bg_color}"/>',
+        f'  <rect width="22" height="1" fill="{border_top}"/>',
+        f'  <rect y="31" width="22" height="1" fill="{border_bot}"/>',
+        f'  <circle cx="11" cy="16" r="6.2" fill="{color}" stroke="{border_color}" stroke-width="0.8"/>'
     ]
     if glyph == 'x':
-        svg.append(f'  <path d="M6.5 6.5l5 5m0-5l-5 5" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M8.5 13.5l5 5m0-5l-5 5" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     elif glyph == '-':
-        svg.append(f'  <path d="M6 9h6" fill="none" stroke="{glyph_color}" stroke-width="1.4" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M8 16h6" fill="none" stroke="{glyph_color}" stroke-width="1.4" stroke-linecap="round"/>')
     elif glyph == '+':
-        svg.append(f'  <path d="M9 6v6m-3-3h6" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M11 13v6m-3-3h6" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     svg.append('</svg>')
     return '\n'.join(svg)
 
@@ -57,6 +63,7 @@ def install(root):
 
     converter = root / PREFIX.lstrip('/') / 'bin/rsvg-convert'
     icon_cache_bin = root / PREFIX.lstrip('/') / 'bin/gtk-update-icon-cache'
+    fc_cache_bin = root / PREFIX.lstrip('/') / 'bin/fc-cache'
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = str(root / PREFIX.lstrip('/') / 'lib')
 
@@ -107,14 +114,99 @@ def install(root):
         if not ws_dark_link.exists() and not ws_dark_link.is_symlink():
             ws_dark_link.symlink_to('WhiteSur')
 
+    # 0b. Install Inter Font Family for macOS Typography & Fontconfig Subpixel Anti-Aliasing
+    inter_target = root / 'usr/share/fonts/inter'
+    inter_target.mkdir(parents=True, exist_ok=True)
+    inter_src = FONTS_ARCHIVE_DIR / 'inter/extras/ttf'
+    if inter_src.is_dir():
+        for ttf in inter_src.glob('*.ttf'):
+            shutil.copy2(ttf, inter_target / ttf.name)
+
+    # Enable Fontconfig Subpixel RGB and LCD Filter for ultra-smooth fonts
+    fonts_conf_d = root / PREFIX.lstrip('/') / 'etc/fonts/conf.d'
+    if fonts_conf_d.is_dir():
+        (fonts_conf_d / '10-sub-pixel-none.conf').unlink(missing_ok=True)
+        subpixel_avail = root / PREFIX.lstrip('/') / 'share/fontconfig/conf.avail/10-sub-pixel-rgb.conf'
+        if subpixel_avail.exists():
+            (fonts_conf_d / '10-sub-pixel-rgb.conf').unlink(missing_ok=True)
+            (fonts_conf_d / '10-sub-pixel-rgb.conf').symlink_to('../../../share/fontconfig/conf.avail/10-sub-pixel-rgb.conf')
+
+    font_local_conf = '''<?xml version="1.0"?>
+    <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+    <fontconfig>
+      <dir>/usr/share/fonts</dir>
+      <dir>/opt/groove-graphics/share/fonts</dir>
+      <match target="font">
+        <edit mode="assign" name="antialias"><bool>true</bool></edit>
+        <edit mode="assign" name="hinting"><bool>true</bool></edit>
+        <edit mode="assign" name="hintstyle"><const>hintslight</const></edit>
+        <edit mode="assign" name="rgba"><const>rgb</const></edit>
+        <edit mode="assign" name="lcdfilter"><const>lcddefault</const></edit>
+      </match>
+      <alias>
+        <family>sans-serif</family>
+        <prefer><family>Inter</family><family>DejaVu Sans</family></prefer>
+      </alias>
+      <alias>
+        <family>system-ui</family>
+        <prefer><family>Inter</family><family>DejaVu Sans</family></prefer>
+      </alias>
+    </fontconfig>
+    '''
+    put('/etc/fonts/local.conf', font_local_conf)
+    put(PREFIX + '/etc/fonts/local.conf', font_local_conf)
+
+    if fc_cache_bin.exists():
+        subprocess.run([str(fc_cache_bin), '-f', str(inter_target)], env=env, check=False)
+
+    # 0c. Install Groove Wallpapers Gallery & Portal welcome.html
+    bg_groove_dir = root / 'usr/share/backgrounds/groove'
+    bg_groove_dir.mkdir(parents=True, exist_ok=True)
+    if WALLPAPERS_SOURCE_DIR.is_dir():
+        for wp in WALLPAPERS_SOURCE_DIR.glob('*.*'):
+            if wp.suffix.lower() in ('.png', '.jpg', '.jpeg'):
+                shutil.copy2(wp, bg_groove_dir / wp.name)
+    # Default wallpaper: Piano 4k (matches package_iso.sh audit contract)
+    piano_wp = WALLPAPERS_SOURCE_DIR / 'groove-piano-background-4k.png'
+    default_wp = root / 'usr/share/backgrounds/groove-default.png'
+    if piano_wp.exists():
+        shutil.copy2(piano_wp, default_wp)
+
+    welcome_src = Path(__file__).resolve().parent / 'welcome.html'
+    if welcome_src.exists():
+        put('/usr/share/groove/welcome.html', welcome_src.read_text())
+
+    # 0d. Install Brave Browser (ARM64) and OnlyOffice Desktop Editors (ARM64)
+    brave_zip = APPS_ARCHIVE_DIR / 'brave-browser-1.99.55-linux-arm64.zip'
+    if brave_zip.exists():
+        brave_target = root / PREFIX.lstrip('/') / 'opt/brave'
+        brave_target.mkdir(parents=True, exist_ok=True)
+        subprocess.run(['unzip', '-q', '-o', str(brave_zip), '-d', str(brave_target)], check=True)
+        (brave_target / 'brave').chmod(0o755)
+
+    onlyoffice_tar = APPS_ARCHIVE_DIR / 'onlyoffice-desktopeditors-aarch64.tar.xz'
+    if onlyoffice_tar.exists():
+        oo_parent = root / PREFIX.lstrip('/')
+        subprocess.run(['tar', '-xJf', str(onlyoffice_tar), '-C', str(oo_parent)], check=True)
+        oo_bin = oo_parent / 'opt/onlyoffice/desktopeditors/DesktopEditors'
+        if oo_bin.exists():
+            oo_bin.chmod(0o755)
+
+    src_apps_lib = Path('/opt/groove-apps/lib')
+    dst_apps_lib = root / 'opt/groove-apps/lib'
+    if src_apps_lib.is_dir():
+        dst_apps_lib.mkdir(parents=True, exist_ok=True)
+        for lib_file in src_apps_lib.iterdir():
+            shutil.copy2(lib_file, dst_apps_lib / lib_file.name)
+
     theme_dir = root / 'usr/share/themes/GrooveBlueNote/xfwm4'
     theme_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1. xfwm4 themerc (macOS Traffic Light style on the left)
+    # 1. xfwm4 themerc (macOS Traffic Light style on the left, perfectly smoothed)
     themerc = '''
     button_layout=CHM|
-    button_offset=8
-    button_spacing=6
+    button_offset=10
+    button_spacing=2
     full_width_title=false
     title_alignment=center
     title_shadow_active=false
@@ -129,7 +221,7 @@ def install(root):
     '''
     put('/usr/share/themes/GrooveBlueNote/xfwm4/themerc', themerc)
 
-    # 2. Render traffic-light buttons via rsvg-convert
+    # 2. Render traffic-light buttons via rsvg-convert with SOLID titlebar background (8-bit anti-aliasing)
     button_specs = [
         # Close: Red
         ('close-active', '#FF5F56', '#E0443E', None, None),
@@ -152,12 +244,16 @@ def install(root):
     tmp_dir.mkdir(parents=True, exist_ok=True)
 
     for name, col, border, glyph, glyph_col in button_specs:
-        svg_content = create_svg_button(col, border, glyph, glyph_col)
+        is_inactive = 'inactive' in name
+        bg_col = '#1a1d23' if is_inactive else '#20242b'
+        b_top = '#242b38' if is_inactive else '#2e3849'
+        b_bot = '#101217' if is_inactive else '#141720'
+        svg_content = create_svg_button(col, border, bg_color=bg_col, border_top=b_top, border_bot=b_bot, glyph=glyph, glyph_color=glyph_col)
         svg_path = tmp_dir / f'{name}.svg'
         svg_path.write_text(svg_content)
         png_path = theme_dir / f'{name}.png'
         if converter.exists():
-            subprocess.run([str(converter), '-w', '18', '-h', '18',
+            subprocess.run([str(converter), '-w', '22', '-h', '32',
                             str(svg_path), '-o', str(png_path)], env=env, check=True)
             png_path.chmod(0o644)
 
@@ -231,7 +327,8 @@ def install(root):
         'terminal': 'utilities-terminal.svg',
         'files': 'system-file-manager.svg',
         'editor': 'org.xfce.mousepad.svg',
-        'browser': 'firefox.svg',
+        'browser': 'brave.svg',
+        'office': 'onlyoffice-desktopeditors.svg',
         'system': 'utilities-system-monitor.svg',
         'settings': 'preferences-system.svg',
         'installer': 'system-installer.svg',
@@ -345,6 +442,9 @@ def install(root):
 
     opacity-rule = [
       "100:class_g = 'groove-dock'",
+      "100:class_g = 'Brave-browser'",
+      "100:class_g = 'brave-browser'",
+      "100:class_g = 'DesktopEditors'",
       "100:class_g = 'Firefox'",
       "100:class_g = 'firefox'",
       "88:class_g = 'Xfce4-terminal'",
@@ -395,19 +495,19 @@ def install(root):
     RunHook=0
     ''')
 
-    # 7. XFCE Window Manager Configuration (xfwm4.xml)
+    # 7. XFCE Window Manager Configuration (xfwm4.xml) with Inter Font
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml', '''
     <?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfwm4" version="1.0">
       <property name="general" type="empty">
         <property name="theme" type="string" value="WhiteSur-Dark"/>
         <property name="button_layout" type="string" value="CHM|"/>
-        <property name="button_offset" type="int" value="8"/>
-        <property name="button_spacing" type="int" value="6"/>
+        <property name="button_offset" type="int" value="10"/>
+        <property name="button_spacing" type="int" value="2"/>
         <property name="title_alignment" type="string" value="center"/>
         <property name="title_shadow_active" type="string" value="false"/>
         <property name="title_shadow_inactive" type="string" value="false"/>
-        <property name="title_font" type="string" value="DejaVu Sans Bold 10"/>
+        <property name="title_font" type="string" value="Inter Bold 10.5"/>
         <property name="use_compositing" type="bool" value="false"/>
         <property name="box_resize" type="bool" value="false"/>
         <property name="box_move" type="bool" value="false"/>
@@ -453,7 +553,7 @@ def install(root):
     '''
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
 
-    # 9. Single 32px Top Menu Bar (xfce4-panel.xml) with Custom Warm Soundwave Logo (no [x] or hex emoji box!)
+    # 9. Single 32px Top Menu Bar (xfce4-panel.xml) with Custom Warm Soundwave Logo
     panel_xml = '''<?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfce4-panel" version="1.0">
       <property name="configver" type="int" value="2"/>
@@ -523,14 +623,18 @@ def install(root):
     put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
     put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
 
-    # 10. GTK3 Settings & Decorations (WhiteSur-Dark + WhiteSur Icons)
+    # 10. GTK3 Settings & Decorations (WhiteSur-Dark + WhiteSur Icons + Inter Font + Subpixel Xft)
     put('/etc/xdg/gtk-3.0/settings.ini', '''
     [Settings]
     gtk-theme-name=WhiteSur-Dark
     gtk-icon-theme-name=WhiteSur
-    gtk-font-name=DejaVu Sans 11
+    gtk-font-name=Inter 10.5
     gtk-application-prefer-dark-theme=true
     gtk-decoration-layout=close,minimize,maximize:menu
+    gtk-xft-antialias=1
+    gtk-xft-hinting=1
+    gtk-xft-hintstyle=hintslight
+    gtk-xft-rgba=rgb
     ''')
 
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml', '''
@@ -541,22 +645,26 @@ def install(root):
         <property name="IconThemeName" type="string" value="WhiteSur"/>
       </property>
       <property name="Gtk" type="empty">
-        <property name="FontName" type="string" value="DejaVu Sans 11"/>
+        <property name="FontName" type="string" value="Inter 10.5"/>
         <property name="DecorationLayout" type="string" value="close,minimize,maximize:menu"/>
+      </property>
+      <property name="Xft" type="empty">
+        <property name="DPI" type="int" value="-1"/>
+        <property name="Antialias" type="int" value="1"/>
+        <property name="Hinting" type="int" value="1"/>
+        <property name="HintStyle" type="string" value="hintslight"/>
+        <property name="RGBA" type="string" value="rgb"/>
+        <property name="Lcdfilter" type="string" value="lcddefault"/>
       </property>
     </channel>
     ''')
 
-    greeter_conf = root / 'etc/lightdm/lightdm-gtk-greeter.conf'
-    if greeter_conf.exists():
-        gtxt = greeter_conf.read_text()
-        gtxt = gtxt.replace('theme-name=GrooveBlueNote', 'theme-name=WhiteSur-Dark')
-        gtxt = gtxt.replace('icon-theme-name=Adwaita', 'icon-theme-name=WhiteSur')
-        greeter_conf.write_text(gtxt)
-
     # 11. Glassmorphism CSS Styling for Menus, Top Bar, Popovers, and Thunar Sidebar
     glass_css = '''
     /* Linux Groove macOS Glassmorphism Overrides */
+    * {
+        font-family: 'Inter', 'DejaVu Sans', sans-serif;
+    }
     .xfce4-panel,
     panel-toplevel {
         background-color: rgba(16, 20, 30, 0.78);
@@ -620,7 +728,6 @@ def install(root):
     ''' + glass_css
     put('/usr/share/themes/GrooveBlueNote/gtk-3.0/gtk.css', fallback_css)
 
-    # Also append Glassmorphism rules to WhiteSur-Dark gtk-3.0 CSS and user gtk.css
     for ws_css_rel in ('usr/share/themes/WhiteSur-Dark/gtk-3.0/gtk.css',
                        'usr/share/themes/WhiteSur-Dark/gtk-3.0/gtk-dark.css'):
         ws_css_path = root / ws_css_rel
@@ -637,9 +744,10 @@ def install(root):
     desktop_dir.mkdir(parents=True, exist_ok=True)
 
     launchers = [
+        ('brave.desktop', 'Brave Browser', '/usr/libexec/groove-browser', '/usr/share/icons/groove-glass/browser.png'),
+        ('onlyoffice.desktop', 'OnlyOffice Desktop Editors', '/usr/libexec/groove-office', '/usr/share/icons/groove-glass/office.png'),
         ('groove-control-center.desktop', 'Centro de Control', '/usr/libexec/groove-control-center', '/usr/share/icons/groove-glass/system.png'),
         ('groove-installer.desktop', 'Instalar Linux Groove OS', '/usr/libexec/groove-installer-gui', '/usr/share/icons/groove-glass/installer.png'),
-        ('firefox.desktop', 'Firefox ESR', '/usr/libexec/groove-browser', '/usr/share/icons/groove-glass/browser.png'),
         ('thunar.desktop', 'Archivos', '/usr/libexec/groove-files', '/usr/share/icons/groove-glass/files.png'),
         ('xfce4-terminal.desktop', 'Terminal', '/usr/libexec/groove-terminal', '/usr/share/icons/groove-glass/terminal.png')
     ]

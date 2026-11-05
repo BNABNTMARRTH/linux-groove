@@ -47,7 +47,7 @@ def main():
     else
         export LIBGL_ALWAYS_SOFTWARE=1
     fi
-    export GTK_THEME=GrooveBlueNote
+    export GTK_THEME=WhiteSur-Dark
     export LANG=es_MX.UTF-8
     '''
     script('groove-session-wrapper',environment+'''
@@ -76,7 +76,7 @@ def main():
     printf '%s\\n' "$$" > "$XDG_RUNTIME_DIR/groove-weston.pid"
     exec {PREFIX}/bin/weston --backend=drm --renderer=pixman --config=/etc/xdg/weston/weston.ini
     ''')
-    script('groove-greeter',environment+f'exec {PREFIX}/sbin/lightdm-gtk-greeter\n')
+    script('groove-greeter',environment+f'exec {PREFIX}/bin/groove-greeter-ui\n')
     script('groove-xserver',f'exec {PREFIX}/bin/Xorg -logfile /var/log/lightdm/x-0.log -modulepath {PREFIX}/lib/xorg/modules -nolisten tcp "$@"\n')
     script('groove-live-access','''
     case "${PAM_SERVICE:-}" in lightdm|login) ;; *) exit 1 ;; esac
@@ -132,7 +132,8 @@ def main():
     position=50%,center 50%,center
     ''')
     for path,name,exec_ in [('xsessions/groove-xfce.desktop','Groove XFCE','/usr/libexec/groove-xfce'),('wayland-sessions/weston.desktop','Weston','/usr/libexec/groove-weston'),('xgreeters/groove-greeter.desktop','Groove Blue Note','/usr/libexec/groove-greeter')]:
-        put('/usr/share/'+path,f'[Desktop Entry]\nName={name}\nComment=Linux Groove OS\nExec={exec_}\nTryExec={exec_}\nType=Application\nDesktopNames={"XFCE" if "xfce" in path else "Weston"};\n')
+        desktop_names = "XFCE;" if "xfce" in path else ("Weston;" if "weston" in path else "LightDM;")
+        put('/usr/share/'+path,f'[Desktop Entry]\nName={name}\nComment=Linux Groove OS\nExec={exec_}\nTryExec={exec_}\nType=Application\nDesktopNames={desktop_names}\n')
     put('/etc/X11/xorg.conf',f'''
     Section "Device"
         Identifier "VirtIO"
