@@ -38,6 +38,7 @@ fi
 chroot "$ROOT" /usr/bin/localedef -i es_MX -f UTF-8 es_MX.UTF-8
 /sbin/ldconfig -r "$ROOT"
 chroot "$ROOT" /sbin/groove-init --check-services /etc/groove/services
+chroot "$ROOT" /sbin/groove-init --check-services /etc/groove/wayland-services
 chroot "$ROOT" /sbin/groove-init --check-services /etc/groove/recovery-services
 bash /workspace/scripts/graphics/audit_runtime.sh "$ROOT"
 bash /workspace/scripts/graphics/test_live_access.sh "$ROOT"
@@ -59,8 +60,12 @@ if [ -f /boot/grub/fonts/unicode.pf2 ]; then
         terminal_output gfxterm console
     fi
 fi
-menuentry "Linux Groove 0.2.0 - Selector XFCE / Weston" {
+menuentry "Linux Groove 0.2.0 - Selector XFCE / Weston (LightDM)" {
     linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0
+    initrd /boot/initramfs.cpio.gz
+}
+menuentry "Linux Groove 0.2.0 - Compositor Weston (Wayland puro)" {
+    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.wayland=1
     initrd /boot/initramfs.cpio.gz
 }
 menuentry "Linux Groove - Consola de recuperacion" {

@@ -527,6 +527,17 @@ fn setup_loopback() {
     }
 }
 
+pub fn service_dir_from_cmdline(cmdline: &str) -> &'static str {
+    let tokens: Vec<&str> = cmdline.split_whitespace().collect();
+    if tokens.iter().any(|s| ["single", "groove.text=1"].contains(s)) {
+        "/etc/groove/recovery-services"
+    } else if tokens.iter().any(|s| ["groove.wayland=1", "groove.session=weston"].contains(s)) {
+        "/etc/groove/wayland-services"
+    } else {
+        "/etc/groove/services"
+    }
+}
+
 fn run() -> Result<(), String> {
     let args = std::env::args().collect::<Vec<_>>();
     if args.get(1).map(String::as_str) == Some("--check-services") {
@@ -557,14 +568,7 @@ fn run() -> Result<(), String> {
     #[cfg(target_os = "linux")]
     setup_loopback();
     let cmdline = fs::read_to_string("/proc/cmdline").unwrap_or_default();
-    let text = cmdline
-        .split_whitespace()
-        .any(|s| ["single", "groove.text=1"].contains(&s));
-    let dir = if text {
-        "/etc/groove/recovery-services"
-    } else {
-        "/etc/groove/services"
-    };
+    let dir = service_dir_from_cmdline(&cmdline);
     let mut supervisor =
         Supervisor::new(read_manifests(Path::new(dir))?, "/var/log/groove".into())?;
     while !SHUTDOWN.load(Ordering::Relaxed) {
@@ -720,5 +724,29 @@ mod tests {
         assert!(s.failed.contains("timeout"));
         assert!(s.running.is_empty());
         let _ = fs::remove_dir_all(dir);
+    }
+    #[test]
+    fn parses_service_dir_from_kernel_cmdline() {
+        assert_eq!(service_dir_from_cmdline(""), "/etc/groove/services");
+        assert_eq!(
+            service_dir_from_cmdline("console=tty0 root=/dev/sr0"),
+            "/etc/groove/services"
+        );
+        assert_eq!(
+            service_dir_from_cmdline("console=tty0 single"),
+            "/etc/groove/recovery-services"
+        );
+        assert_eq!(
+            service_dir_from_cmdline("console=tty0 groove.text=1"),
+            "/etc/groove/recovery-services"
+        );
+        assert_eq!(
+            service_dir_from_cmdline("console=tty0 groove.wayland=1"),
+            "/etc/groove/wayland-services"
+        );
+        assert_eq!(
+            service_dir_from_cmdline("console=tty0 groove.session=weston"),
+            "/etc/groove/wayland-services"
+        );
     }
 }

@@ -4,12 +4,13 @@
 
 ---
 
-## Estado y entrega gráfica acordada — 2026-11-04
+## Estado y entrega gráfica acordada — 2026-11-05
 
-La ISO ARM64 actual arranca mediante UEFI/ACPI en UTM y alcanza la TUI.
-La primera entrega gráfica incorpora LightDM con selector XFCE/X11 y Weston,
-utilidades y Firefox ESR; los componentes se compilan desde fuentes usando
-BLFS 12.2 System V como referencia y groove-init como PID 1.
+La ISO ARM64 actual arranca mediante UEFI/ACPI en UTM y alcanza tanto la TUI como el selector gráfico de LightDM con apariencia Blue Note.
+La entrega gráfica 0.2.0 incorpora:
+1. **LightDM con selector XFCE/X11 y Weston**, utilidades completas de escritorio y Firefox ESR 153.6.0 compilado desde fuentes.
+2. **Entrada dedicada en GRUB para Weston (Wayland puro)** mediante el parámetro `groove.wayland=1` gestionado por `groove-init`.
+Los componentes se compilan desde fuentes usando BLFS 12.2 System V como referencia y `groove-init` como PID 1.
 
 El acceso de groove sin contraseña se limita al LiveUSB, sin autologin.
 La persistencia, x86_64 y nuevas suites creativas quedan fuera de esta entrega.
@@ -17,12 +18,14 @@ El escritorio Rust/Smithay continúa como etapa posterior; la TUI y la demo
 minifb existentes no acreditan un compositor Wayland funcional.
 
 Las métricas siguientes son objetivos de producto, no resultados actuales.
-La ISO gráfica puede superar 800 MB; tamaño, RAM, arranque, FPS y latencia se
+La ISO gráfica ronda los 836 MB; tamaño, RAM, arranque, FPS y latencia se
 medirán con el hardware y procedimiento registrados. No se garantizan cero
 xruns ni tiempos de arranque a partir de simulaciones.
 
 Referencias: [plan](plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md),
+[plan Weston](plans/DEDICATED_WESTON_WAYLAND_PLAN.md),
 [sesiones gráficas](specs/007-graphical-sessions-spec.md),
+[Wayland dedicado y traspaso](specs/009-wayland-standalone-and-session-handoff-spec.md),
 [hoja de ruta Smithay](specs/008-smithay-desktop-roadmap-spec.md) y
 [avance con evidencia](PROGRESS_TRACKER.md).
 

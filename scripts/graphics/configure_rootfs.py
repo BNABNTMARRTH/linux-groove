@@ -50,11 +50,21 @@ def main():
     exec dbus-run-session -- "$@"
     ''')
     script('groove-xfce','export XDG_SESSION_TYPE=x11\nexport XDG_CURRENT_DESKTOP=XFCE\nexec '+PREFIX+'/bin/startxfce4\n')
-    script('groove-weston',f'''
+    script('groove-weston',environment+f'''
     export XDG_SESSION_TYPE=wayland
     export XDG_CURRENT_DESKTOP=Weston
     export LIBSEAT_BACKEND=seatd
-    exec {PREFIX}/bin/weston --backend=drm-backend.so --renderer=pixman --config=/etc/xdg/weston/weston.ini
+    export XDG_RUNTIME_DIR=/run/user/$(id -u)
+    if [ ! -d "$XDG_RUNTIME_DIR" ]; then
+        mkdir -p "$XDG_RUNTIME_DIR"
+        chmod 0700 "$XDG_RUNTIME_DIR"
+    fi
+    waited=0
+    while pidof Xorg >/dev/null 2>&1 && [ "$waited" -lt 50 ]; do
+        sleep 0.1
+        waited=$((waited + 1))
+    done
+    exec {PREFIX}/bin/weston --backend=drm --renderer=pixman --config=/etc/xdg/weston/weston.ini
     ''')
     script('groove-greeter',environment+f'exec {PREFIX}/sbin/lightdm-gtk-greeter\n')
     script('groove-xserver',f'exec {PREFIX}/bin/Xorg -logfile /var/log/lightdm/x-0.log -modulepath {PREFIX}/lib/xorg/modules -nolisten tcp "$@"\n')
@@ -101,7 +111,7 @@ def main():
     put('/etc/lightdm/users.conf','[UserList]\nminimum-uid=1000\nhidden-users=root lightdm messagebus\nhidden-shells=/bin/false /usr/sbin/nologin\n')
     put('/etc/lightdm/lightdm-gtk-greeter.conf','''
     [greeter]
-    background=/usr/share/backgrounds/groove-blue-note.svg
+    background=/usr/share/backgrounds/groove-blue-note.png
     theme-name=GrooveBlueNote
     icon-theme-name=Adwaita
     font-name=DejaVu Sans 12
@@ -129,18 +139,18 @@ def main():
     EndSection
     ''')
     put('/etc/udev/rules.d/70-groove-input.rules','SUBSYSTEM=="input", GROUP="input", MODE="0660"\nSUBSYSTEM=="drm", GROUP="video", MODE="0660"\nKERNEL=="renderD*", GROUP="render", MODE="0660"\n')
-    put('/etc/xdg/weston/weston.ini','''
+    put('/etc/xdg/weston/weston.ini',f'''
     [core]
     idle-time=0
     xwayland=false
     [shell]
-    background-image=/usr/share/backgrounds/groove-blue-note.svg
+    background-image=/usr/share/backgrounds/groove-blue-note.png
     background-color=0xff0b0e17
     panel-color=0xff141926
     locking=false
     [launcher]
-    icon=/usr/share/icons/utilities-terminal.png
-    path=/opt/groove-graphics/bin/weston-terminal
+    icon={PREFIX}/share/weston/icon_terminal.png
+    path={PREFIX}/bin/weston-terminal
     ''')
     put('/usr/share/backgrounds/groove-blue-note.svg','''
     <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
@@ -158,6 +168,18 @@ def main():
       <text x="134" y="945" font-family="DejaVu Sans,sans-serif" font-size="17" fill="#94a3b8">A space for sound, code and creation.</text>
     </svg>
     ''')
+    svg_bg=root/'usr/share/backgrounds/groove-blue-note.svg'
+    png_bg=root/'usr/share/backgrounds/groove-blue-note.png'
+    rsvg=root/PREFIX.lstrip('/')/'bin/rsvg-convert'
+    if rsvg.exists():
+        rsvg_env=os.environ.copy()
+        rsvg_env['LD_LIBRARY_PATH']=str(root/PREFIX.lstrip('/')/'lib')
+        subprocess.run([str(rsvg),'-w','1920','-h','1080','-f','png',str(svg_bg),'-o',str(png_bg)],env=rsvg_env,check=False)
+    for extra_bg_dir in [Path('/workspace/backgrouds_groove'),Path('/workspace/backgrounds_groove')]:
+        if extra_bg_dir.exists():
+            for bg in extra_bg_dir.glob('*.png'):
+                if not bg.name.startswith('._'):
+                    shutil.copy2(bg,root/'usr/share/backgrounds'/bg.name)
     css='''
     @import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");
     @define-color theme_bg_color #141926;
@@ -177,7 +199,7 @@ def main():
     ''')
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml','''
     <?xml version="1.0" encoding="UTF-8"?>
-    <channel name="xfce4-desktop" version="1.0"><property name="backdrop" type="empty"><property name="screen0" type="empty"><property name="monitorVirtual-1" type="empty"><property name="workspace0" type="empty"><property name="last-image" type="string" value="/usr/share/backgrounds/groove-blue-note.svg"/><property name="image-style" type="int" value="5"/></property></property></property></property></channel>
+    <channel name="xfce4-desktop" version="1.0"><property name="backdrop" type="empty"><property name="screen0" type="empty"><property name="monitorVirtual-1" type="empty"><property name="workspace0" type="empty"><property name="last-image" type="string" value="/usr/share/backgrounds/groove-blue-note.png"/><property name="image-style" type="int" value="5"/></property></property></property></property></channel>
     ''')
     put('/usr/share/applications/firefox.desktop',f'[Desktop Entry]\nName=Firefox ESR\nComment=Navegador compilado desde fuentes\nExec={PREFIX}/bin/firefox %u\nIcon=firefox\nTerminal=false\nType=Application\nCategories=Network;WebBrowser;\nMimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;\n')
     put('/etc/xdg/mimeapps.list','[Default Applications]\ntext/html=firefox.desktop\nx-scheme-handler/http=firefox.desktop\nx-scheme-handler/https=firefox.desktop\n')
@@ -226,7 +248,18 @@ def main():
     put('/etc/groove/services/network.toml',service('network',PREFIX+'/sbin/dhcpcd',['--nobackground'],requires=['runtime','device-trigger']))
     put('/etc/groove/services/lightdm.toml',service('lightdm',PREFIX+'/sbin/lightdm',['--debug','--config=/etc/lightdm/lightdm.conf'],requires=['dbus','device-trigger','seatd']))
     put('/etc/groove/services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],requires=['runtime'],restart='always'))
-    put('/etc/groove/services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty2','linux'],requires=['runtime'],restart='always'))
+    put('/etc/groove/services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty3','linux'],requires=['runtime'],restart='always'))
+    wayland_services=root/'etc/groove/wayland-services';wayland_services.mkdir(parents=True,exist_ok=True)
+    for old in wayland_services.glob('*.toml'):old.unlink()
+    put('/etc/groove/wayland-services/runtime.toml',service('runtime','/usr/libexec/groove-runtime',kind='oneshot',restart='never'))
+    put('/etc/groove/wayland-services/udev.toml',service('udev',PREFIX+'/sbin/udevd',requires=['runtime'],ready='/run/udev/control'))
+    put('/etc/groove/wayland-services/device-trigger.toml',service('device-trigger','/usr/libexec/groove-device-trigger',requires=['udev'],kind='oneshot'))
+    put('/etc/groove/wayland-services/dbus.toml',service('dbus',PREFIX+'/bin/dbus-daemon',['--system','--nofork','--nopidfile'],requires=['runtime'],ready='/run/dbus/system_bus_socket'))
+    put('/etc/groove/wayland-services/seatd.toml',service('seatd',PREFIX+'/bin/seatd',['-g','video'],requires=['device-trigger'],ready='/run/seatd.sock'))
+    put('/etc/groove/wayland-services/network.toml',service('network',PREFIX+'/sbin/dhcpcd',['--nobackground'],requires=['runtime','device-trigger']))
+    put('/etc/groove/wayland-services/weston.toml',service('weston','/usr/libexec/groove-weston',requires=['dbus','device-trigger','seatd'],user='groove',group='groove',restart='always'))
+    put('/etc/groove/wayland-services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],requires=['runtime'],restart='always'))
+    put('/etc/groove/wayland-services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty3','linux'],requires=['runtime'],restart='always'))
     put('/etc/groove/recovery-services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty1','linux'],console=True,restart='always'))
     put('/etc/groove/recovery-services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],console=True,restart='always'))
     for folder,uid,gid in [('home/groove',1000,1000),('var/lib/lightdm',65,65),('var/cache/lightdm',65,65),('var/log/lightdm',65,65)]:

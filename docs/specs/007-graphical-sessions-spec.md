@@ -1,7 +1,7 @@
 # Spec 007 — Sesiones gráficas XFCE/Weston
 
-Estado: en implementación. Fecha: 2026-11-04.
-Requisitos y decisiones: [plan de integración](../plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md).
+Estado: en implementación. Fecha: 2026-11-04 (Actualizado 2026-11-05).
+Requisitos y decisiones: [plan de integración](../plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md) y [Spec 009 (Wayland Standalone y Traspaso DRM)](009-wayland-standalone-and-session-handoff-spec.md).
 
 ## Arquitectura y dependencias
 
