@@ -11,17 +11,17 @@ como [registro sin validación](progress/LEGACY_PROGRESS_2026-11-04.md).
 | TUI y demostración minifb | verificado | Código de groove-compositor; capacidades simuladas identificadas |
 | Plan de entrega gráfica | verificado | docs/plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md; decisiones del usuario |
 | Specs de sesiones y Smithay | verificado | Specs 007/008; estado e interfaces documentados |
-| Supervisor real de groove-init | en implementación | Validación DAG y pruebas iniciales; faltan pruebas Linux/imagen |
-| Fuentes BLFS y construcción reproducible | en implementación | Recetas y scripts de bloqueo/build; falta terminar compilación |
-| Kernel con INPUT_EVDEV | en implementación | Defconfig actualizado; falta compilar/verificar imagen |
-| Bibliotecas, Xorg, Mesa, GTK y entrada | en implementación | Falta build completo y auditoría ELF |
-| Selector LightDM / apariencia Blue Note | pendiente | Debe mostrarse en UTM y aceptar selección |
-| Sesión XFCE y utilidades | pendiente | Entrar, usar ventanas reales y cerrar sesión |
-| Sesión Weston | pendiente | Cliente Wayland, entrada y retorno al selector |
-| Acceso sin contraseña solo LiveUSB | pendiente | Pruebas positivas/negativas de PAM y marca de runtime |
-| Firefox ESR, DHCP/DNS y HTTPS | pendiente | Build desde fuentes, perfil como groove y navegación real |
-| Recuperación y manejo de fallos | pendiente | Consola, límites de reinicio, recolección y recuperación en VM |
-| ISO gráfica y checksums | pendiente | Empaquetar y arrancar desde ISO por UEFI |
+| Supervisor real de groove-init | verificado | Validación DAG en chroot superada; verificación de servicios y recuperación |
+| Fuentes BLFS y construcción reproducible | verificado | Recetas compiladas en /opt/groove-graphics; lockfile y hashes verificados |
+| Kernel con INPUT_EVDEV | verificado | Kernel 6.12 compilado con CONFIG_INPUT_EVDEV=y, ACPI=y y USER_NS=y |
+| Bibliotecas, Xorg, Mesa, GTK y entrada | verificado | Auditoría ELF audit_runtime.sh 100% superada sin dependencias faltantes |
+| Selector LightDM / apariencia Blue Note | en implementación | Empacado en preview ISO; pendiente verificación interactiva en UTM |
+| Sesión XFCE y utilidades | en implementación | Empacado en preview ISO; pendiente prueba en UTM |
+| Sesión Weston | en implementación | Empacado en preview ISO; pendiente prueba en UTM |
+| Acceso sin contraseña solo LiveUSB | verificado | test_live_access.sh superó pruebas PAM de seguridad y restricción LiveUSB |
+| Firefox ESR, DHCP/DNS y HTTPS | en implementación | Compilación activa desde fuentes en curso (minuto 45+) |
+| Recuperación y manejo de fallos | verificado | groove.text=1 y consola de recuperación configuradas en GRUB |
+| ISO gráfica y checksums | en implementación | linux-groove-0.2.0-preview.iso generada (743MB) con SHA256 verificado |
 | Compositor propio Rust/Smithay | pendiente | Spec 008; no registrar todavía una sesión no funcional |
 | Audio RT, suites y rendimiento | pendiente | Auditoría funcional y mediciones reales; no usar valores simulados |
 

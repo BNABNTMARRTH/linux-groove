@@ -2,7 +2,9 @@
 # Run in the builder after all source builds and kernel/init checks succeed.
 set -euo pipefail
 ROOT=${ROOT:-/tmp/groove-root}
+ROOT=$(realpath "$ROOT")
 STAGING=${STAGING:-/tmp/base-iso}
+STAGING=$(realpath "$STAGING")
 PREFIX=${PREFIX:-/opt/groove-graphics}
 OUTPUT=${OUTPUT:-/tmp/linux-groove-0.2.0-aarch64.iso}
 [[ "$ROOT" != / && -f "$ROOT/etc/os-release" && -d "$PREFIX" ]]
@@ -31,6 +33,10 @@ fi
 if [[ -f /etc/dbus-1/system.d/org.freedesktop.DisplayManager.conf ]]; then
     mkdir -p "$ROOT/etc/dbus-1/system.d"
     cp /etc/dbus-1/system.d/org.freedesktop.DisplayManager.conf "$ROOT/etc/dbus-1/system.d/"
+fi
+mkdir -p "$ROOT/usr/lib/locale"
+if [[ -f "$ROOT/usr/share/i18n/charmaps/UTF-8.gz" && ! -f "$ROOT/usr/share/i18n/charmaps/UTF-8" ]]; then
+    gzip -dk "$ROOT/usr/share/i18n/charmaps/UTF-8.gz"
 fi
 chroot "$ROOT" /usr/bin/localedef -i es_MX -f UTF-8 es_MX.UTF-8
 /sbin/ldconfig -r "$ROOT"

@@ -22,7 +22,7 @@ def main():
     put('/etc/nsswitch.conf','passwd: files\ngroup: files\nshadow: files\nhosts: files dns\nnetworks: files\n')
     put('/etc/login.defs','ENV_PATH PATH=/opt/groove-graphics/bin:/opt/groove-graphics/sbin:/usr/bin:/bin\nLOGIN_RETRIES 3\nFAIL_DELAY 2\nDEFAULT_HOME yes\nUID_MIN 1000\nGID_MIN 1000\n')
     put('/etc/ld.so.conf','include /etc/ld.so.conf.d/*.conf\n/usr/lib\n/lib\n')
-    put('/etc/ld.so.conf.d/groove-graphics.conf',PREFIX+'/lib\n')
+    put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n')
     profile=root/'etc/profile'
     if not profile.exists():put('/etc/profile','for script in /etc/profile.d/*.sh; do [ ! -r "$script" ] || . "$script"; done\n')
     put('/etc/profile.d/groove-graphics.sh',f'export PATH={PREFIX}/bin:{PREFIX}/sbin:$PATH\nexport XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share\n')

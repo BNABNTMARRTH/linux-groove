@@ -70,7 +70,7 @@
   {
     "name": "glib2",
     "build": "meson",
-    "options": "-Dintrospection=disabled -Dtests=false -Dlibmount=disabled -Dselinux=disabled -Dxattr=false -Dman-pages=disabled -Ddtrace=false -Dsystemtap=false -Dnls=enabled"
+    "options": "-Dintrospection=disabled -Dtests=false -Dlibmount=disabled -Dselinux=disabled -Dxattr=false -Dman-pages=disabled -Ddtrace=false -Dsystemtap=false -Dnls=enabled -Dlibelf=disabled"
   },
   {
     "name": "dbus",
