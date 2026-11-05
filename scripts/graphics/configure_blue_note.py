@@ -123,7 +123,7 @@ exec /opt/groove-graphics/bin/xfce4-terminal --title="Instalador de Linux Groove
     [Configuration]
     FontName=DejaVu Sans Mono 11
     ColorForeground=#e8e6e0
-    ColorBackground=#15181e
+    ColorBackground=#11151f
     ColorCursor=#d4af37
     BackgroundMode=TERMINAL_BACKGROUND_SOLID
     MiscMenubarDefault=FALSE
@@ -137,7 +137,7 @@ exec /opt/groove-graphics/bin/xfce4-terminal --title="Instalador de Linux Groove
     <channel name="xfce4-terminal" version="1.0">
       <property name="background-mode" type="string" value="TERMINAL_BACKGROUND_SOLID"/>
       <property name="color-foreground" type="string" value="#e8e6e0"/>
-      <property name="color-background" type="string" value="#15181e"/>
+      <property name="color-background" type="string" value="#11151f"/>
       <property name="color-cursor" type="string" value="#d4af37"/>
       <property name="title-mode" type="string" value="TERMINAL_TITLE_HIDE"/>
       <property name="font-name" type="string" value="DejaVu Sans Mono 11"/>

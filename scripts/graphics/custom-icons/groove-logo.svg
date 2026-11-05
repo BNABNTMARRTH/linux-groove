@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="grooveWarmWave" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe629"/>
+      <stop offset="52%" stop-color="#ff9e00"/>
+      <stop offset="100%" stop-color="#ff4800"/>
+    </linearGradient>
+  </defs>
+  <rect x="3.5" y="19" width="4.8" height="10" rx="2.4" fill="url(#grooveWarmWave)"/>
+  <rect x="11.0" y="15" width="4.8" height="18" rx="2.4" fill="url(#grooveWarmWave)"/>
+  <rect x="18.5" y="10" width="4.8" height="28" rx="2.4" fill="url(#grooveWarmWave)"/>
+  <rect x="26.0" y="3" width="4.8" height="42" rx="2.4" fill="url(#grooveWarmWave)"/>
+  <rect x="33.5" y="10" width="4.8" height="28" rx="2.4" fill="url(#grooveWarmWave)"/>
+  <rect x="41.0" y="16" width="4.8" height="16" rx="2.4" fill="url(#grooveWarmWave)"/>
+</svg>
+

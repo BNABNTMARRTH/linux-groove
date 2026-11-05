@@ -1,10 +1,13 @@
-"""Configure macOS Blue Note Glass appearance for XFCE, xfwm4, picom, and groove-dock."""
+"""Configure macOS WhiteSur + Blue Note Glass appearance for XFCE, xfwm4, picom, and groove-dock."""
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import textwrap
 
 PREFIX = '/opt/groove-graphics'
+CUSTOM_ICONS_DIR = Path(__file__).resolve().parent / 'custom-icons'
+THEMES_ARCHIVE_DIR = Path('/backup/sources/themes')
 
 def create_svg_button(color, border_color, glyph=None, glyph_color=None):
     svg = [
@@ -52,6 +55,58 @@ def install(root):
         target.write_text(textwrap.dedent(body).lstrip())
         target.chmod(mode)
 
+    converter = root / PREFIX.lstrip('/') / 'bin/rsvg-convert'
+    icon_cache_bin = root / PREFIX.lstrip('/') / 'bin/gtk-update-icon-cache'
+    env = os.environ.copy()
+    env['LD_LIBRARY_PATH'] = str(root / PREFIX.lstrip('/') / 'lib')
+
+    # 0. Extract precompiled WhiteSur-Dark GTK theme & WhiteSur Icon Pack
+    themes_root = root / 'usr/share/themes'
+    icons_root = root / 'usr/share/icons'
+    themes_root.mkdir(parents=True, exist_ok=True)
+    icons_root.mkdir(parents=True, exist_ok=True)
+
+    ws_gtk_tar = THEMES_ARCHIVE_DIR / 'WhiteSur-Dark.tar.xz'
+    if ws_gtk_tar.exists():
+        subprocess.run(['tar', '-xJf', str(ws_gtk_tar), '-C', str(themes_root)], check=True)
+
+    ws_icons_tar = THEMES_ARCHIVE_DIR / 'WhiteSur-icons-installed.tar.xz'
+    if ws_icons_tar.exists():
+        ws_icon_dir = icons_root / 'WhiteSur'
+        if ws_icon_dir.exists():
+            shutil.rmtree(ws_icon_dir)
+        subprocess.run(['tar', '-xJf', str(ws_icons_tar), '-C', str(icons_root)], check=True)
+        index_theme = ws_icon_dir / 'index.theme'
+        if index_theme.exists():
+            idx_txt = index_theme.read_text()
+            idx_txt = idx_txt.replace('Inherits=hicolor,breeze', 'Inherits=Adwaita,hicolor')
+            index_theme.write_text(idx_txt)
+        # Recolor monochrome #363636 action/status/symbolic icons to #dedede for dark theme legibility
+        recolor_dirs = [
+            'actions/16', 'actions/22', 'actions/24', 'actions/32', 'actions/symbolic',
+            'devices/16', 'devices/22', 'devices/24', 'devices/32', 'devices/symbolic',
+            'places/16', 'places/22', 'places/24', 'places/symbolic',
+            'apps/16', 'apps/22', 'apps/32', 'apps/symbolic',
+            'categories/22', 'categories/symbolic',
+            'emblems/symbolic', 'mimes/symbolic', 'status/symbolic',
+        ]
+        for rel_d in recolor_dirs:
+            dpath = ws_icon_dir / rel_d
+            if not dpath.is_dir():
+                continue
+            for svg_file in dpath.glob('*.svg'):
+                if svg_file.is_symlink():
+                    continue
+                try:
+                    txt = svg_file.read_text()
+                    if '#363636' in txt:
+                        svg_file.write_text(txt.replace('#363636', '#dedede'))
+                except Exception:
+                    pass
+        ws_dark_link = icons_root / 'WhiteSur-dark'
+        if not ws_dark_link.exists() and not ws_dark_link.is_symlink():
+            ws_dark_link.symlink_to('WhiteSur')
+
     theme_dir = root / 'usr/share/themes/GrooveBlueNote/xfwm4'
     theme_dir.mkdir(parents=True, exist_ok=True)
 
@@ -75,10 +130,6 @@ def install(root):
     put('/usr/share/themes/GrooveBlueNote/xfwm4/themerc', themerc)
 
     # 2. Render traffic-light buttons via rsvg-convert
-    converter = root / PREFIX.lstrip('/') / 'bin/rsvg-convert'
-    env = os.environ.copy()
-    env['LD_LIBRARY_PATH'] = str(root / PREFIX.lstrip('/') / 'lib')
-
     button_specs = [
         # Close: Red
         ('close-active', '#FF5F56', '#E0443E', None, None),
@@ -164,7 +215,101 @@ def install(root):
                                 str(tmp_dir / 'border.svg'), '-o', str(dest)], env=env, check=True)
                 dest.chmod(0o644)
 
-    # 5. Picom Configuration (Reliable XRender backend with full RGBA support)
+    # Mirror xfwm4 assets into WhiteSur-Dark/xfwm4 so both themes have 12px XPM corner masks and CHM| layout
+    ws_xfwm4 = root / 'usr/share/themes/WhiteSur-Dark/xfwm4'
+    if ws_xfwm4.parent.exists():
+        ws_xfwm4.mkdir(parents=True, exist_ok=True)
+        for item in theme_dir.iterdir():
+            if item.is_file():
+                shutil.copy2(item, ws_xfwm4 / item.name)
+
+    # 4b. Populate Dock Icons from WhiteSur + Custom Icons Override Pipeline
+    dock_icon_dir = root / 'usr/share/icons/groove-glass'
+    dock_icon_dir.mkdir(parents=True, exist_ok=True)
+    ws_apps_scalable = root / 'usr/share/icons/WhiteSur/apps/scalable'
+    whitesur_dock_mapping = {
+        'terminal': 'utilities-terminal.svg',
+        'files': 'system-file-manager.svg',
+        'editor': 'org.xfce.mousepad.svg',
+        'browser': 'firefox.svg',
+        'system': 'utilities-system-monitor.svg',
+        'settings': 'preferences-system.svg',
+        'installer': 'system-installer.svg',
+    }
+    if ws_apps_scalable.is_dir() and converter.exists():
+        for dock_name, ws_svg_name in whitesur_dock_mapping.items():
+            src_svg = ws_apps_scalable / ws_svg_name
+            if src_svg.exists():
+                dst_svg = dock_icon_dir / f'{dock_name}.svg'
+                dst_svg.write_text(src_svg.read_text())
+                dst_svg.chmod(0o644)
+                for size, suffix in ((48, ''), (96, '@2x')):
+                    dest_png = dock_icon_dir / f'{dock_name}{suffix}.png'
+                    subprocess.run([str(converter), '-w', str(size), '-h', str(size),
+                                    str(dst_svg), '-o', str(dest_png)], env=env, check=True)
+                    dest_png.chmod(0o644)
+
+    # Process user's custom icons in scripts/graphics/custom-icons/ (overrides WhiteSur defaults)
+    hicolor_root = root / 'usr/share/icons/hicolor'
+    if CUSTOM_ICONS_DIR.is_dir() and converter.exists():
+        for custom_svg in sorted(CUSTOM_ICONS_DIR.glob('*.svg')):
+            stem = custom_svg.stem
+            svg_text = custom_svg.read_text()
+            # 1) groove-glass dock directory
+            dst_dock_svg = dock_icon_dir / f'{stem}.svg'
+            dst_dock_svg.write_text(svg_text)
+            dst_dock_svg.chmod(0o644)
+            for size, suffix in ((48, ''), (96, '@2x')):
+                dest_png = dock_icon_dir / f'{stem}{suffix}.png'
+                subprocess.run([str(converter), '-w', str(size), '-h', str(size),
+                                str(dst_dock_svg), '-o', str(dest_png)], env=env, check=True)
+                dest_png.chmod(0o644)
+
+            # 2) Install into WhiteSur & hicolor (plus panel menu aliases for groove-logo)
+            alias_stems = [stem]
+            if stem == 'groove-logo':
+                alias_stems.extend(['org.xfce.panel.applicationsmenu', 'xfce4-panel-menu', 'start-here'])
+
+            for target_stem in alias_stems:
+                if ws_apps_scalable.is_dir():
+                    ws_target = ws_apps_scalable / f'{target_stem}.svg'
+                    if ws_target.is_symlink() or ws_target.exists():
+                        ws_target.unlink()
+                    ws_target.write_text(svg_text)
+                    ws_target.chmod(0o644)
+
+                hc_scalable = hicolor_root / 'scalable/apps'
+                hc_scalable.mkdir(parents=True, exist_ok=True)
+                hc_svg = hc_scalable / f'{target_stem}.svg'
+                hc_svg.write_text(svg_text)
+                hc_svg.chmod(0o644)
+
+                for px in (16, 22, 24, 32, 48):
+                    hc_px_dir = hicolor_root / f'{px}x{px}/apps'
+                    hc_px_dir.mkdir(parents=True, exist_ok=True)
+                    hc_png = hc_px_dir / f'{target_stem}.png'
+                    subprocess.run([str(converter), '-w', str(px), '-h', str(px),
+                                    str(dst_dock_svg), '-o', str(hc_png)], env=env, check=True)
+                    hc_png.chmod(0o644)
+                    # Also place 16/22/24/32 px PNG/SVG in WhiteSur/apps/<px> so panel lookup finds it immediately
+                    ws_px_dir = root / f'usr/share/icons/WhiteSur/apps/{px}'
+                    if ws_px_dir.is_dir():
+                        ws_px_svg = ws_px_dir / f'{target_stem}.svg'
+                        if ws_px_svg.is_symlink() or ws_px_svg.exists():
+                            ws_px_svg.unlink()
+                        ws_px_svg.write_text(svg_text)
+                        ws_px_svg.chmod(0o644)
+
+        for custom_png in sorted(CUSTOM_ICONS_DIR.glob('*.png')):
+            shutil.copy2(custom_png, dock_icon_dir / custom_png.name)
+
+    # Refresh GTK icon caches so WhiteSur and hicolor icons resolve instantaneously
+    if icon_cache_bin.exists():
+        for ic_dir in (root / 'usr/share/icons/WhiteSur', root / 'usr/share/icons/hicolor'):
+            if ic_dir.is_dir():
+                subprocess.run([str(icon_cache_bin), '-f', '-t', str(ic_dir)], env=env, check=False)
+
+    # 5. Picom Configuration (Glassmorphism translucency for menus, panel, and windows)
     put('/etc/xdg/picom.conf', '''
     experimental-backends = true;
     backend = "xrender";
@@ -179,9 +324,9 @@ def install(root):
 
     shadow = true;
     shadow-radius = 16;
-    shadow-opacity = 0.38;
-    shadow-offset-x = -10;
-    shadow-offset-y = -10;
+    shadow-opacity = 0.42;
+    shadow-offset-x = -12;
+    shadow-offset-y = -12;
     shadow-exclude = [
       "class_g = 'xfce4-screenshooter'",
       "window_type = 'dock'",
@@ -189,10 +334,39 @@ def install(root):
       "_GTK_FRAME_EXTENTS@:c"
     ];
 
-    fading = false;
-    inactive-opacity = 1.0;
-    active-opacity = 1.0;
-    frame-opacity = 1.0;
+    fading = true;
+    fade-in-step = 0.08;
+    fade-out-step = 0.08;
+    fade-delta = 10;
+
+    inactive-opacity = 0.94;
+    active-opacity = 0.98;
+    frame-opacity = 0.92;
+
+    opacity-rule = [
+      "100:class_g = 'groove-dock'",
+      "100:class_g = 'Firefox'",
+      "100:class_g = 'firefox'",
+      "88:class_g = 'Xfce4-terminal'",
+      "88:class_g = 'xfce4-terminal'",
+      "92:class_g = 'Thunar'",
+      "92:class_g = 'thunar'",
+      "93:class_g = 'Mousepad'",
+      "93:class_g = 'mousepad'",
+      "92:class_g = 'Groove-control-center'",
+      "92:class_g = 'groove-control-center'",
+      "92:class_g = 'Xfce4-settings-manager'"
+    ];
+
+    wintypes:
+    {
+      tooltip = { fade = true; shadow = true; opacity = 0.88; focus = true; full-shadow = false; };
+      dock = { shadow = false; clip-shadow-above = true; };
+      dnd = { shadow = false; };
+      popup_menu = { opacity = 0.86; shadow = true; fade = true; };
+      dropdown_menu = { opacity = 0.86; shadow = true; fade = true; };
+      menu = { opacity = 0.86; shadow = true; fade = true; };
+    };
     ''')
 
     put('/usr/libexec/groove-picom', '''#!/bin/sh
@@ -226,7 +400,7 @@ def install(root):
     <?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfwm4" version="1.0">
       <property name="general" type="empty">
-        <property name="theme" type="string" value="GrooveBlueNote"/>
+        <property name="theme" type="string" value="WhiteSur-Dark"/>
         <property name="button_layout" type="string" value="CHM|"/>
         <property name="button_offset" type="int" value="8"/>
         <property name="button_spacing" type="int" value="6"/>
@@ -244,7 +418,7 @@ def install(root):
     </channel>
     ''')
 
-    # 8. XFCE Desktop Configuration (xfce4-desktop.xml) with Interactive Desktop Icons!
+    # 8. XFCE Desktop Configuration (xfce4-desktop.xml) with Interactive Desktop Icons
     wallpaper_path = '/usr/share/backgrounds/groove-default.png'
     desktop_xml = f'''<?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfce4-desktop" version="1.0">
@@ -279,8 +453,7 @@ def install(root):
     '''
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
 
-    # 9. Single 32px Top Menu Bar (xfce4-panel.xml)
-    # CRITICAL: property name="panel-1" MUST be nested INSIDE property name="panels" type="array"
+    # 9. Single 32px Top Menu Bar (xfce4-panel.xml) with Custom Warm Soundwave Logo (no [x] or hex emoji box!)
     panel_xml = '''<?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfce4-panel" version="1.0">
       <property name="configver" type="int" value="2"/>
@@ -291,7 +464,7 @@ def install(root):
           <property name="position" type="string" value="p=6;x=0;y=0"/>
           <property name="length" type="uint" value="100"/>
           <property name="position-locked" type="bool" value="true"/>
-          <property name="icon-size" type="uint" value="16"/>
+          <property name="icon-size" type="uint" value="20"/>
           <property name="size" type="uint" value="32"/>
           <property name="plugin-ids" type="array">
             <value type="int" value="1"/>
@@ -307,7 +480,8 @@ def install(root):
       <property name="plugins" type="empty">
         <property name="plugin-1" type="string" value="applicationsmenu">
           <property name="show-button-title" type="bool" value="true"/>
-          <property name="button-title" type="string" value=" 🎷 Linux Groove "/>
+          <property name="button-title" type="string" value=" Linux Groove "/>
+          <property name="button-icon" type="string" value="groove-logo"/>
           <property name="show-menu-icons" type="bool" value="true"/>
           <property name="custom-menu" type="bool" value="false"/>
         </property>
@@ -343,18 +517,17 @@ def install(root):
       </property>
     </channel>
     '''
-    # Put panel config in ALL discovery paths so xfce4-panel never falls back to an empty panel
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
     put(PREFIX + '/etc/xdg/xfce4/panel/default.xml', panel_xml)
     put(PREFIX + '/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
     put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
     put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
 
-    # 10. GTK3 Settings & Decorations
+    # 10. GTK3 Settings & Decorations (WhiteSur-Dark + WhiteSur Icons)
     put('/etc/xdg/gtk-3.0/settings.ini', '''
     [Settings]
-    gtk-theme-name=GrooveBlueNote
-    gtk-icon-theme-name=Adwaita
+    gtk-theme-name=WhiteSur-Dark
+    gtk-icon-theme-name=WhiteSur
     gtk-font-name=DejaVu Sans 11
     gtk-application-prefer-dark-theme=true
     gtk-decoration-layout=close,minimize,maximize:menu
@@ -364,8 +537,8 @@ def install(root):
     <?xml version="1.0" encoding="UTF-8"?>
     <channel name="xsettings" version="1.0">
       <property name="Net" type="empty">
-        <property name="ThemeName" type="string" value="GrooveBlueNote"/>
-        <property name="IconThemeName" type="string" value="Adwaita"/>
+        <property name="ThemeName" type="string" value="WhiteSur-Dark"/>
+        <property name="IconThemeName" type="string" value="WhiteSur"/>
       </property>
       <property name="Gtk" type="empty">
         <property name="FontName" type="string" value="DejaVu Sans 11"/>
@@ -374,8 +547,66 @@ def install(root):
     </channel>
     ''')
 
-    # 11. CSS Styling for macOS top bar and windows
-    css = '''
+    greeter_conf = root / 'etc/lightdm/lightdm-gtk-greeter.conf'
+    if greeter_conf.exists():
+        gtxt = greeter_conf.read_text()
+        gtxt = gtxt.replace('theme-name=GrooveBlueNote', 'theme-name=WhiteSur-Dark')
+        gtxt = gtxt.replace('icon-theme-name=Adwaita', 'icon-theme-name=WhiteSur')
+        greeter_conf.write_text(gtxt)
+
+    # 11. Glassmorphism CSS Styling for Menus, Top Bar, Popovers, and Thunar Sidebar
+    glass_css = '''
+    /* Linux Groove macOS Glassmorphism Overrides */
+    .xfce4-panel,
+    panel-toplevel {
+        background-color: rgba(16, 20, 30, 0.78);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        color: #f4efe6;
+    }
+    .xfce4-panel button {
+        border-radius: 6px;
+        color: #f4efe6;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        padding: 2px 6px;
+        font-weight: 600;
+    }
+    .xfce4-panel button:hover,
+    .xfce4-panel button:checked {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+    menu,
+    .menu,
+    .context-menu,
+    popover,
+    popover.background {
+        background-color: rgba(22, 26, 36, 0.84);
+        color: #f4efe6;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+    }
+    menuitem {
+        border-radius: 6px;
+        padding: 5px 10px;
+        margin: 2px 4px;
+    }
+    menuitem:hover {
+        background-color: rgba(249, 115, 22, 0.85);
+        color: #ffffff;
+    }
+    .thunar .sidebar,
+    .thunar .sidebar .view {
+        background-color: rgba(20, 24, 34, 0.82);
+        color: #e8e6e0;
+    }
+    .dim-label {
+        color: #94a3b8;
+    }
+    '''
+
+    fallback_css = '''
     @import url("resource:///org/gtk/libgtk/theme/Adwaita/gtk-contained-dark.css");
     @define-color theme_bg_color #141926;
     @define-color theme_fg_color #f4efe6;
@@ -386,27 +617,20 @@ def install(root):
     button:checked, button.suggested-action { background: #d4af37; color: #0b0e17; }
     entry:focus { border-color: #d4af37; box-shadow: inset 0 0 0 1px #d4af37; }
     selection { background-color: #d4af37; color: #0b0e17; }
+    ''' + glass_css
+    put('/usr/share/themes/GrooveBlueNote/gtk-3.0/gtk.css', fallback_css)
 
-    .xfce4-panel {
-        background-color: rgba(14, 18, 28, 0.90);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-        color: #f4efe6;
-    }
-    .xfce4-panel button {
-        border-radius: 4px;
-        color: #f4efe6;
-        background: transparent;
-        box-shadow: none;
-        border: none;
-    }
-    .xfce4-panel button:hover {
-        background-color: rgba(255, 255, 255, 0.12);
-    }
-    .dim-label {
-        color: #94a3b8;
-    }
-    '''
-    put('/usr/share/themes/GrooveBlueNote/gtk-3.0/gtk.css', css)
+    # Also append Glassmorphism rules to WhiteSur-Dark gtk-3.0 CSS and user gtk.css
+    for ws_css_rel in ('usr/share/themes/WhiteSur-Dark/gtk-3.0/gtk.css',
+                       'usr/share/themes/WhiteSur-Dark/gtk-3.0/gtk-dark.css'):
+        ws_css_path = root / ws_css_rel
+        if ws_css_path.exists():
+            orig = ws_css_path.read_text()
+            if 'Linux Groove macOS Glassmorphism Overrides' not in orig:
+                ws_css_path.write_text(orig + '\n' + textwrap.dedent(glass_css))
+
+    put('/etc/xdg/gtk-3.0/gtk.css', glass_css)
+    put('/home/groove/.config/gtk-3.0/gtk.css', glass_css)
 
     # 12. Populate Desktop Launchers in /home/groove/Desktop
     desktop_dir = root / 'home/groove/Desktop'
@@ -430,7 +654,13 @@ Terminal=false
 Categories=Utility;
 ''', mode=0o755)
 
-    os.chown(desktop_dir, 1000, 1000)
+    for chown_target in (desktop_dir, root / 'home/groove/.config'):
+        if chown_target.exists():
+            for dirpath, dirnames, filenames in os.walk(chown_target):
+                os.chown(dirpath, 1000, 1000)
+                for fn in filenames:
+                    fp = Path(dirpath) / fn
+                    if not fp.is_symlink():
+                        os.chown(fp, 1000, 1000)
     for f in desktop_dir.glob('*.desktop'):
-        os.chown(f, 1000, 1000)
         f.chmod(0o755)
