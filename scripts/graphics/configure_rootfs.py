@@ -17,10 +17,9 @@ def main():
     account('group',['root:x:0:','tty:x:5:','cdrom:x:15:','video:x:12:groove,lightdm','messagebus:x:18:','input:x:24:groove,lightdm','lightdm:x:65:','render:x:107:groove,lightdm','kvm:x:108:','sgx:x:109:','groove:x:1000:'])
     account('shadow',['root:!:1:0:99999:7:::','messagebus:!:1:0:99999:7:::','lightdm:!:1:0:99999:7:::','groove:!:1:0:99999:7:::'])
     (root/'etc/shadow').chmod(0o600)
-    dbus_sys=root/PREFIX.lstrip('/')/'share/dbus-1/system.conf'
-    put('/etc/dbus-1/system.conf',dbus_sys.read_text() if dbus_sys.exists() else '<busconfig/>\n')
-    dbus_sess=root/PREFIX.lstrip('/')/'share/dbus-1/session.conf'
-    put('/etc/dbus-1/session.conf',dbus_sess.read_text() if dbus_sess.exists() else '<busconfig/>\n')
+    dbus_minimal='<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"\n "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">\n<busconfig></busconfig>\n'
+    put('/etc/dbus-1/system.conf',dbus_minimal)
+    put('/etc/dbus-1/session.conf',dbus_minimal)
     dbus_sysd=root/PREFIX.lstrip('/')/'share/dbus-1/system.d'
     if dbus_sysd.exists():
         for conf in dbus_sysd.glob('*.conf'):
@@ -28,7 +27,7 @@ def main():
     put('/etc/nsswitch.conf','passwd: files\ngroup: files\nshadow: files\nhosts: files dns\nnetworks: files\n')
     put('/etc/login.defs','ENV_PATH PATH=/opt/groove-graphics/bin:/opt/groove-graphics/sbin:/usr/bin:/bin\nLOGIN_RETRIES 3\nFAIL_DELAY 2\nDEFAULT_HOME yes\nUID_MIN 1000\nGID_MIN 1000\n')
     put('/etc/ld.so.conf','include /etc/ld.so.conf.d/*.conf\n/usr/lib\n/lib\n')
-    put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n')
+    put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n{PREFIX}/lib/firefox\n')
     profile=root/'etc/profile'
     if not profile.exists():put('/etc/profile','for script in /etc/profile.d/*.sh; do [ ! -r "$script" ] || . "$script"; done\n')
     put('/etc/profile.d/groove-graphics.sh',f'export PATH={PREFIX}/bin:{PREFIX}/sbin:$PATH\nexport XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share\n')

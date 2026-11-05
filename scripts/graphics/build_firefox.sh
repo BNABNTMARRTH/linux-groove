@@ -72,4 +72,7 @@ ac_add_options --enable-bootstrap
 ac_add_options --with-sysroot=/
 CONFIG
 ./mach build
-./mach install
+mkdir -p "$PREFIX/lib" "$PREFIX/bin"
+rm -rf "$PREFIX/lib/firefox"
+cp -a "$OBJECT_DIR/dist/firefox" "$PREFIX/lib/firefox"
+ln -sfn "$PREFIX/lib/firefox/firefox" "$PREFIX/bin/firefox"
