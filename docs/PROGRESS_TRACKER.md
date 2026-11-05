@@ -15,7 +15,7 @@ como [registro sin validación](progress/LEGACY_PROGRESS_2026-11-04.md).
 | Fuentes BLFS y construcción reproducible | verificado | Recetas compiladas en /opt/groove-graphics; lockfile y hashes verificados |
 | Kernel con INPUT_EVDEV | verificado | Kernel 6.12 compilado con CONFIG_INPUT_EVDEV=y, ACPI=y y USER_NS=y |
 | Bibliotecas, Xorg, Mesa, GTK y entrada | verificado | Auditoría ELF audit_runtime.sh 100% superada sin dependencias faltantes |
-| Selector LightDM / apariencia Blue Note | en implementación | Empacado en ISO 0.2.0 (VT1 directo, D-Bus resuelto); pendiente confirmación en UTM |
+| Selector LightDM / apariencia Blue Note | verificado | Greeter GTK Blue Note desplegado en UTM con tema Groove, reloj, selector y sesión |
 | Sesión XFCE y utilidades | en implementación | Empacado en ISO 0.2.0; pendiente prueba en UTM |
 | Sesión Weston | en implementación | Empacado en ISO 0.2.0; pendiente prueba en UTM |
 | Acceso sin contraseña solo LiveUSB | verificado | test_live_access.sh superó pruebas PAM de seguridad y restricción LiveUSB |
