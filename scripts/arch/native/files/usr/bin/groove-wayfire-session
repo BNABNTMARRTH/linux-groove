@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+export XDG_CURRENT_DESKTOP=Wayfire XDG_SESSION_DESKTOP=wayfire XDG_SESSION_TYPE=wayland
+config=${XDG_CONFIG_HOME:-$HOME/.config}
+mkdir -p "$config"
+if [[ ! -e "$config/wayfire.ini" ]]; then
+    cp --no-clobber /usr/share/groove/wayfire.ini "$config/wayfire.ini"
+fi
+# SDDM/PAM supplies logind and the user bus. Never start another seat manager.
+exec wayfire --config "$config/wayfire.ini"

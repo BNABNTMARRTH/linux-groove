@@ -19,10 +19,11 @@ flowchart TD
         VIRT_MAC["Virtualización & macOS Lab (Virt-Manager tipo UTM, soporte .dmg, Darling)"]
     end
 
-    subgraph Layer3["Capa 3: Experiencia Visual Groove (Blue Note Glass + Wayfire 3D)"]
-        WAYFIRE["Motor Gráfico Wayfire 3D (Cubo 3D, Wobbly Gelatina, Blur Kawase, Xwayland)"]
-        GROOVE_UI["Apps Nativas Groove (Dock, Centro de Control, Editor de Transparencia, Greeter)"]
-        THEME["Diseño Minimalista GrooveWindow (Bordes Cairo ARGB suaves + Fuentes Inter LCD)"]
+    subgraph Layer3["Capa 3: Experiencia Visual Groove (KDE Plasma 6 Wayland - SteamOS Edition)"]
+        KDE_WAYLAND["KDE Plasma 6 Wayland Nativo (KWin, Aislamiento de Procesos, Cero Congelamientos)"]
+        MACOS_DESIGN["Diseño macOS Glass (Botones Semáforo a la izquierda, KWin Blur, Fuentes Inter LCD)"]
+        SYSTEM_APPS["Herramientas de Sistema (Dolphin, Konsole, System Settings, Spectacle, App Hub)"]
+        FALLBACKS["Sesiones Secundarias (Groove macOS Glass XFCE, Wayfire 3D)"]
     end
 
     subgraph Layer2["Capa 2: Cimientos del Sistema (Base Arch Linux ARM)"]

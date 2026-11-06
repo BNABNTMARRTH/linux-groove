@@ -1,0 +1,13 @@
+pkgname=groove-platform
+pkgver=0.4.1
+pkgrel=1
+pkgdesc='Native Groove defaults, session integration and diagnostics'
+arch=('aarch64')
+license=('MIT')
+depends=('systemd' 'sddm' 'networkmanager' 'plasma-workspace' 'breeze' 'breeze-gtk' 'wayfire' 'wf-shell' 'pipewire' 'wireplumber' 'rtkit' 'python' 'qt6-tools' 'kconfig' 'inter-font')
+source=('groove-platform.tar')
+# configure.sh replaces this with the digest of the exact staged payload.
+sha256sums=('@PAYLOAD_SHA256@')
+package() {
+  cp -a "$srcdir/payload/." "$pkgdir/"
+}

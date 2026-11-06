@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "colors": {"header": "#202124", "toolbar": "#353535", "content": "#15181e", "text": "#e8e6e0", "accent": "#d4af37"},
+  "font": {"family": "Inter", "fallback": "DejaVu Sans", "points": 11, "antialias": true, "rgba": "none", "hintstyle": "hintslight"},
+  "decoration": {"buttons": "left", "style": "monochrome", "engine": "Breeze"},
+  "profiles": {
+    "stable": {"quantum": 1024, "rate": 48000, "kwin": {"blur": false, "wobblywindows": false}, "wayfire": []},
+    "expressive": {"quantum": 1024, "rate": 48000, "kwin": {"blur": true, "overview": true, "desktopgrid": true}, "wayfire": ["cube", "scale", "wobbly"]},
+    "studio": {"quantum": 256, "rate": 48000, "kwin": {"blur": false, "wobblywindows": false, "overview": false, "desktopgrid": false}, "wayfire": []}
+  }
+}

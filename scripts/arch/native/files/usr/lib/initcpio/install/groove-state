@@ -1,0 +1,9 @@
+#!/bin/bash
+build() {
+    add_module overlay
+    add_module ext4
+    add_binary /usr/bin/cp
+    add_binary /usr/bin/mount
+    add_runscript
+}
+help() { echo 'Mount version-specific writable state for Groove immutable roots.'; }

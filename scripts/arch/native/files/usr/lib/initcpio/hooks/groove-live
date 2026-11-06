@@ -1,0 +1,66 @@
+#!/usr/bin/ash
+
+run_earlyhook() {
+    # Activate if groove.live is set, or if no root parameter is defined
+    if [ "$(getarg groove.live)" != 1 ] && [ -n "$(getarg root)" ]; then
+        return 0
+    fi
+
+    echo ":: [groove-live] Searching for Linux Groove Live media..."
+    rootdev=""
+
+    # 1. Try findfs with known volume labels
+    for lbl in LINUX_GROOVE_LIVE GROOVE-LIVE GROOVE_LIVE; do
+        if dev=$(findfs "LABEL=$lbl" 2>/dev/null); then
+            rootdev="$dev"
+            break
+        fi
+    done
+
+    # 2. If not found by label, poll block devices for groove/rootfs.squashfs
+    if [ -z "$rootdev" ]; then
+        for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            for dev in /dev/sr* /dev/vd* /dev/sd* /dev/nvme* /dev/mmcblk*; do
+                [ -b "$dev" ] || continue
+                mkdir -p /run/groove-test
+                if mount -o ro "$dev" /run/groove-test 2>/dev/null; then
+                    if [ -f /run/groove-test/groove/rootfs.squashfs ]; then
+                        umount /run/groove-test 2>/dev/null
+                        rootdev="$dev"
+                        break 2
+                    fi
+                    umount /run/groove-test 2>/dev/null
+                fi
+            done
+            sleep 1
+        done
+    fi
+
+    if [ -z "$rootdev" ]; then
+        err 'Linux Groove Live medium not found after scanning block devices'
+        launch_interactive_shell --exec
+    fi
+
+    echo ":: [groove-live] Found Live medium at $rootdev"
+    mkdir -p /run/groove-live /run/groove-squash /run/groove-ram /sysroot
+
+    mount -o ro "$rootdev" /run/groove-live || { err 'Failed to mount Live medium'; launch_interactive_shell --exec; }
+    mount -t squashfs -o loop,ro /run/groove-live/groove/rootfs.squashfs /run/groove-squash || { err 'Failed to mount rootfs.squashfs'; launch_interactive_shell --exec; }
+
+    echo ":: [groove-live] Initializing writable OverlayFS in RAM (75% RAM)..."
+    mount -t tmpfs -o size=75%,mode=0755 tmpfs /run/groove-ram || { err 'Failed to mount tmpfs'; launch_interactive_shell --exec; }
+    mkdir -p /run/groove-ram/upper /run/groove-ram/work
+
+    mount -t overlay overlay -o lowerdir=/run/groove-squash,upperdir=/run/groove-ram/upper,workdir=/run/groove-ram/work /sysroot || { err 'Failed to mount overlay on /sysroot'; launch_interactive_shell --exec; }
+
+    # Setup live marker for PAM passwordless authentication
+    mkdir -p /sysroot/run/groove /sysroot/run/media/groove_live
+    echo "LINUX_GROOVE_LIVE" > /sysroot/run/groove/live
+    chmod 0644 /sysroot/run/groove/live
+
+    # Expose live medium mount inside sysroot
+    mount --bind /run/groove-live /sysroot/run/media/groove_live 2>/dev/null || true
+
+    # Override mount_handler so mkinitcpio skips default root mount
+    mount_handler() { :; }
+}

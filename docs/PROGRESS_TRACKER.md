@@ -3,7 +3,7 @@
 > Estado vigente de apariencia XFCE: [spec 013](specs/013-unified-window-design-spec.md). Las referencias a Picom y decoración universal más abajo describen etapas anteriores; la aceptación UTM de GrooveWindow está pendiente.
 
 Actualizado: 2026-11-05 (America/Mexico_City).
-Estados: **pendiente**, **en implementación**, **verificado**.
+Estados: **diseñado**, **implementado**, **validado en UTM** y **pendiente**.
 Una compilación no acredita integración. Las casillas históricas se conservan
 como [registro sin validación](progress/LEGACY_PROGRESS_2026-11-04.md).
 
@@ -86,3 +86,35 @@ la configuración vigente usa XFWM y coherencia por aplicación.
 | ISO rc21 y pruebas de construcción | Verificado, no promovida | docs/validation/unified-window-design/README.md y rc21-build.log |
 | Matriz UTM y promoción | Pendiente | No acreditada por pruebas estáticas |
 | Adaptación Wayfire | Planificada posteriormente | Fuera de esta entrega |
+
+## Groove estable — Arch ARM / Plasma / A/B / audio (2026-11-06)
+
+| Requisito | Estado | Evidencia o pendiente |
+|---|---|---|
+| Raíz Arch ARM limpia con firmas y actualización completa | implementado | `scripts/arch/native/bootstrap.sh`; falta exportar candidata |
+| Groove como paquete PKGBUILD | implementado | `scripts/arch/native/packages/groove-platform/PKGBUILD` |
+| Plasma Wayland principal y Wayfire alternativo | implementado | sesiones, portales y `groove-wayfire-session`; falta arranque UTM |
+| Entrada/GPU sin variables globales de software | implementado | módulos virtio y `groove-diagnostics`; falta comparar dispositivos |
+| Perfiles Estable/Expresivo/Estudio | implementado | `groove-profile`; falta medir p95 y pausas |
+| A/B con UKI, tres intentos y reversión | implementado | `build-disk.sh`, `groove-update`; faltan fallos controlados |
+| PipeWire/WirePlumber y límites RT acotados | implementado | paquetes y configuración 48 kHz; falta medir xruns |
+| Aceptación gráfica, entrada, A/B y audio | pendiente | ejecutar en VM separada y guardar capturas/logs |
+
+## Linux Groove OS 0.4.0 — antecedentes
+
+- **Imagen:** `linux-groove-0.4.0-steamos-arch-aarch64.iso`
+- **Ubicación:** `/Volumes/Backup/linux_groove_terabit/iso/linux-groove-0.4.0-steamos-arch-aarch64.iso`
+- **Tamaño:** 2.6 GB (2,756,263,936 bytes)
+- **SHA-256:** `9b40c9229894b7ffe4e40aea400083a6af399acb27bab66f5deda7e1a6a758b3`
+- **Base del Sistema:** Arch Linux ARM (`aarch64`) oficial con Kernel 6.12.0 PREEMPT_RT, audio PipeWire/JACK, gestión de paquetes nativa `pacman` y soporte Flatpak/Flathub.
+- **Entorno Predeterminado:** KDE Plasma 6 (Wayland) con KWin compositor acelerado. Proporciona aislamiento de memoria por proceso para evitar congelamientos del sistema si un cliente pesada/IA se cuelga.
+- **Interfaz Visual:** Tema oscuro `BreezeDark` con efecto Glass translúcido y desenfoque KWin, botones de ventana estilo semáforo macOS a la izquierda (`ButtonsOnLeft=XIA`), menú contextual completo en el escritorio con clic derecho, Centro de Ajustes del Sistema (`systemsettings`) y fondo Piano Neon 4K.
+- **Failsafes Implementados:**
+  - Atajo global universal para forzar salida: `Cmd + Option + Esc` / `Ctrl + Alt + Esc` con cursor de terminación `Kill Window`.
+  - Atajo para cerrar ventana: `Cmd + Q` / `Alt + F4`.
+  - Watchdog de ventanas no responsivas `ping_timeout` (3s) en el gestor de ventanas.
+- **Sesiones Alternativas Disponibles:**
+  - Opción 2: *Groove · macOS Glass (XFCE 4.20 con tema WhiteSur-Dark y groove-dock)*.
+  - Opción 3: *Groove · Wayfire 3D (Wayfire 0.11 con Cubo 3D y ventanas gelatinosas)*.
+  - Opción 4: *Consola de recuperación*.
+

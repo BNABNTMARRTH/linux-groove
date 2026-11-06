@@ -1,0 +1,75 @@
+#!/usr/bin/env python3
+"""Per-user profiles with reversible Studio mode; never changes display scale."""
+import argparse, configparser, json, os, pathlib, subprocess, tempfile
+
+def run(*args):
+ return subprocess.run(args,check=True,capture_output=True,text=True).stdout.strip()
+def atomic(path, data):
+ path.parent.mkdir(parents=True,exist_ok=True)
+ with tempfile.NamedTemporaryFile(mode='w',dir=path.parent,delete=False) as f:
+  f.write(data); temp=f.name
+ os.replace(temp,path)
+def main():
+ p=argparse.ArgumentParser(); p.add_argument('profile',choices=['stable','expressive','studio','restore','status']); a=p.parse_args()
+ config=pathlib.Path(os.environ.get('XDG_CONFIG_HOME',str(pathlib.Path.home()/'.config')))
+ state=pathlib.Path(os.environ.get('XDG_STATE_HOME',str(pathlib.Path.home()/'.local/state')))/'groove/profiles.json'
+ saved=json.loads(state.read_text()) if state.exists() else {}
+ if a.profile=='status': print(json.dumps(saved,indent=2)); return
+ session=os.environ.get('XDG_CURRENT_DESKTOP','').lower()
+ if session not in ('kde','wayfire'): raise RuntimeError('Run inside Plasma or Wayfire.')
+ design=json.loads(pathlib.Path('/usr/share/groove/design.json').read_text())
+ keys=sorted({key for spec in design['profiles'].values() for key in spec['kwin']})
+ def capture():
+  result={'session':session,'audio':{},'kwin':{},'wayfire':None}
+  # pw-dump contains metadata with typed values; preserve forced rate/quantum.
+  objects=json.loads(run('pw-dump'))
+  for obj in objects:
+   if obj.get('type')=='PipeWire:Interface:Metadata' and obj.get('props',{}).get('metadata.name')=='settings':
+    for entry in obj.get('metadata',[]):
+     if entry.get('key') in ('clock.force-rate','clock.force-quantum'):
+      result['audio'][entry['key']]=str(entry['value'])
+  if session=='kde':
+   for key in keys:
+    result['kwin'][key]=run('kreadconfig6','--file','kwinrc','--group','Plugins','--key',key+'Enabled','--default','__unset__')
+  else:
+   ini=configparser.ConfigParser(); ini.read(config/'wayfire.ini'); result['wayfire']=ini.get('core','plugins')
+  return result
+ def apply(values):
+  if values['session'] != session: raise RuntimeError('Restore in the desktop where Studio was enabled.')
+  for key in ('clock.force-rate','clock.force-quantum'):
+   run('pw-metadata','-n','settings','0',key,values['audio'].get(key,'0'))
+  if session=='kde':
+   for key,value in values['kwin'].items():
+    args=['kwriteconfig6','--file','kwinrc','--group','Plugins','--key',key+'Enabled']
+    run(*(args+(['--delete'] if value=='__unset__' else [value])))
+   run('qdbus6','org.kde.KWin','/KWin','reconfigure')
+  else:
+   ini=configparser.ConfigParser(); ini.read(config/'wayfire.ini'); ini.set('core','plugins',values['wayfire'])
+   import io
+   buf=io.StringIO(); ini.write(buf); atomic(config/'wayfire.ini',buf.getvalue())
+ if a.profile=='restore':
+  if 'before_studio' not in saved: raise RuntimeError('No Studio snapshot to restore.')
+  apply(saved['before_studio']); saved.pop('before_studio'); saved['profile']='restored'
+ else:
+  if 'before_studio' in saved and a.profile!='studio':
+   raise RuntimeError('Use groove-profile restore before choosing another profile.')
+  before=capture()
+  if a.profile=='studio' and 'before_studio' not in saved:
+   saved['before_studio']=before
+   atomic(state,json.dumps(saved,indent=2)) # Preserve recovery even if applying fails.
+  spec=design['profiles'][a.profile]
+  values={'session':session,'audio':{'clock.force-rate':str(spec['rate']),'clock.force-quantum':str(spec['quantum'])},'kwin':{},'wayfire':None}
+  if session=='kde':
+   values['kwin']={k:str(spec['kwin'].get(k,False)).lower() for k in keys}
+  else:
+   plugins=[v for v in before['wayfire'].split() if v not in ('cube','scale','wobbly','blur')]
+   values['wayfire']=' '.join(plugins+spec['wayfire'])
+  try: apply(values)
+  except Exception:
+   apply(before)
+   raise
+  saved['profile']=a.profile
+ atomic(state,json.dumps(saved,indent=2)); print(a.profile)
+if __name__=='__main__':
+ try: main()
+ except (RuntimeError,OSError,subprocess.CalledProcessError,ValueError,KeyError) as e: raise SystemExit(str(e))

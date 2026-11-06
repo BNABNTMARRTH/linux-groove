@@ -1,0 +1,9 @@
+[org.kde.kdecoration2]
+library=org.kde.breeze
+ButtonsOnLeft=XIA
+ButtonsOnRight=
+[Plugins]
+blurEnabled=false
+wobblywindowsEnabled=false
+[Windows]
+BorderlessMaximizedWindows=false

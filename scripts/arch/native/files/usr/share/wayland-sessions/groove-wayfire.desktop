@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Groove Wayfire
+Comment=Alternative Wayland session
+Exec=/usr/bin/groove-wayfire-session
+Type=Application
+DesktopNames=Wayfire

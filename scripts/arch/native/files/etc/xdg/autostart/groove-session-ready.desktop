@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Groove session readiness
+Exec=/usr/bin/groove-session-ready
+OnlyShowIn=KDE;
+NoDisplay=true
