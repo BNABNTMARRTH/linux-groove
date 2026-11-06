@@ -1,5 +1,7 @@
 # Check de avance — Linux Groove
 
+> Estado vigente de apariencia XFCE: [spec 013](specs/013-unified-window-design-spec.md). Las referencias a Picom y decoración universal más abajo describen etapas anteriores; la aceptación UTM de GrooveWindow está pendiente.
+
 Actualizado: 2026-11-05 (America/Mexico_City).
 Estados: **pendiente**, **en implementación**, **verificado**.
 Una compilación no acredita integración. Las casillas históricas se conservan
@@ -70,3 +72,17 @@ como [registro sin validación](progress/LEGACY_PROGRESS_2026-11-04.md).
 - **SHA-256:** `8e1a891762329e750192f0d4aca3f880ffd6669d512564d98cd025f9df6e3f53`
 - **Arranque por defecto (GRUB `default=0`):** `Linux Groove 0.2.0 - Blue Note Glass Desktop (Wayland)` (`groove.wayland=1`).
 - **Entorno de usuario:** Weston 13.0.3 Wayland modificado con Top Bar + macOS Dock flotante + botones semáforo + Terminal translúcida + Wallpaper Piano Keys Neon.
+
+## GrooveWindow — spec 013 (estado vigente de XFCE)
+
+Las afirmaciones anteriores sobre semáforos universales y Picom son históricas;
+la configuración vigente usa XFWM y coherencia por aplicación.
+
+| Entregable | Estado | Evidencia |
+|---|---|---|
+| Tokens y generador XFWM/GTK 1×/2× | Implementado | configure_window_design.py y test_window_design.py |
+| Defaults XFCE, fuentes y ONLYOFFICE | Implementado; pruebas de tema Xvfb, apps UTM pendientes | Spec 013 |
+| Superficie transparente del dock | Implementado; validación visual pendiente | groove-dock.c |
+| ISO rc21 y pruebas de construcción | Verificado, no promovida | docs/validation/unified-window-design/README.md y rc21-build.log |
+| Matriz UTM y promoción | Pendiente | No acreditada por pruebas estáticas |
+| Adaptación Wayfire | Planificada posteriormente | Fuera de esta entrega |

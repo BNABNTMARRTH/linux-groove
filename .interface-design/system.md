@@ -42,3 +42,23 @@ Terminal GTK opaca, mono 11 pt, prompt de una línea y carpeta personal.
 Controles monocromáticos a la derecha; radios 12 px. Blur solo en superficies
 translúcidas, no sobre el texto de la terminal. Animaciones 160–180 ms;
 perfil reducido conservado. Weston usa los mismos cuatro lanzadores básicos.
+
+## Vigente en XFCE: GrooveWindow — spec 013
+
+Sustituye los controles y superficies anteriores solo en XFCE. Audiencia:
+creadores que alternan documentos, archivos, terminal y navegador. Dominio:
+estudio, mezcla, pista, partitura, toma y edición. Colores de referencia:
+carbón de equipos, gris de controles, negro de vinilo, texto claro y latón.
+Firma Groove: foco latón y escritorio existente; la ventana acompaña al trabajo.
+Se sustituyen semáforos por símbolos, marcos gruesos por borde discreto y
+translucidez de herramientas por superficies opacas legibles.
+
+Tokens normativos: scripts/graphics/window-design/tokens.json. Cabecera #202124,
+herramientas #353535, contenido #15181e, texto #e8e6e0, secundario #9aa0a6,
+borde #45464a de 1 px y foco #d4af37. Barra 36 px, zona de botón 32 px, hover
+circular 28 px, esquinas superiores 8 px. Inter 10.5 y título Medium 10.5;
+DejaVu Sans como alternativa. Controles a la izquierda; título centrado.
+Activo/inactivo/hover/pulsado/restaurar definidos, sin añadir animaciones.
+XFWM compone; GTK conserva controles funcionales Adwaita dark. Sin rediseño
+del panel ni iconos. CSD de terceros se verifica por aplicación, sin duplicarla.
+GrooveWindow-2x ofrece recursos XFWM a 2× sin modificar automáticamente DPI.

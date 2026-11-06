@@ -61,6 +61,7 @@ int main(void)
     if (stopping) return 0;
     fputs("Graphical session ended; handing the seat to LightDM\n", stderr);
     execl("/opt/groove-graphics/sbin/lightdm", "lightdm", "--no-daemon", (char*)NULL);
+    execl("/usr/bin/lightdm", "lightdm", "--no-daemon", (char*)NULL);
     perror("lightdm");
     return 1;
 }

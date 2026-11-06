@@ -143,11 +143,28 @@ def install(root, environment, service):
         [org.gnome.desktop.wm.preferences]
         button-layout=':minimize,maximize,close'
         ''')
+        glib_compile=root/'opt/groove-graphics/bin/glib-compile-schemas'
+        glib_cmd=[str(glib_compile)]
         tool_env=os.environ.copy()
         tool_env['LD_LIBRARY_PATH']=str(root/'opt/groove-graphics/lib')
-        subprocess.run([str(root/'opt/groove-graphics/bin/glib-compile-schemas'),str(schema_dir)],env=tool_env,check=True)
+        if not glib_compile.is_file() and (root/'usr/bin/glib-compile-schemas').is_file():
+            glib_compile=root/'usr/bin/glib-compile-schemas'
+            ld_so=root/'usr/lib/ld-linux-aarch64.so.1'
+            glib_cmd=([str(ld_so),'--library-path',str(root/'usr/lib'),str(glib_compile)]
+                      if ld_so.is_file() else [str(glib_compile)])
+            tool_env=os.environ.copy()
+        if glib_compile.is_file():
+            subprocess.run(glib_cmd+[str(schema_dir)],env=tool_env,check=True)
     # pixdecor loads these PNG paths directly; supply original vector controls.
     converter=root/'opt/groove-graphics/bin/rsvg-convert'
+    conv_cmd=[str(converter)]
+    conv_env=os.environ.copy();conv_env['LD_LIBRARY_PATH']=str(root/'opt/groove-graphics/lib')
+    if not converter.is_file() and (root/'usr/bin/rsvg-convert').is_file():
+        converter=root/'usr/bin/rsvg-convert'
+        ld_so=root/'usr/lib/ld-linux-aarch64.so.1'
+        conv_cmd=([str(ld_so),'--library-path',str(root/'usr/lib'),str(converter)]
+                  if ld_so.is_file() else [str(converter)])
+        conv_env=os.environ.copy()
     if converter.is_file():
         controls={
             'close':'<path d="M5 5L11 11M11 5L5 11"/>',
@@ -161,8 +178,7 @@ def install(root, environment, service):
             for size in (16,24,32,48):
                 dest=root/f'usr/share/icons/Adwaita/{size}x{size}/ui/window-{name}-symbolic.symbolic.png'
                 dest.parent.mkdir(parents=True,exist_ok=True)
-                tool_env=os.environ.copy();tool_env['LD_LIBRARY_PATH']=str(root/'opt/groove-graphics/lib')
-                subprocess.run([str(converter),'-w',str(size),'-h',str(size),str(root/asset.lstrip('/')),'-o',str(dest)],env=tool_env,check=True)
+                subprocess.run(conv_cmd+['-w',str(size),'-h',str(size),str(root/asset.lstrip('/')),'-o',str(dest)],env=conv_env,check=True)
                 dest.chmod(0o644)
     target=root/'etc/groove/wayfire-services'; target.mkdir(parents=True,exist_ok=True)
     for manifest in (root/'etc/groove/wayland-services').glob('*.toml'):

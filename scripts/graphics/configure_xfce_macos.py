@@ -56,6 +56,9 @@ def write_rounded_xpm(path, width, height, radius, is_left=True):
     path.write_text('\n'.join(lines) + '\n')
 
 def install(root):
+    is_arch = (root / 'usr/bin/pacman').is_file()
+    bin_prefix = '/usr/bin' if is_arch else PREFIX + '/bin'
+
     def put(rel_path, body, mode=0o644):
         target = root / rel_path.lstrip('/')
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -65,8 +68,23 @@ def install(root):
     converter = root / PREFIX.lstrip('/') / 'bin/rsvg-convert'
     icon_cache_bin = root / PREFIX.lstrip('/') / 'bin/gtk-update-icon-cache'
     fc_cache_bin = root / PREFIX.lstrip('/') / 'bin/fc-cache'
+    conv_cmd = [str(converter)]
+    icon_cache_cmd = [str(icon_cache_bin)]
+    fc_cache_cmd = [str(fc_cache_bin)]
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = str(root / PREFIX.lstrip('/') / 'lib')
+    if not converter.exists() and (root / 'usr/bin/rsvg-convert').exists():
+        converter = root / 'usr/bin/rsvg-convert'
+        icon_cache_bin = root / 'usr/bin/gtk-update-icon-cache'
+        fc_cache_bin = root / 'usr/bin/fc-cache'
+        ld_so = root / 'usr/lib/ld-linux-aarch64.so.1'
+        conv_cmd = ([str(ld_so), '--library-path', str(root / 'usr/lib'), str(converter)]
+                    if ld_so.is_file() else [str(converter)])
+        icon_cache_cmd = ([str(ld_so), '--library-path', str(root / 'usr/lib'), str(icon_cache_bin)]
+                          if ld_so.is_file() else [str(icon_cache_bin)])
+        fc_cache_cmd = ([str(ld_so), '--library-path', str(root / 'usr/lib'), str(fc_cache_bin)]
+                        if ld_so.is_file() else [str(fc_cache_bin)])
+        env = os.environ.copy()
 
     # 0. Extract precompiled WhiteSur-Dark GTK theme & WhiteSur Icon Pack
     themes_root = root / 'usr/share/themes'
@@ -121,7 +139,9 @@ def install(root):
     inter_src = FONTS_ARCHIVE_DIR / 'inter/extras/ttf'
     if inter_src.is_dir():
         for ttf in inter_src.glob('*.ttf'):
-            shutil.copy2(ttf, inter_target / ttf.name)
+            dest_ttf = inter_target / ttf.name
+            shutil.copy2(ttf, dest_ttf)
+            dest_ttf.chmod(0o644)
 
     # Enable Fontconfig Subpixel RGB and LCD Filter for ultra-smooth fonts
     fonts_conf_d = root / PREFIX.lstrip('/') / 'etc/fonts/conf.d'
@@ -158,7 +178,7 @@ def install(root):
     put(PREFIX + '/etc/fonts/local.conf', font_local_conf)
 
     if fc_cache_bin.exists():
-        subprocess.run([str(fc_cache_bin), '-f', str(inter_target)], env=env, check=False)
+        subprocess.run(fc_cache_cmd + ['-f', str(inter_target)], env=env, check=False)
 
     # 0c. Install Groove Wallpapers Gallery & Portal welcome.html
     bg_groove_dir = root / 'usr/share/backgrounds/groove'
@@ -192,9 +212,13 @@ def install(root):
     if onlyoffice_tar.exists():
         oo_parent = root / PREFIX.lstrip('/')
         subprocess.run(['tar', '-xJf', str(onlyoffice_tar), '-C', str(oo_parent)], check=True)
-        oo_bin = oo_parent / 'opt/onlyoffice/desktopeditors/DesktopEditors'
-        if oo_bin.exists():
-            oo_bin.chmod(0o755)
+        oo_dir = oo_parent / 'opt/onlyoffice'
+        if oo_dir.is_dir():
+            for p in oo_dir.rglob('*'):
+                if p.is_file():
+                    p.chmod(0o755 if (p.suffix in ('.so', '') or os.access(p, os.X_OK)) else 0o644)
+                elif p.is_dir():
+                    p.chmod(0o755)
 
     dst_apps_lib = root / 'opt/groove-apps/lib'
     dst_apps_lib.mkdir(parents=True, exist_ok=True)
@@ -204,6 +228,9 @@ def install(root):
                 dest_file = dst_apps_lib / lib_file.name
                 if not dest_file.exists():
                     shutil.copy2(lib_file, dest_file)
+    for lib_file in dst_apps_lib.glob('*'):
+        if lib_file.is_file():
+            lib_file.chmod(0o755)
 
     theme_dir = root / 'usr/share/themes/GrooveBlueNote/xfwm4'
     theme_dir.mkdir(parents=True, exist_ok=True)
@@ -255,7 +282,7 @@ def install(root):
         svg_path.write_text(svg_content)
         png_path = theme_dir / f'{name}.png'
         if converter.exists():
-            subprocess.run([str(converter), '-w', '24', '-h', '28',
+            subprocess.run(conv_cmd + ['-w', '24', '-h', '28',
                             str(svg_path), '-o', str(png_path)], env=env, check=True)
             png_path.chmod(0o644)
 
@@ -270,14 +297,6 @@ def install(root):
             for item in orig_xfwm4.iterdir():
                 if item.name.startswith(('title-', 'top-', 'bottom', 'left-', 'right-', 'shade-', 'stick-', 'menu-')):
                     shutil.copy2(item, theme_dir / item.name)
-
-    # Mirror xfwm4 assets into WhiteSur-Dark/xfwm4 so both themes have native macOS frames and smooth buttons
-    ws_xfwm4 = root / 'usr/share/themes/WhiteSur-Dark/xfwm4'
-    if ws_xfwm4.parent.exists():
-        ws_xfwm4.mkdir(parents=True, exist_ok=True)
-        for item in theme_dir.iterdir():
-            if item.is_file():
-                shutil.copy2(item, ws_xfwm4 / item.name)
 
     # 4b. Populate Dock Icons from WhiteSur + Custom Icons Override Pipeline
     dock_icon_dir = root / 'usr/share/icons/groove-glass'
@@ -302,7 +321,7 @@ def install(root):
                 dst_svg.chmod(0o644)
                 for size, suffix in ((48, ''), (96, '@2x')):
                     dest_png = dock_icon_dir / f'{dock_name}{suffix}.png'
-                    subprocess.run([str(converter), '-w', str(size), '-h', str(size),
+                    subprocess.run(conv_cmd + ['-w', str(size), '-h', str(size),
                                     str(dst_svg), '-o', str(dest_png)], env=env, check=True)
                     dest_png.chmod(0o644)
 
@@ -318,7 +337,7 @@ def install(root):
             dst_dock_svg.chmod(0o644)
             for size, suffix in ((48, ''), (96, '@2x')):
                 dest_png = dock_icon_dir / f'{stem}{suffix}.png'
-                subprocess.run([str(converter), '-w', str(size), '-h', str(size),
+                subprocess.run(conv_cmd + ['-w', str(size), '-h', str(size),
                                 str(dst_dock_svg), '-o', str(dest_png)], env=env, check=True)
                 dest_png.chmod(0o644)
 
@@ -345,7 +364,7 @@ def install(root):
                     hc_px_dir = hicolor_root / f'{px}x{px}/apps'
                     hc_px_dir.mkdir(parents=True, exist_ok=True)
                     hc_png = hc_px_dir / f'{target_stem}.png'
-                    subprocess.run([str(converter), '-w', str(px), '-h', str(px),
+                    subprocess.run(conv_cmd + ['-w', str(px), '-h', str(px),
                                     str(dst_dock_svg), '-o', str(hc_png)], env=env, check=True)
                     hc_png.chmod(0o644)
                     # Also place 16/22/24/32 px PNG/SVG in WhiteSur/apps/<px> so panel lookup finds it immediately
@@ -364,87 +383,17 @@ def install(root):
     if icon_cache_bin.exists():
         for ic_dir in (root / 'usr/share/icons/WhiteSur', root / 'usr/share/icons/hicolor'):
             if ic_dir.is_dir():
-                subprocess.run([str(icon_cache_bin), '-f', '-t', str(ic_dir)], env=env, check=False)
-
-    # 5. Picom configuration (disabled by default; xfwm4 native compositing is used)
-    put('/etc/xdg/picom.conf', '''
-    experimental-backends = true;
-    backend = "xrender";
-    vsync = false;
-
-    corner-radius = 12;
-    rounded-corners-exclude = [
-      "window_type = 'dock'",
-      "window_type = 'desktop'",
-      "class_g = 'xfce4-panel'"
-    ];
-
-    shadow = true;
-    shadow-radius = 16;
-    shadow-opacity = 0.42;
-    shadow-offset-x = -12;
-    shadow-offset-y = -12;
-    shadow-exclude = [
-      "class_g = 'xfce4-screenshooter'",
-      "window_type = 'dock'",
-      "window_type = 'desktop'",
-      "_GTK_FRAME_EXTENTS@:c"
-    ];
-
-    fading = true;
-    fade-in-step = 0.08;
-    fade-out-step = 0.08;
-    fade-delta = 10;
-
-    inactive-opacity = 0.94;
-    active-opacity = 0.98;
-    frame-opacity = 0.92;
-
-    opacity-rule = [
-      "80:class_g = 'xfce4-panel'",
-      "80:class_g = 'Xfce4-panel'",
-      "100:class_g = 'groove-dock'",
-      "100:class_g = 'Brave-browser'",
-      "100:class_g = 'brave-browser'",
-      "100:class_g = 'DesktopEditors'",
-      "100:class_g = 'Firefox'",
-      "100:class_g = 'firefox'",
-      "88:class_g = 'Xfce4-terminal'",
-      "88:class_g = 'xfce4-terminal'",
-      "92:class_g = 'Thunar'",
-      "92:class_g = 'thunar'",
-      "93:class_g = 'Mousepad'",
-      "93:class_g = 'mousepad'",
-      "92:class_g = 'Groove-control-center'",
-      "92:class_g = 'groove-control-center'",
-      "92:class_g = 'Xfce4-settings-manager'"
-    ];
-
-    wintypes:
-    {
-      tooltip = { fade = true; shadow = true; opacity = 0.88; focus = true; full-shadow = false; };
-      dock = { shadow = false; clip-shadow-above = true; };
-      dnd = { shadow = false; };
-      popup_menu = { opacity = 0.86; shadow = true; fade = true; };
-      dropdown_menu = { opacity = 0.86; shadow = true; fade = true; };
-      menu = { opacity = 0.86; shadow = true; fade = true; };
-    };
-    ''')
-
-    put('/usr/libexec/groove-picom', '''#!/bin/sh
-    set -eu
-    exec /opt/groove-graphics/bin/picom --experimental-backends --config /etc/xdg/picom.conf "$@"
-    ''', 0o755)
+                subprocess.run(icon_cache_cmd + ['-f', '-t', str(ic_dir)], env=env, check=False)
 
     # 6. Autostart Groove Dock (Picom not autostarted to avoid double compositing)
     (root / 'etc/xdg/autostart/groove-picom.desktop').unlink(missing_ok=True)
 
-    put('/etc/xdg/autostart/groove-dock.desktop', '''
+    put('/etc/xdg/autostart/groove-dock.desktop', f'''
     [Desktop Entry]
     Type=Application
     Name=Groove macOS Dock
     Comment=macOS Glass Floating Dock
-    Exec=/opt/groove-graphics/bin/groove-dock
+    Exec={bin_prefix}/groove-dock
     OnlyShowIn=XFCE;
     RunHook=0
     ''')
@@ -507,7 +456,7 @@ def install(root):
     '''
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
     put(PREFIX + '/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
-    put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
+    # XFCE reads the system default when no user preference exists.
     put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
 
     # Autostart wallpaper script to guarantee matching any dynamic RandR monitor and resolution
@@ -617,7 +566,7 @@ RunHook=0
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
     put(PREFIX + '/etc/xdg/xfce4/panel/default.xml', panel_xml)
     put(PREFIX + '/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
-    put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
+    # Preserve user panel settings; use the system default for new profiles.
     put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml', panel_xml)
 
     # 10. GTK3 Settings & Decorations (WhiteSur-Dark + WhiteSur Icons + Inter Font + Subpixel Xft)
@@ -728,16 +677,9 @@ RunHook=0
     ''' + glass_css
     put('/usr/share/themes/GrooveBlueNote/gtk-3.0/gtk.css', fallback_css)
 
-    for ws_css_rel in ('usr/share/themes/WhiteSur-Dark/gtk-3.0/gtk.css',
-                       'usr/share/themes/WhiteSur-Dark/gtk-3.0/gtk-dark.css'):
-        ws_css_path = root / ws_css_rel
-        if ws_css_path.exists():
-            orig = ws_css_path.read_text()
-            if 'Linux Groove macOS Glassmorphism Overrides' not in orig:
-                ws_css_path.write_text(orig + '\n' + textwrap.dedent(glass_css))
-
-    put('/etc/xdg/gtk-3.0/gtk.css', glass_css)
-    put('/home/groove/.config/gtk-3.0/gtk.css', glass_css)
+    # Keep panel styling separate from application themes; never inject user CSS.
+    panel_css = glass_css[:glass_css.index('    menu,')]
+    put('/etc/xdg/gtk-3.0/gtk.css', panel_css)
 
     # 12. Populate Desktop Launchers in /home/groove/Desktop
     desktop_dir = root / 'home/groove/Desktop'
@@ -765,11 +707,17 @@ Categories=Utility;
     for chown_target in (desktop_dir, root / 'home/groove/.config'):
         if chown_target.exists():
             for dirpath, dirnames, filenames in os.walk(chown_target):
-                os.chown(dirpath, 1000, 1000)
+                try:
+                    os.chown(dirpath, 1000, 1000)
+                except PermissionError:
+                    pass
                 for fn in filenames:
                     fp = Path(dirpath) / fn
                     if not fp.is_symlink():
-                        os.chown(fp, 1000, 1000)
+                        try:
+                            os.chown(fp, 1000, 1000)
+                        except PermissionError:
+                            pass
     for f in desktop_dir.glob('*.desktop'):
         f.chmod(0o755)
 

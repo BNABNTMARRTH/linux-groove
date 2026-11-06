@@ -40,6 +40,12 @@ cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-greeter-ui.
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-effects-dialog.c" \
     $(pkg-config --cflags --libs gtk+-3.0) \
     -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-effects-dialog"
+cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-transparency-settings.c" \
+    $(pkg-config --cflags --libs gtk+-3.0) \
+    -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-transparency-settings"
+cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-package-installer.c" \
+    $(pkg-config --cflags --libs gtk+-3.0) \
+    -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-package-installer"
 # Copy only the compiled source prefix. Never copy libraries from builder /usr.
 "$PREFIX/bin/gdk-pixbuf-query-loaders" > "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache.tmp"
 mv "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache.tmp" "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache"
@@ -59,6 +65,19 @@ if [[ "$ENABLE_WAYFIRE" == 1 ]]; then
 fi
 cp /tmp/groove-init-target/release/groove-init "$ROOT/sbin/groove-init"
 chmod 0755 "$ROOT/sbin/groove-init"
+if [[ -f /tmp/groove-init-target/release/groove-installer ]]; then
+    cp /tmp/groove-init-target/release/groove-installer "$ROOT/usr/bin/groove-installer"
+    chmod 0755 "$ROOT/usr/bin/groove-installer"
+fi
+if [[ -f /tmp/groove-init-target/release/groove-session ]]; then
+    cp /tmp/groove-init-target/release/groove-session "$ROOT/usr/bin/groove-session"
+    chmod 0755 "$ROOT/usr/bin/groove-session"
+fi
+if [[ -f /tmp/graphical-images/groove_rt.ko ]]; then
+    mkdir -p "$ROOT/lib/modules/6.12.0/extra"
+    cp /tmp/graphical-images/groove_rt.ko "$ROOT/lib/modules/6.12.0/extra/groove_rt.ko"
+    chmod 0644 "$ROOT/lib/modules/6.12.0/extra/groove_rt.ko"
+fi
 python3 "$SOURCE_ROOT"/scripts/graphics/configure_rootfs.py "$ROOT"
 if [[ -d "$PREFIX/share/dbus-1/system.d" ]]; then
     mkdir -p "$ROOT/etc/dbus-1/system.d"
@@ -75,6 +94,11 @@ if [[ -f "$ROOT/usr/share/i18n/charmaps/UTF-8.gz" && ! -f "$ROOT/usr/share/i18n/
 fi
 chroot "$ROOT" /usr/bin/localedef -i es_MX -f UTF-8 es_MX.UTF-8
 /sbin/ldconfig -r "$ROOT"
+# Verify the installed font, not merely the configured family name.
+FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf" chroot "$ROOT" "$PREFIX/bin/fc-cache" -f
+font_family=$(FONTCONFIG_FILE="$PREFIX/etc/fonts/fonts.conf" chroot "$ROOT" "$PREFIX/bin/fc-match" -f '%{family}' Inter)
+[[ "$font_family" == *Inter* ]] || { echo "Inter did not resolve: $font_family" >&2; exit 1; }
+python3 -m unittest discover -s "$SOURCE_ROOT/scripts/graphics/tests" -p test_window_design.py -v
 # Validate the catalogue through the same API used by the greeter.
 cc -O2 "$SOURCE_ROOT"/scripts/graphics/tests/session_catalog_check.c \
     $(PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs liblightdm-gobject-1) \
@@ -125,7 +149,7 @@ if [ -f /boot/grub/fonts/unicode.pf2 ]; then
         terminal_output gfxterm console
     fi
 fi
-menuentry "Linux Groove 0.3.0 - Blue Note macOS Glass (XFCE + Picom)" {
+menuentry "Linux Groove 0.3.0 - GrooveWindow (XFCE + XFWM)" {
     linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0
     initrd /boot/initramfs.cpio.gz
 }

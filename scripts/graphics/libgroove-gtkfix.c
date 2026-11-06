@@ -32,3 +32,4 @@ static void groove_gtk_fix_init(void) {
         p_gtk_init_check(&argc, &argv);
     }
 }
+

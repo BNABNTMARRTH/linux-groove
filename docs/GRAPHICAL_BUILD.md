@@ -119,3 +119,19 @@ hasta completar aceptación; Weston, XFCE y consola se conservan.
 Audacity, Blender, persistencia y gestor de aplicaciones quedan para después.
 
 Ver [spec 012](specs/012-blue-note-refinement-spec.md) y el informe de validación.
+
+## Candidata GrooveWindow (spec 013)
+
+Construcción XFCE con XFWM como compositor, sin promoción automática:
+
+```sh
+VERSION=0.3.0-rc21 DEFAULT_SESSION=xfce ./scripts/build_wayfire_iso.sh package
+```
+
+El constructor conserva archivos de salida existentes y exige staging nuevo.
+Genera recursos SVG/PNG 1×/2× y verifica Inter dentro del rootfs. Configuración
+XFCE propia en `/etc/xdg/groove-xfce`; no fuerza GTK_THEME ni escribe las
+preferencias de apariencia de un HOME existente. Wayfire se adapta después.
+
+[Evidencia y matriz UTM](validation/unified-window-design/README.md).
+Las capturas Xvfb de apariencia no acreditan composición, GPU ni arranque UTM.

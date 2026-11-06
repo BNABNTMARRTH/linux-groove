@@ -1,5 +1,7 @@
 # Plan Híbrido por Fases: Escritorio Blue Note macOS Glass (XFCE + Picom → Wayfire → Smithay)
 
+> Actualización 2026-11-05: la spec 013 (`docs/specs/013-unified-window-design-spec.md`) sustituye las decisiones de apariencia/compositor para XFCE. Este documento conserva su contexto histórico y el alcance de las otras sesiones.
+
 ## Descripción del Objetivo
 
 Construir e integrar un escritorio gráfico de alta gama inspirado en **macOS + Blue Note Glassmorphism**, resolviendo de raíz las limitaciones visuales observadas en Weston (decoraciones desiguales entre apps GTK y terminal, falta de desenfoque/sombras y dock estático), estructurado en un **Plan Híbrido de 3 Fases**:
