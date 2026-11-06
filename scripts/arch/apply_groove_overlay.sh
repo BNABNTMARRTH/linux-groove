@@ -102,10 +102,14 @@ docker exec "$BUILDER" bash -c "
         cc -O2 -Wall -Wextra /usr/src/groove/groove-package-installer.c \
             \$(pkg-config --cflags --libs gtk+-3.0) \
             -o /usr/bin/groove-package-installer
+
+        cc -O2 -Wall -Wextra /usr/src/groove/groove-app-hub.c \
+            \$(pkg-config --cflags --libs gtk+-3.0) \
+            -o /usr/bin/groove-app-hub
             
         rm -rf /usr/src/groove
     '
-    for b in groove-desktop groove-launch-error groove-dock groove-control-center groove-greeter-ui groove-effects-dialog groove-transparency-settings groove-package-installer; do
+    for b in groove-desktop groove-launch-error groove-dock groove-control-center groove-greeter-ui groove-effects-dialog groove-transparency-settings groove-package-installer groove-app-hub; do
         ln -sfn \"../../../usr/bin/\$b\" '$WORK_ROOT/opt/groove-graphics/bin/'\"\$b\"
     done
 "

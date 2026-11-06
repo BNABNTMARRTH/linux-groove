@@ -18,14 +18,14 @@ typedef struct {
 } ControlAction;
 
 static const ControlAction actions[] = {
-    {"video-display", "Pantalla", "Resolución y orientación", "/opt/groove-graphics/bin/xfce4-display-settings"},
-    {"preferences-desktop-theme", "Apariencia", "Temas GTK, iconos y fuentes", "/opt/groove-graphics/bin/xfce4-appearance-settings"},
+    {"video-display", "Pantalla", "Resolución y orientación", "/usr/bin/xfce4-display-settings"},
+    {"preferences-desktop-theme", "Apariencia", "Temas GTK, iconos y fuentes", "/usr/bin/xfce4-appearance-settings"},
     {"preferences-desktop-display", "Transparencia", "Opacidad de ventanas y sombras", "/usr/libexec/groove-transparency-settings"},
-    {"preferences-desktop-wallpaper", "Fondo", "Fondo de escritorio y estilos", "/opt/groove-graphics/bin/xfdesktop-settings"},
-    {"preferences-system-windows", "Ventanas", "Bordes y comportamiento xfwm4", "/opt/groove-graphics/bin/xfwm4-settings"},
-    {"input-keyboard", "Teclado", "Distribución de teclas y atajos", "/opt/groove-graphics/bin/xfce4-keyboard-settings"},
-    {"input-mouse", "Ratón", "Velocidad del puntero y touchpad", "/opt/groove-graphics/bin/xfce4-mouse-settings"},
-    {"system-software-install", "Instalar App", "Extraer e instalar .tar.xz, .zip, .deb", "/usr/libexec/groove-package-installer"},
+    {"preferences-desktop-wallpaper", "Fondo", "Fondo de escritorio y estilos", "/usr/bin/xfdesktop-settings"},
+    {"preferences-system-windows", "Ventanas", "Bordes y comportamiento xfwm4", "/usr/bin/xfwm4-settings"},
+    {"input-keyboard", "Teclado", "Distribución de teclas y atajos", "/usr/bin/xfce4-keyboard-settings"},
+    {"input-mouse", "Ratón", "Velocidad del puntero y touchpad", "/usr/bin/xfce4-mouse-settings"},
+    {"system-software-install", "App Hub", "Catálogo de software a 1 clic", "/usr/bin/groove-app-hub"},
     {"utilities-terminal", "Terminal", "Línea de comandos Groove", "/usr/libexec/groove-terminal"},
     {"preferences-system", "Efectos 3D", "Cubo 3D, Wobbly y rotación Wayfire", "/usr/libexec/groove-effects-info"},
     {"drive-harddisk", "Instalar OS", "Instalar Linux Groove en disco", "/usr/libexec/groove-installer-gui"}

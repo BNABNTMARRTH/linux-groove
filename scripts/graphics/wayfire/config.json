@@ -39,12 +39,12 @@
     "tooltip": false
   },
   "custom/workspaces": {
-    "exec": "/opt/groove-wayfire/bin/groove-workspace",
+    "exec": "/usr/bin/groove-workspace",
     "return-type": "json",
     "interval": 1,
-    "on-click": "/opt/groove-wayfire/bin/groove-workspace next",
-    "on-scroll-up": "/opt/groove-wayfire/bin/groove-workspace prev",
-    "on-scroll-down": "/opt/groove-wayfire/bin/groove-workspace next"
+    "on-click": "/usr/bin/groove-workspace next",
+    "on-scroll-up": "/usr/bin/groove-workspace prev",
+    "on-scroll-down": "/usr/bin/groove-workspace next"
   },
   "custom/system": {
     "exec": "/usr/libexec/groove-system-status",

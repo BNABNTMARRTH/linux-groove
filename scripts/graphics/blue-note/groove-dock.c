@@ -92,9 +92,9 @@ static DockItem items[] = {
     {"system", "Control", "/usr/share/icons/groove-glass/system@2x.png",
      "/usr/libexec/groove-control-center", "groove-control-center", NULL, 1.0, 1.0, 0, 0, FALSE, FALSE, FALSE, 0.0, 0.0},
     {"settings", "Ajustes", "/usr/share/icons/groove-glass/settings@2x.png",
-     "/opt/groove-graphics/bin/xfce4-settings-manager", "xfce4-settings-manager", NULL, 1.0, 1.0, 0, 0, FALSE, FALSE, FALSE, 0.0, 0.0},
-    {"installer", "Instalar OS", "/usr/share/icons/groove-glass/installer@2x.png",
-     "/usr/libexec/groove-installer-gui", "groove-installer", NULL, 1.0, 1.0, 0, 0, FALSE, FALSE, FALSE, 0.0, 0.0}
+     "/usr/bin/xfce4-settings-manager", "xfce4-settings-manager", NULL, 1.0, 1.0, 0, 0, FALSE, FALSE, FALSE, 0.0, 0.0},
+    {"apphub", "App Hub", "/usr/share/icons/groove-glass/installer@2x.png",
+     "/usr/bin/groove-app-hub", "groove-app-hub", NULL, 1.0, 1.0, 0, 0, FALSE, FALSE, FALSE, 0.0, 0.0}
 };
 static const int num_items = sizeof(items) / sizeof(items[0]);
 

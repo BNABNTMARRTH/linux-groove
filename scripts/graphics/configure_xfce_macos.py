@@ -398,7 +398,7 @@ def install(root):
     RunHook=0
     ''')
 
-    # 7. XFCE Window Manager Configuration (xfwm4.xml) with Inter Font
+    # 7. XFCE Window Manager Configuration (xfwm4.xml) with Inter Font & Anti-Freeze Watchdog
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml', '''
     <?xml version="1.0" encoding="UTF-8"?>
     <channel name="xfwm4" version="1.0">
@@ -417,6 +417,34 @@ def install(root):
         <property name="double_click_action" type="string" value="maximize"/>
         <property name="scroll_workspaces" type="bool" value="false"/>
         <property name="workspace_count" type="int" value="4"/>
+        <property name="ping_timeout" type="uint" value="3000"/>
+        <property name="easy_click" type="string" value="Super"/>
+      </property>
+    </channel>
+    ''')
+
+    # 7b. Universal Force Quit shortcuts (Mac Cmd+Alt+Esc & Ctrl+Alt+Esc) and Cmd+Q
+    put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml', '''
+    <?xml version="1.0" encoding="UTF-8"?>
+    <channel name="xfce4-keyboard-shortcuts" version="1.0">
+      <property name="commands" type="empty">
+        <property name="custom" type="empty">
+          <property name="&lt;Primary&gt;&lt;Alt&gt;Escape" type="string" value="xkill"/>
+          <property name="&lt;Super&gt;&lt;Alt&gt;Escape" type="string" value="xkill"/>
+          <property name="&lt;Primary&gt;&lt;Shift&gt;Escape" type="string" value="xfce4-taskmanager"/>
+          <property name="&lt;Super&gt;e" type="string" value="thunar"/>
+          <property name="&lt;Super&gt;t" type="string" value="xfce4-terminal"/>
+          <property name="&lt;Super&gt;space" type="string" value="xfce4-appfinder"/>
+        </property>
+      </property>
+      <property name="xfwm4" type="empty">
+        <property name="custom" type="empty">
+          <property name="&lt;Super&gt;q" type="string" value="close_window_key"/>
+          <property name="&lt;Alt&gt;F4" type="string" value="close_window_key"/>
+          <property name="&lt;Alt&gt;Tab" type="string" value="cycle_windows_key"/>
+          <property name="&lt;Alt&gt;&lt;Shift&gt;Tab" type="string" value="cycle_reverse_windows_key"/>
+          <property name="&lt;Super&gt;Tab" type="string" value="switch_window_key"/>
+        </property>
       </property>
     </channel>
     ''')
@@ -442,14 +470,14 @@ def install(root):
         </property>
       </property>
       <property name="desktop-icons" type="empty">
-        <property name="style" type="int" value="2"/>
+        <property name="style" type="int" value="0"/>
         <property name="icon-size" type="uint" value="48"/>
-        <property name="show-thumbnails" type="bool" value="true"/>
+        <property name="show-thumbnails" type="bool" value="false"/>
         <property name="file-icons" type="empty">
-          <property name="show-home" type="bool" value="true"/>
-          <property name="show-filesystem" type="bool" value="true"/>
+          <property name="show-home" type="bool" value="false"/>
+          <property name="show-filesystem" type="bool" value="false"/>
           <property name="show-trash" type="bool" value="false"/>
-          <property name="show-removable" type="bool" value="true"/>
+          <property name="show-removable" type="bool" value="false"/>
         </property>
       </property>
     </channel>
@@ -681,28 +709,11 @@ RunHook=0
     panel_css = glass_css[:glass_css.index('    menu,')]
     put('/etc/xdg/gtk-3.0/gtk.css', panel_css)
 
-    # 12. Populate Desktop Launchers in /home/groove/Desktop
+    # 12. Clean macOS Desktop (Launchers reside in the Dock and Application Menu)
     desktop_dir = root / 'home/groove/Desktop'
     desktop_dir.mkdir(parents=True, exist_ok=True)
-
-    launchers = [
-        ('brave.desktop', 'Brave Browser', '/usr/libexec/groove-browser', '/usr/share/icons/groove-glass/browser.png'),
-        ('onlyoffice.desktop', 'OnlyOffice Desktop Editors', '/usr/libexec/groove-office', '/usr/share/icons/groove-glass/office.png'),
-        ('groove-control-center.desktop', 'Centro de Control', '/usr/libexec/groove-control-center', '/usr/share/icons/groove-glass/system.png'),
-        ('groove-installer.desktop', 'Instalar Linux Groove OS', '/usr/libexec/groove-installer-gui', '/usr/share/icons/groove-glass/installer.png'),
-        ('thunar.desktop', 'Archivos', '/usr/libexec/groove-files', '/usr/share/icons/groove-glass/files.png'),
-        ('xfce4-terminal.desktop', 'Terminal', '/usr/libexec/groove-terminal', '/usr/share/icons/groove-glass/terminal.png')
-    ]
-    for fname, name, exec_cmd, icon_path in launchers:
-        put(f'/home/groove/Desktop/{fname}', f'''[Desktop Entry]
-Version=1.0
-Type=Application
-Name={name}
-Exec={exec_cmd}
-Icon={icon_path}
-Terminal=false
-Categories=Utility;
-''', mode=0o755)
+    for old_launcher in desktop_dir.glob('*.desktop'):
+        old_launcher.unlink(missing_ok=True)
 
     for chown_target in (desktop_dir, root / 'home/groove/.config'):
         if chown_target.exists():

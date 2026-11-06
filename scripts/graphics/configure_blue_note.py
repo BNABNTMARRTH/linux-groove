@@ -92,6 +92,18 @@ exec {bin_prefix}/groove-transparency-settings "$@"
     put('/usr/libexec/groove-package-installer', f'''#!/bin/sh
 exec {bin_prefix}/groove-package-installer "$@"
 ''', 0o755)
+    put('/usr/libexec/groove-app-hub', f'''#!/bin/sh
+exec {bin_prefix}/groove-app-hub "$@"
+''', 0o755)
+    put('/usr/share/applications/groove-app-hub.desktop', '''[Desktop Entry]
+Type=Application
+Name=Groove App Hub
+Comment=Catálogo de software a 1 clic para Linux Groove OS
+Exec=/usr/libexec/groove-app-hub
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;Utility;
+''')
     put('/usr/share/applications/groove-package-installer.desktop', '''[Desktop Entry]
 Type=Application
 Name=Instalador de Paquetes Groove
