@@ -1,5 +1,7 @@
 # 012 — Blue Note sobrio y lanzadores compartidos
 
+> Actualización 2026-11-05: la spec 013 (`docs/specs/013-unified-window-design-spec.md`) sustituye las decisiones de apariencia/compositor para XFCE. Este documento conserva su contexto histórico y el alcance de las otras sesiones.
+
 Fecha: 2026-11-05. Implementación y aceptación se registran por separado.
 
 ## Apariencia

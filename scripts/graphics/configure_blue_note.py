@@ -15,6 +15,14 @@ APPLICATIONS = (
 )
 
 def install(root, environment):
+    is_arch = (root / 'usr/bin/pacman').is_file()
+    bin_prefix = '/usr/bin' if is_arch else PREFIX + '/bin'
+    pixbuf_cache = (
+        '/usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache'
+        if is_arch else
+        PREFIX + '/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache'
+    )
+
     def put(name, body, mode=0o644):
         target = root / name.lstrip('/')
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -22,11 +30,11 @@ def install(root, environment):
         target.chmod(mode)
 
     # Preserve the caller's session environment, especially its D-Bus and Mesa.
-    put('/usr/libexec/groove-launch', '#!/bin/sh\nset -eu\n' + environment + '''
+    put('/usr/libexec/groove-launch', '#!/bin/sh\nset -eu\n' + environment + f'''
 label=$1
 name=$2
 shift 2
-if [ "${XDG_SESSION_TYPE:-}" = x11 ]; then
+if [ "${{XDG_SESSION_TYPE:-}}" = x11 ]; then
     export GDK_BACKEND=x11
     export MOZ_ENABLE_WAYLAND=0
 else
@@ -41,12 +49,12 @@ result=0
 "$@" >> "$log" 2>&1 || result=$?
 if [ "$result" -ne 0 ]; then
     printf 'Exit status: %s\\n' "$result" >> "$log"
-    /opt/groove-graphics/bin/groove-launch-error "$label" "$log" || true
+    {bin_prefix}/groove-launch-error "$label" "$log" || true
 fi
 exit "$result"
 ''', 0o755)
     for name, label, command in APPLICATIONS:
-        cmd_path = command if command.startswith('/') else PREFIX + '/bin/' + command
+        cmd_path = command if command.startswith('/') else bin_prefix + '/' + command
         put('/usr/libexec/groove-' + name,
             '#!/bin/sh\nexec /usr/libexec/groove-launch "' + label + '" ' + name +
             ' ' + cmd_path + ' "$@"\n', 0o755)
@@ -60,24 +68,40 @@ exit "$result"
         Terminal=false
         Categories=Utility;
         ''')
-    put('/usr/libexec/groove-browser', '''#!/bin/sh
-export LD_LIBRARY_PATH=/opt/groove-apps/lib:/opt/groove-graphics/lib:${LD_LIBRARY_PATH:-}
+    put('/usr/libexec/groove-browser', f'''#!/bin/sh
+export LD_LIBRARY_PATH=/opt/groove-apps/lib:/opt/groove-graphics/lib:${{LD_LIBRARY_PATH:-}}
 if [ -x /opt/groove-graphics/opt/brave/brave ]; then
     exec /usr/libexec/groove-launch "Brave" browser /opt/groove-graphics/opt/brave/brave --no-sandbox --disable-gpu-sandbox --no-first-run --no-default-browser-check file:///usr/share/groove/welcome.html "$@"
 else
-    exec /usr/libexec/groove-launch "Firefox" browser /opt/groove-graphics/bin/firefox file:///usr/share/groove/welcome.html "$@"
+    exec /usr/libexec/groove-launch "Firefox" browser {bin_prefix}/firefox file:///usr/share/groove/welcome.html "$@"
 fi
 ''', 0o755)
-    put('/usr/libexec/groove-office', '''#!/bin/sh
-export XDG_DATA_DIRS=/opt/groove-graphics/share:/usr/share:${XDG_DATA_DIRS:-}
-export GDK_PIXBUF_MODULE_FILE=/opt/groove-graphics/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
-export LD_PRELOAD=/opt/groove-apps/lib/libgroove-gtkfix.so:${LD_PRELOAD:-}
-export LD_LIBRARY_PATH=/opt/groove-graphics/opt/onlyoffice/desktopeditors:/opt/groove-apps/lib:/opt/groove-graphics/lib:${LD_LIBRARY_PATH:-}
+    put('/usr/libexec/groove-office', f'''#!/bin/sh
+export XDG_DATA_DIRS=/opt/groove-graphics/share:/usr/share:${{XDG_DATA_DIRS:-}}
+export GDK_PIXBUF_MODULE_FILE={pixbuf_cache}
+export LD_PRELOAD=/opt/groove-apps/lib/libgroove-gtkfix.so:${{LD_PRELOAD:-}}
+export LD_LIBRARY_PATH=/opt/groove-graphics/opt/onlyoffice/desktopeditors:/opt/groove-apps/lib:/opt/groove-graphics/lib:${{LD_LIBRARY_PATH:-}}
 exec /usr/libexec/groove-launch "OnlyOffice" office /opt/groove-graphics/opt/onlyoffice/desktopeditors/DesktopEditors "$@"
 ''', 0o755)
-    put('/usr/libexec/groove-effects-info', '''#!/bin/sh
-exec /opt/groove-graphics/bin/groove-effects-dialog "$@"
+    put('/usr/libexec/groove-effects-info', f'''#!/bin/sh
+exec {bin_prefix}/groove-effects-dialog "$@"
 ''', 0o755)
+    put('/usr/libexec/groove-transparency-settings', f'''#!/bin/sh
+exec {bin_prefix}/groove-transparency-settings "$@"
+''', 0o755)
+    put('/usr/libexec/groove-package-installer', f'''#!/bin/sh
+exec {bin_prefix}/groove-package-installer "$@"
+''', 0o755)
+    put('/usr/share/applications/groove-package-installer.desktop', '''[Desktop Entry]
+Type=Application
+Name=Instalador de Paquetes Groove
+Comment=Instalar y extraer paquetes .tar.xz, .zip, .deb, .dmg y .AppImage
+Exec=/usr/libexec/groove-package-installer %F
+Icon=package-x-generic
+Terminal=false
+Categories=Utility;System;Archiving;
+MimeType=application/x-xz-compressed-tar;application/x-tar;application/gzip;application/zip;application/x-bzip2;application/x-compressed-tar;application/vnd.debian.binary-package;application/x-deb;application/x-apple-diskimage;
+''')
     put('/usr/libexec/groove-system-status', '''#!/bin/sh
 set -eu
 total=0; available=0
@@ -116,24 +140,31 @@ kill -TERM "$compositor"
     put('/usr/libexec/groove-system-info', '''#!/bin/sh
 exec /usr/libexec/groove-terminal --title="Groove · Sistema" --command=/usr/bin/groove-sysinfo
 ''', 0o755)
-    put('/usr/libexec/groove-control-center', '''#!/bin/sh
-exec /usr/libexec/groove-launch "Control" control /opt/groove-graphics/bin/groove-control-center "$@"
+    put('/usr/libexec/groove-control-center', f'''#!/bin/sh
+exec /usr/libexec/groove-launch "Control" control {bin_prefix}/groove-control-center "$@"
 ''', 0o755)
-    put('/usr/libexec/groove-installer-gui', '''#!/bin/sh
-exec /opt/groove-graphics/bin/xfce4-terminal --title="Instalador de Linux Groove OS" --geometry=100x30 -e /usr/bin/groove-installer "$@"
+    put('/usr/libexec/groove-installer-gui', f'''#!/bin/sh
+exec {bin_prefix}/xfce4-terminal --title="Instalador de Linux Groove OS" --geometry=100x30 -e /usr/bin/groove-installer "$@"
 ''', 0o755)
     # Old wallpaper actions did not change anything; do not expose empty actions.
     for name in ('motion', 'wallpaper', 'system'):
         (root / f'usr/share/applications/groove-launcher-{name}.desktop').unlink(missing_ok=True)
     converter = root / PREFIX.lstrip('/') / 'bin/rsvg-convert'
+    conv_cmd = [str(converter)]
     env = os.environ.copy()
     env['LD_LIBRARY_PATH'] = str(root / PREFIX.lstrip('/') / 'lib')
+    if not converter.exists() and (root / 'usr/bin/rsvg-convert').exists():
+        converter = root / 'usr/bin/rsvg-convert'
+        ld_so = root / 'usr/lib/ld-linux-aarch64.so.1'
+        conv_cmd = ([str(ld_so), '--library-path', str(root / 'usr/lib'), str(converter)]
+                    if ld_so.is_file() else [str(converter)])
+        env = os.environ.copy()
     for svg in sorted((ASSETS / 'icons').glob('*.svg')):
         put('/usr/share/icons/groove-glass/' + svg.name, svg.read_text())
         if converter.exists():
             for size, suffix in ((48, ''), (96, '@2x')):
                 dest = root / f'usr/share/icons/groove-glass/{svg.stem}{suffix}.png'
-                subprocess.run([str(converter), '-w', str(size), '-h', str(size),
+                subprocess.run(conv_cmd + ['-w', str(size), '-h', str(size),
                     str(svg), '-o', str(dest)], env=env, check=True)
                 dest.chmod(0o644)
     prompt = "export PS1='\\[\\033[38;5;180m\\]groove\\[\\033[0m\\] \\w \\$ '\n"
@@ -180,14 +211,18 @@ exec /opt/groove-graphics/bin/xfce4-terminal --title="Instalador de Linux Groove
       <style name="def:string" foreground="#9dbbc5"/>
     </style-scheme>
     ''')
-    schemas = root / PREFIX.lstrip('/') / 'share/glib-2.0/schemas'
-    if (schemas / 'org.xfce.mousepad.gschema.xml').exists():
-        put(PREFIX + '/share/glib-2.0/schemas/60-groove-mousepad.gschema.override', '''
+    schemas_rel = '/usr/share/glib-2.0/schemas' if is_arch else PREFIX + '/share/glib-2.0/schemas'
+    schemas = root / schemas_rel.lstrip('/')
+    glib_compile = root / (bin_prefix.lstrip('/') + '/glib-compile-schemas')
+    if (schemas / 'org.xfce.mousepad.gschema.xml').exists() and glib_compile.exists():
+        put(schemas_rel + '/60-groove-mousepad.gschema.override', '''
         [org.xfce.mousepad.preferences.view]
         color-scheme='groove'
         ''')
-        subprocess.run([str(root / PREFIX.lstrip('/') / 'bin/glib-compile-schemas'),
-            str(schemas)], env=env, check=True)
+        ld_so = root / 'usr/lib/ld-linux-aarch64.so.1'
+        glib_cmd = ([str(ld_so), '--library-path', str(root / 'usr/lib'), str(glib_compile)]
+                    if (is_arch and ld_so.is_file()) else [str(glib_compile)])
+        subprocess.run(glib_cmd + [str(schemas)], env=env, check=True)
     if (root / PREFIX.lstrip('/') / 'lib/firefox').exists():
         put(PREFIX + '/lib/firefox/defaults/pref/groove.js', '''
         // Let GTK/Wayfire supply the titlebar; keep the browser's own tab strip.

@@ -19,7 +19,15 @@ class DesktopConfiguration(unittest.TestCase):
             root=Path(folder);(root/'etc').mkdir();(root/'etc/os-release').write_text('ID=groove\n')
             dest=root/'usr/share/backgrounds/groove-default.png'
             dest.parent.mkdir(parents=True);dest.write_bytes(b'old wallpaper')
-            subprocess.run([sys.executable,str(GRAPHICS/'configure_rootfs.py'),str(root)],check=True,capture_output=True)
+            # This skeleton test has no compiled renderer/fonts. Production
+            # packaging requires both; their contract has separate tests.
+            configure = (
+                f'import sys; sys.path.insert(0, {str(GRAPHICS)!r}); '
+                'import configure_window_design as w; original=w.install; '
+                'w.install=lambda root: original(root, render=False); '
+                'import configure_rootfs; configure_rootfs.main()'
+            )
+            subprocess.run([sys.executable,'-c',configure,str(root)],check=True,capture_output=True)
             original=GRAPHICS.parents[1]/'backgrouds_groove/groove-piano-background-4k.png'
             self.assertEqual(hashlib.sha256(dest.read_bytes()).digest(),hashlib.sha256(original.read_bytes()).digest())
             self.assertEqual(dest.stat().st_mode & 0o777,0o644)

@@ -1,12 +1,19 @@
 # Product Requirements Document (PRD)
 
-## Evolución Blue Note macOS Glass — 2026-11-05
+## Entrega vigente: GrooveWindow — 2026-11-05
 
-La entrega 0.3.0 implementa una arquitectura híbrida en 3 fases:
-- **Fase 1 (Arranque predeterminado en ISO 0.3.0-rc13):** Sesión XFCE 4.18/4.20 + Picom (Xorg) con decoración universal `xfwm4` (botones semáforo rojo `#FF5F56`, amarillo `#FFBD2E`, verde `#27C93F` a la izquierda con hover glyphs en todas las ventanas), compositor Picom (sombras suaves de 24px, esquinas redondeadas de 12px, transparencias de cristal), Dock flotante `groove-dock` con zoom / magnificación gaussiana 60 FPS e indicadores de ventanas activas, y fondo predeterminado Piano Keys Neon 4K.
-- **Fase 2 (Wayfire Wayland Acelerado):** Preservada e integrada en la misma ISO y seleccionable desde GRUB (`groove.session=wayfire`) y LightDM.
-- **Fase 3 (Compositor Propio Rust / Smithay):** Hoja de ruta técnica (Spec 008) para soberanía completa del renderizado.
-Consultar [Opciones de Evolución](plans/DESKTOP_EVOLUTION_OPTIONS.md) y [Plan Híbrido](plans/hybrid_macos_glass_evolution_plan.md).
+XFCE/X11 adopta una apariencia coherente inspirada en Brave: cabecera carbón,
+herramientas gris oscuro, controles monocromáticos a la izquierda y hover
+circular. XFWM gestiona decoración y composición; GTK comparte los valores.
+La coherencia se valida por aplicación, sin prometer decoración idéntica en
+software con cabecera propia. Brave conserva su interfaz y ONLYOFFICE recibe
+un valor predeterminado oscuro que respeta preferencias existentes.
+
+La entrega incluye nitidez tipográfica y transparencia correcta del dock.
+Wayfire se adapta después; Weston y consola permanecen como alternativas.
+Smithay continúa como hoja de ruta, sin ser requisito de esta entrega.
+Especificación normativa: [013 — GrooveWindow](specs/013-unified-window-design-spec.md).
+La implementación no se declara validada hasta completar la matriz UTM.
 
 ## Linux Groove OS — "The Blue Note Edition"
 *A Minimal, High-Performance Linux Distribution Built from Scratch in Rust for Digital Artists and Creators*
@@ -91,6 +98,10 @@ El sistema está optimizado para flujos de trabajo artísticos profesionales (**
 
 ## 4. Filosofía Visual y Experiencia de Usuario: "Blue Note"
 
+La estructura de ventanas XFCE se rige por la spec 013. Los conceptos de audio,
+tilado y escritorio propio siguientes son objetivos de producto, no funciones
+acreditadas por esta entrega gráfica.
+
 1. **Paleta Cromática Analógica:**
    - **Midnight Club** (`#0B0E17`): Fondo principal profundo de bajo consumo visual.
    - **Vinyl Groove** (`#141926`): Paneles, dock y contenedores de ventanas.
@@ -132,7 +143,10 @@ El sistema está optimizado para flujos de trabajo artísticos profesionales (**
   - Selección de Ensembles modulares durante el proceso de instalación.
 
 
-## Refinamiento Blue Note — 2026-11-05
+## Refinamiento Blue Note — antecedente 2026-11-05
+
+Para XFCE, la spec 013 sustituye colores, botones y tipografía de este
+antecedente. Las decisiones restantes de Wayfire se conservan.
 
 Dirección aprobada: oscuro sobrio, terminal GTK opaca, controles monocromáticos
 a la derecha y cuatro lanzadores compartidos (Terminal, Archivos, Editor, Firefox).

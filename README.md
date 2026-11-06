@@ -1,13 +1,13 @@
 # Linux Groove OS — The Blue Note Edition
 
-## Blue Note Glass: Wayfire en integración
+## GrooveWindow: integración XFCE/X11
 
-La siguiente ISO conserva Weston, XFCE y recuperación e incorpora una sesión
-Wayfire + Waybar con el piano de Groove como fondo, dock y perfil de efectos 3D.
-La aceleración y la promoción a escritorio predeterminado requieren evidencia en
-UTM. [Plan](docs/plans/WAYFIRE_BLUE_NOTE_GLASS_IMPLEMENTATION.md) ·
-[Spec](docs/specs/011-wayfire-blue-note-glass-spec.md) ·
-[Construcción](docs/GRAPHICAL_BUILD.md) · [Avance](docs/PROGRESS_TRACKER.md).
+Nueva apariencia de ventanas inspirada en Brave, con tema propio XFWM/GTK,
+fuentes coherentes y corrección de transparencia del dock. XFWM es el compositor
+predeterminado; la adaptación visual de Wayfire queda para después.
+[Spec 013](docs/specs/013-unified-window-design-spec.md) ·
+[Validación](docs/validation/unified-window-design/README.md) ·
+[PRD](docs/PRD.md). La candidata **0.3.0-rc21** está construida y tiene checksum verificado; requiere aceptación UTM antes de promoción.
 
 
 Distribución ARM64 basada en LFS 12.2, con PID 1 y herramientas propias en Rust.
@@ -75,7 +75,10 @@ objetivos medibles, no como resultados garantizados de la ISO gráfica.
 
 Licencia: Apache-2.0 o MIT.
 
-## Refinamiento Blue Note — 2026-11-05
+## Refinamiento Blue Note — antecedente 2026-11-05
+
+La spec 013 sustituye estas decisiones visuales para XFCE; Wayfire conserva
+su configuración hasta su adaptación posterior.
 
 Dirección aprobada: oscuro sobrio, terminal GTK opaca, controles monocromáticos
 a la derecha y cuatro lanzadores compartidos (Terminal, Archivos, Editor, Firefox).

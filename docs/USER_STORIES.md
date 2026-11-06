@@ -154,3 +154,11 @@ Escenario: Conservar el escritorio propio
 - Como usuario quiero recuperar Weston o una consola si la nueva sesión falla.
 
 Aceptación y evidencia: [spec 011](specs/011-wayfire-blue-note-glass-spec.md).
+
+## Ventanas coherentes — spec 013
+
+Como creador, quiero reconocer los controles de ventana al cambiar entre editor,
+archivos, terminal y navegador, con texto nítido y sin fondos accidentales del dock.
+Aceptación: matriz de aplicaciones/estados de spec 013, tema oscuro ONLYOFFICE
+sin cambiar documentos, preferencias previas conservadas y capturas nativas UTM.
+Wayfire y modificaciones al código de aplicaciones quedan fuera de esta entrega.

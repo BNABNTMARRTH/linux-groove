@@ -1,5 +1,7 @@
 # Apariencia vigente
 
+> Actualización 2026-11-05: la spec 013 (`docs/specs/013-unified-window-design-spec.md`) sustituye las decisiones de apariencia/compositor para XFCE. Este documento conserva su contexto histórico y el alcance de las otras sesiones.
+
 La spec 012 sustituye las dimensiones, iconos y terminal originales de esta spec.
 Las dependencias y contratos de sesión de este documento se mantienen.
 

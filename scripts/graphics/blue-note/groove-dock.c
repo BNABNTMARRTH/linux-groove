@@ -574,11 +574,23 @@ static void on_window_realize(GtkWidget *widget, gpointer user_data) {
     set_dock_strut(widget, capsule_height + dock_bottom_margin + 6);
 }
 
+/* Clear the toplevel as well as the drawing area: its transparent headroom
+ * belongs to the dock, not to the application underneath it. */
+static gboolean clear_dock_surface(GtkWidget *widget, cairo_t *cr, gpointer data) {
+    (void)widget; (void)data;
+    cairo_save(cr);
+    cairo_set_operator(cr, CAIRO_OPERATOR_CLEAR);
+    cairo_paint(cr);
+    cairo_restore(cr);
+    return FALSE; /* Let GTK propagate drawing to the capsule and labels. */
+}
+
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
     load_dock_config();
 
     dock_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_widget_set_name(dock_window, "groove-dock");
     gtk_window_set_type_hint(GTK_WINDOW(dock_window), GDK_WINDOW_TYPE_HINT_DOCK);
     gtk_window_set_title(GTK_WINDOW(dock_window), "Groove macOS Dock");
     gtk_window_set_decorated(GTK_WINDOW(dock_window), FALSE);
@@ -587,6 +599,14 @@ int main(int argc, char *argv[]) {
     gtk_window_set_keep_above(GTK_WINDOW(dock_window), TRUE);
     gtk_window_stick(GTK_WINDOW(dock_window));
     gtk_widget_set_app_paintable(dock_window, TRUE);
+    GtkCssProvider *dock_css = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(dock_css,
+        "#groove-dock, #groove-dock decoration { background: transparent; "
+        "background-image: none; border: none; box-shadow: none; }", -1, NULL);
+    gtk_style_context_add_provider_for_screen(gtk_widget_get_screen(dock_window),
+        GTK_STYLE_PROVIDER(dock_css), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(dock_css);
+    g_signal_connect(dock_window, "draw", G_CALLBACK(clear_dock_surface), NULL);
 
     GdkScreen *screen = gtk_widget_get_screen(dock_window);
     GdkVisual *visual = gdk_screen_get_rgba_visual(screen);

@@ -1,5 +1,7 @@
 # Spec 010 — Entorno de Escritorio Blue Note Glass (Weston Wayland)
 
+> Actualización 2026-11-05: la spec 013 (`docs/specs/013-unified-window-design-spec.md`) sustituye las decisiones de apariencia/compositor para XFCE. Este documento conserva su contexto histórico y el alcance de las otras sesiones.
+
 Actualización 2026-11-05: la [spec 011](011-wayfire-blue-note-glass-spec.md) añade
 Wayfire como sesión opcional y `groove.session=wayfire` como grafo independiente.
 Weston conserva el inicio normal hasta validar GPU/funcionalidad en UTM; el fondo

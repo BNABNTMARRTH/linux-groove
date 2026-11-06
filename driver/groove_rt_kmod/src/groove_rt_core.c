@@ -32,7 +32,6 @@ static long groove_rt_ioctl(struct file *file, unsigned int cmd, unsigned long a
 {
     int tid;
     struct task_struct *task;
-    struct sched_param param;
 
     switch (cmd) {
     case GROOVE_IOCTL_REGISTER_RT_THREAD:
@@ -48,9 +47,8 @@ static long groove_rt_ioctl(struct file *file, unsigned int cmd, unsigned long a
         get_task_struct(task);
         rcu_read_unlock();
 
-        /* Elevar a SCHED_FIFO 98 para evitar xruns */
-        param.sched_priority = 98;
-        sched_setscheduler_nocheck(task, SCHED_FIFO, &param);
+        /* Elevar a SCHED_FIFO en tiempo real para evitar xruns */
+        sched_set_fifo(task);
         put_task_struct(task);
 
         g_active_threads++;
@@ -71,8 +69,7 @@ static long groove_rt_ioctl(struct file *file, unsigned int cmd, unsigned long a
         if (task) {
             get_task_struct(task);
             rcu_read_unlock();
-            param.sched_priority = 0;
-            sched_setscheduler_nocheck(task, SCHED_NORMAL, &param);
+            sched_set_normal(task, 0);
             put_task_struct(task);
             if (g_active_threads > 0) g_active_threads--;
             pr_info("🎷 [groove_rt] Hilo %d restaurado a SCHED_NORMAL\n", tid);

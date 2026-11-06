@@ -5,7 +5,7 @@ WORKSPACE=$(cd "$(dirname "$0")/.." && pwd)
 STORAGE=${STORAGE:-/Volumes/Backup/linux_groove_terabit}
 BUILDER=${BUILDER:-groove-graphical-build}
 ACTION=${1:-all}
-VERSION=${VERSION:-0.3.0-rc13}
+VERSION=${VERSION:-0.3.0-rc22}
 [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]] || exit 1
 case "$ACTION" in all|sources|package) ;; *) echo 'Usage: build_wayfire_iso.sh [all|sources|package]' >&2; exit 1;; esac
 output="$STORAGE/iso/linux-groove-$VERSION-aarch64.iso"
@@ -64,6 +64,14 @@ docker exec -e GROOVE_SOURCE_ROOT="$SOURCE_ROOT" "$BUILDER" bash -euc '
         $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs gtk+-3.0) \
         -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
         -o /opt/groove-graphics/bin/groove-effects-dialog
+    cc -O2 -Wall -Wextra "$GROOVE_SOURCE_ROOT"/scripts/graphics/blue-note/groove-transparency-settings.c \
+        $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs gtk+-3.0) \
+        -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
+        -o /opt/groove-graphics/bin/groove-transparency-settings
+    cc -O2 -Wall -Wextra "$GROOVE_SOURCE_ROOT"/scripts/graphics/blue-note/groove-package-installer.c \
+        $(PKG_CONFIG_LIBDIR=/opt/groove-graphics/lib/pkgconfig:/opt/groove-graphics/share/pkgconfig pkg-config --cflags --libs gtk+-3.0) \
+        -L/opt/groove-graphics/lib -Wl,-rpath,/opt/groove-graphics/lib \
+        -o /opt/groove-graphics/bin/groove-package-installer
     cc -D_GNU_SOURCE -O2 -I/opt/groove-wayfire/include -I/opt/groove-graphics/include \
        "$GROOVE_SOURCE_ROOT"/scripts/graphics/wayfire/groove-gpu-info.c \
        -L/opt/groove-wayfire/lib -Wl,-rpath,/opt/groove-wayfire/lib \
@@ -86,10 +94,12 @@ docker exec -e VERSION="$VERSION" -e DEFAULT_SESSION="${DEFAULT_SESSION:-xfce}" 
     bash "$GROOVE_SOURCE_ROOT"/scripts/graphics/build_kernel.sh
     CARGO_TARGET_DIR=/tmp/groove-init-target cargo test --locked -p groove-init
     CARGO_TARGET_DIR=/tmp/groove-init-target cargo build --locked --release -p groove-init
+    CARGO_TARGET_DIR=/tmp/groove-init-target cargo build --locked --release -p groove-installer
+    CARGO_TARGET_DIR=/tmp/groove-init-target cargo build --locked --release -p groove-session
     ROOT="$root" STAGING="$staging" ENABLE_WAYFIRE=1 \
       OUTPUT="/tmp/linux-groove-$VERSION-aarch64.iso" bash "$GROOVE_SOURCE_ROOT"/scripts/graphics/package_iso.sh
 '
 docker cp "$BUILDER:/tmp/linux-groove-$VERSION-aarch64.iso" "${output}.tmp"
 mv "${output}.tmp" "$output"
 (cd "$STORAGE/iso" && shasum -a 256 "linux-groove-$VERSION-aarch64.iso" > "SHA256SUMS-$VERSION.txt" && shasum -a 256 -c "SHA256SUMS-$VERSION.txt")
-echo "Candidate: $output; default remains Weston until UTM GPU acceptance."
+echo "Candidate: $output; candidate requires UTM acceptance before promotion."

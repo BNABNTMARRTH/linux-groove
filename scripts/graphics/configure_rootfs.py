@@ -12,33 +12,41 @@ def main():
     def account(file,entries):
         path=root/'etc'/file;lines=path.read_text().splitlines() if path.exists() else []
         keys={line.split(':')[0] for line in entries};lines=[line for line in lines if line.split(':')[0] not in keys];path.write_text('\n'.join(lines+entries)+'\n')
-    put('/etc/os-release','NAME="Linux Groove OS"\nPRETTY_NAME="Linux Groove OS 0.2.0 — Blue Note Desktop Preview"\nID=groove\nID_LIKE=lfs\nVERSION_ID=0.2.0\nVERSION_CODENAME=blue-note\n')
-    account('passwd',['root:x:0:0:root:/root:/bin/bash','messagebus:x:18:18:System D-Bus:/run/dbus:/bin/false','lightdm:x:65:65:LightDM:/var/lib/lightdm:/bin/false','groove:x:1000:1000:Groove Artist:/home/groove:/bin/bash'])
-    account('group',['root:x:0:','tty:x:5:','cdrom:x:15:','video:x:12:groove,lightdm','messagebus:x:18:','input:x:24:groove,lightdm','lightdm:x:65:','render:x:107:groove,lightdm','kvm:x:108:','sgx:x:109:','groove:x:1000:'])
-    account('shadow',['root:!:1:0:99999:7:::','messagebus:!:1:0:99999:7:::','lightdm:!:1:0:99999:7:::','groove:!:1:0:99999:7:::'])
-    (root/'etc/shadow').chmod(0o600)
-    dbus_minimal='<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"\n "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">\n<busconfig></busconfig>\n'
-    put('/etc/dbus-1/system.conf',dbus_minimal)
-    put('/etc/dbus-1/session.conf',dbus_minimal)
-    dbus_sysd=root/PREFIX.lstrip('/')/'share/dbus-1/system.d'
-    if dbus_sysd.exists():
-        for conf in dbus_sysd.glob('*.conf'):
-            put(f'/etc/dbus-1/system.d/{conf.name}',conf.read_text())
-    put('/etc/nsswitch.conf','passwd: files\ngroup: files\nshadow: files\nhosts: files dns\nnetworks: files\n')
-    put('/etc/login.defs','ENV_PATH PATH=/opt/groove-graphics/bin:/opt/groove-graphics/sbin:/usr/bin:/bin\nLOGIN_RETRIES 3\nFAIL_DELAY 2\nDEFAULT_HOME yes\nUID_MIN 1000\nGID_MIN 1000\n')
-    put('/etc/ld.so.conf','include /etc/ld.so.conf.d/*.conf\n/usr/lib\n/lib\n')
-    put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n{PREFIX}/lib/firefox\n/opt/groove-apps/lib\n{PREFIX}/opt/onlyoffice/desktopeditors\n{PREFIX}/opt/onlyoffice/desktopeditors/converter\n{PREFIX}/opt/brave\n')
+    is_arch=(root/'usr/bin/pacman').is_file()
+    bin_prefix='/usr/bin' if is_arch else f'{PREFIX}/bin'
+    sbin_prefix='/usr/bin' if is_arch else f'{PREFIX}/sbin'
+    udevd_bin='/usr/lib/systemd/systemd-udevd' if is_arch else f'{PREFIX}/sbin/udevd'
+    id_like='arch' if is_arch else 'lfs'
+    put('/etc/os-release',f'NAME="Linux Groove OS"\nPRETTY_NAME="Linux Groove OS 0.2.0 — Blue Note Desktop Preview"\nID=groove\nID_LIKE={id_like}\nVERSION_ID=0.2.0\nVERSION_CODENAME=blue-note\n')
+    if not is_arch:
+        account('passwd',['root:x:0:0:root:/root:/bin/bash','messagebus:x:18:18:System D-Bus:/run/dbus:/bin/false','lightdm:x:65:65:LightDM:/var/lib/lightdm:/bin/false','groove:x:1000:1000:Groove Artist:/home/groove:/bin/bash'])
+        account('group',['root:x:0:','tty:x:5:','cdrom:x:15:','video:x:12:groove,lightdm','messagebus:x:18:','input:x:24:groove,lightdm','lightdm:x:65:','render:x:107:groove,lightdm','kvm:x:108:','sgx:x:109:','groove:x:1000:'])
+        account('shadow',['root:!:1:0:99999:7:::','messagebus:!:1:0:99999:7:::','lightdm:!:1:0:99999:7:::','groove:!:1:0:99999:7:::'])
+        (root/'etc/shadow').chmod(0o600)
+        dbus_minimal='<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"\n "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">\n<busconfig></busconfig>\n'
+        put('/etc/dbus-1/system.conf',dbus_minimal)
+        put('/etc/dbus-1/session.conf',dbus_minimal)
+        dbus_sysd=root/PREFIX.lstrip('/')/'share/dbus-1/system.d'
+        if dbus_sysd.exists():
+            for conf in dbus_sysd.glob('*.conf'):
+                put(f'/etc/dbus-1/system.d/{conf.name}',conf.read_text())
+        put('/etc/nsswitch.conf','passwd: files\ngroup: files\nshadow: files\nhosts: files dns\nnetworks: files\n')
+        put('/etc/login.defs','ENV_PATH PATH=/opt/groove-graphics/bin:/opt/groove-graphics/sbin:/usr/bin:/bin\nLOGIN_RETRIES 3\nFAIL_DELAY 2\nDEFAULT_HOME yes\nUID_MIN 1000\nGID_MIN 1000\n')
+        put('/etc/ld.so.conf','include /etc/ld.so.conf.d/*.conf\n/usr/lib\n/lib\n')
+        put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n{PREFIX}/lib/firefox\n/opt/groove-apps/lib\n{PREFIX}/opt/onlyoffice/desktopeditors\n{PREFIX}/opt/onlyoffice/desktopeditors/converter\n{PREFIX}/opt/brave\n')
     profile=root/'etc/profile'
     if not profile.exists():put('/etc/profile','for script in /etc/profile.d/*.sh; do [ ! -r "$script" ] || . "$script"; done\n')
     put('/etc/profile.d/groove-graphics.sh',f'export PATH={PREFIX}/bin:{PREFIX}/sbin:$PATH\nexport XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share\n')
-    environment=f'''
-    export PATH={PREFIX}/bin:{PREFIX}/sbin:/usr/bin:/usr/sbin:/bin:/sbin
-    export XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share
-    export XDG_CONFIG_DIRS=/etc/xdg:{PREFIX}/etc/xdg
-    export GSETTINGS_SCHEMA_DIR={PREFIX}/share/glib-2.0/schemas
-    export FONTCONFIG_FILE={PREFIX}/etc/fonts/fonts.conf
-    export GDK_PIXBUF_MODULE_FILE={PREFIX}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
+    if is_arch:
+        environment=f'''
+    export PATH=/usr/local/bin:/usr/bin:/bin:{PREFIX}/bin:{PREFIX}/sbin:/usr/sbin:/sbin
+    export XDG_DATA_DIRS=/usr/local/share:/usr/share:{PREFIX}/share
+    export XDG_CONFIG_DIRS=/etc/xdg/groove-xfce:/etc/xdg:{PREFIX}/etc/xdg
+    export GSETTINGS_SCHEMA_DIR=/usr/share/glib-2.0/schemas
+    export FONTCONFIG_FILE=/etc/fonts/fonts.conf
+    export GDK_PIXBUF_MODULE_FILE=/usr/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
     export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    export GTK_CSD=1
     if [ "${{XDG_CURRENT_DESKTOP:-}}" = Wayfire ]; then
         export PATH=/opt/groove-wayfire/bin:$PATH
         export XDG_DATA_DIRS=/opt/groove-wayfire/share:$XDG_DATA_DIRS
@@ -47,7 +55,26 @@ def main():
     else
         export LIBGL_ALWAYS_SOFTWARE=1
     fi
-    export GTK_THEME=WhiteSur-Dark
+    export LANG=es_MX.UTF-8
+    '''
+    else:
+        environment=f'''
+    export PATH={PREFIX}/bin:{PREFIX}/sbin:/usr/bin:/usr/sbin:/bin:/sbin
+    export XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share
+    export XDG_CONFIG_DIRS=/etc/xdg/groove-xfce:/etc/xdg:{PREFIX}/etc/xdg
+    export GSETTINGS_SCHEMA_DIR={PREFIX}/share/glib-2.0/schemas
+    export FONTCONFIG_FILE={PREFIX}/etc/fonts/fonts.conf
+    export GDK_PIXBUF_MODULE_FILE={PREFIX}/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
+    export SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+    export GTK_CSD=1
+    if [ "${{XDG_CURRENT_DESKTOP:-}}" = Wayfire ]; then
+        export PATH=/opt/groove-wayfire/bin:$PATH
+        export XDG_DATA_DIRS=/opt/groove-wayfire/share:$XDG_DATA_DIRS
+        export GSETTINGS_SCHEMA_DIR=/opt/groove-wayfire/share/glib-2.0/schemas
+        unset LIBGL_ALWAYS_SOFTWARE
+    else
+        export LIBGL_ALWAYS_SOFTWARE=1
+    fi
     export LANG=es_MX.UTF-8
     '''
     script('groove-session-wrapper',environment+'''
@@ -58,7 +85,7 @@ def main():
     unset DBUS_SESSION_BUS_ADDRESS
     exec dbus-run-session -- "$@"
     ''')
-    script('groove-xfce',environment+'\nexport XDG_SESSION_TYPE=x11\nexport XDG_CURRENT_DESKTOP=XFCE\nexec '+PREFIX+'/bin/startxfce4\n')
+    script('groove-xfce',environment+'\nexport XDG_SESSION_TYPE=x11\nexport XDG_CURRENT_DESKTOP=XFCE\nexport XDG_CONFIG_DIRS=/etc/xdg/groove-xfce:$XDG_CONFIG_DIRS\nexec '+bin_prefix+'/startxfce4\n')
     script('groove-weston',environment+f'''
     export XDG_SESSION_TYPE=wayland
     export XDG_CURRENT_DESKTOP=Weston
@@ -74,10 +101,20 @@ def main():
         waited=$((waited + 1))
     done
     printf '%s\\n' "$$" > "$XDG_RUNTIME_DIR/groove-weston.pid"
-    exec {PREFIX}/bin/weston --backend=drm --renderer=pixman --config=/etc/xdg/weston/weston.ini
+    exec {bin_prefix}/weston --backend=drm --renderer=pixman --config=/etc/xdg/weston/weston.ini
     ''')
-    script('groove-greeter',environment+f'exec {PREFIX}/bin/groove-greeter-ui\n')
-    script('groove-xserver',f'exec {PREFIX}/bin/Xorg -logfile /var/log/lightdm/x-0.log -modulepath {PREFIX}/lib/xorg/modules -nolisten tcp "$@"\n')
+    script('groove-greeter',environment+f'exec {bin_prefix}/groove-greeter-ui\n')
+    put('/etc/X11/Xwrapper.config','allowed_users=anybody\nneeds_root_rights=yes\n')
+    script('groove-xserver','''#!/bin/sh
+set -eu
+if [ -x /usr/lib/Xorg ]; then
+    exec /usr/lib/Xorg -logfile /var/log/lightdm/x-0.log -nolisten tcp "$@"
+elif [ -x /usr/bin/Xorg ]; then
+    exec /usr/bin/Xorg -logfile /var/log/lightdm/x-0.log -nolisten tcp "$@"
+else
+    exec /opt/groove-graphics/bin/Xorg -logfile /var/log/lightdm/x-0.log -modulepath /opt/groove-graphics/lib/xorg/modules -nolisten tcp "$@"
+fi
+''')
     script('groove-live-access','''
     case "${PAM_SERVICE:-}" in lightdm|login) ;; *) exit 1 ;; esac
     [ "${PAM_USER:-}" = groove ] || exit 1
@@ -87,18 +124,18 @@ def main():
     IFS= read -r value < "$marker"
     [ "$value" = LINUX_GROOVE_LIVE ]
     ''')
-    pam=f'''
-    auth [success=done default=ignore] {PREFIX}/lib/security/pam_exec.so quiet /usr/libexec/groove-live-access
-    auth required {PREFIX}/lib/security/pam_unix.so
-    account required {PREFIX}/lib/security/pam_unix.so
-    password required {PREFIX}/lib/security/pam_unix.so
-    session required {PREFIX}/lib/security/pam_unix.so
+    pam='''
+    auth [success=done default=ignore] pam_exec.so quiet /usr/libexec/groove-live-access
+    auth required pam_unix.so
+    account required pam_unix.so
+    password required pam_unix.so
+    session required pam_unix.so
     '''
     put('/etc/pam.d/lightdm',pam);put('/etc/pam.d/login',pam)
-    put('/etc/pam.d/lightdm-greeter',f'''
-    auth required {PREFIX}/lib/security/pam_permit.so
-    account required {PREFIX}/lib/security/pam_permit.so
-    session required {PREFIX}/lib/security/pam_unix.so
+    put('/etc/pam.d/lightdm-greeter','''
+    auth required pam_permit.so
+    account required pam_permit.so
+    session required pam_unix.so
     ''')
     put('/etc/lightdm/lightdm.conf','''
     [LightDM]
@@ -134,6 +171,7 @@ def main():
     for path,name,exec_ in [('xsessions/groove-xfce.desktop','Groove XFCE','/usr/libexec/groove-xfce'),('wayland-sessions/weston.desktop','Weston','/usr/libexec/groove-weston'),('xgreeters/groove-greeter.desktop','Groove Blue Note','/usr/libexec/groove-greeter')]:
         desktop_names = "XFCE;" if "xfce" in path else ("Weston;" if "weston" in path else "LightDM;")
         put('/usr/share/'+path,f'[Desktop Entry]\nName={name}\nComment=Linux Groove OS\nExec={exec_}\nTryExec={exec_}\nType=Application\nDesktopNames={desktop_names}\n')
+    xorg_mod_path = "/usr/lib/xorg/modules" if is_arch else f"{PREFIX}/lib/xorg/modules"
     put('/etc/X11/xorg.conf',f'''
     Section "ServerFlags"
         Option "BlankTime" "0"
@@ -161,7 +199,7 @@ def main():
         Driver "libinput"
     EndSection
     Section "Files"
-        ModulePath "{PREFIX}/lib/xorg/modules"
+        ModulePath "{xorg_mod_path}"
     EndSection
     ''')
     put('/etc/udev/rules.d/70-groove-input.rules','SUBSYSTEM=="input", GROUP="input", MODE="0660"\nSUBSYSTEM=="drm", GROUP="video", MODE="0660"\nKERNEL=="renderD*", GROUP="render", MODE="0660"\n')
@@ -202,16 +240,16 @@ def main():
     ''')
     script('groove-files',environment+f'''
     export GDK_BACKEND=wayland,x11
-    exec {PREFIX}/bin/thunar "$@"
+    exec {bin_prefix}/thunar "$@"
     ''')
     script('groove-editor',environment+f'''
     export GDK_BACKEND=wayland,x11
-    exec {PREFIX}/bin/mousepad "$@"
+    exec {bin_prefix}/mousepad "$@"
     ''')
     script('groove-browser',environment+f'''
     export MOZ_ENABLE_WAYLAND=1
     export GDK_BACKEND=wayland,x11
-    exec {PREFIX}/bin/firefox "$@"
+    exec {bin_prefix}/firefox "$@"
     ''')
     script('groove-wallpaper-next','''
     current_bg=/usr/share/backgrounds/groove-default.png
@@ -221,7 +259,7 @@ def main():
     echo "Wallpapers available in /usr/share/backgrounds"
     ''')
     script('groove-system-info',environment+f'''
-    exec {PREFIX}/bin/weston-terminal --title="Linux Groove System Specs" --shell=/usr/bin/groove-sysinfo
+    exec {bin_prefix}/weston-terminal --title="Linux Groove System Specs" --shell=/usr/bin/groove-sysinfo
     ''')
     put('/usr/bin/groove-sysinfo','''#!/bin/sh
     clear
@@ -275,10 +313,17 @@ EOF
     svg_bg=root/'usr/share/backgrounds/groove-blue-note.svg'
     png_bg=root/'usr/share/backgrounds/groove-blue-note.png'
     rsvg=root/PREFIX.lstrip('/')/'bin/rsvg-convert'
-    if rsvg.exists():
+    rsvg_cmd=[str(rsvg)]
+    rsvg_env=os.environ.copy()
+    rsvg_env['LD_LIBRARY_PATH']=str(root/PREFIX.lstrip('/')/'lib')
+    if not rsvg.exists() and (root/'usr/bin/rsvg-convert').exists():
+        rsvg=root/'usr/bin/rsvg-convert'
+        ld_so=root/'usr/lib/ld-linux-aarch64.so.1'
+        rsvg_cmd=([str(ld_so),'--library-path',str(root/'usr/lib'),str(rsvg)]
+                  if ld_so.is_file() else [str(rsvg)])
         rsvg_env=os.environ.copy()
-        rsvg_env['LD_LIBRARY_PATH']=str(root/PREFIX.lstrip('/')/'lib')
-        subprocess.run([str(rsvg),'-w','1920','-h','1080','-f','png',str(svg_bg),'-o',str(png_bg)],env=rsvg_env,check=False)
+    if rsvg.exists():
+        subprocess.run(rsvg_cmd+['-w','1920','-h','1080','-f','png',str(svg_bg),'-o',str(png_bg)],env=rsvg_env,check=False)
     for extra_bg_dir in [Path('/workspace/backgrouds_groove'),Path('/workspace/backgrounds_groove')]:
         if extra_bg_dir.exists():
             for bg in extra_bg_dir.glob('*.png'):
@@ -316,7 +361,20 @@ EOF
     <channel name="xfce4-desktop" version="1.0"><property name="backdrop" type="empty"><property name="screen0" type="empty"><property name="monitorVirtual-1" type="empty"><property name="workspace0" type="empty"><property name="last-image" type="string" value="/usr/share/backgrounds/groove-blue-note.png"/><property name="image-style" type="int" value="5"/></property></property></property></property></channel>
     ''')
     put('/usr/share/applications/firefox.desktop',f'[Desktop Entry]\nName=Firefox ESR\nComment=Navegador compilado desde fuentes\nExec={PREFIX}/bin/firefox %u\nIcon=firefox\nTerminal=false\nType=Application\nCategories=Network;WebBrowser;\nMimeType=text/html;x-scheme-handler/http;x-scheme-handler/https;\n')
-    put('/etc/xdg/mimeapps.list','[Default Applications]\ntext/html=firefox.desktop\nx-scheme-handler/http=firefox.desktop\nx-scheme-handler/https=firefox.desktop\n')
+    put('/etc/xdg/mimeapps.list','''[Default Applications]
+text/html=firefox.desktop
+x-scheme-handler/http=firefox.desktop
+x-scheme-handler/https=firefox.desktop
+application/x-xz-compressed-tar=groove-package-installer.desktop
+application/x-tar=groove-package-installer.desktop
+application/gzip=groove-package-installer.desktop
+application/zip=groove-package-installer.desktop
+application/x-bzip2=groove-package-installer.desktop
+application/x-compressed-tar=groove-package-installer.desktop
+application/vnd.debian.binary-package=groove-package-installer.desktop
+application/x-deb=groove-package-installer.desktop
+application/x-apple-diskimage=groove-package-installer.desktop
+''')
     put('/etc/xdg/xfce4/helpers.rc','WebBrowser=firefox\nTerminalEmulator=xfce4-terminal\nFileManager=Thunar\n')
     for icon in (root/PREFIX.lstrip('/')/'lib').glob('firefox*/browser/chrome/icons/default/default128.png'):
         dest=root/'usr/share/icons/hicolor/128x128/apps/firefox.png'
@@ -325,24 +383,37 @@ EOF
         break
     put('/etc/dhcpcd.conf','hostname linux-groove\noption domain_name_servers, domain_name, domain_search\noption classless_static_routes\nrequire dhcp_server_identifier\nnoipv4ll\n')
     script('groove-runtime',f'''
-    mkdir -p /run/dbus /run/user/1000 /run/lightdm /run/lightdm/root /var/lib/lightdm /var/lib/lightdm-data /var/cache/lightdm /var/log/lightdm /var/lib/xkb /var/lib/dhcpcd /var/lib/dbus /var/cache/fontconfig /tmp/.X11-unix /tmp/.ICE-unix {PREFIX}/var/log
+    mkdir -p /run/dbus /run/user/1000 /run/lightdm /run/lightdm/root /var/lib/lightdm /var/lib/lightdm-data /var/cache/lightdm /var/log/lightdm /var/lib/xkb /var/lib/dhcpcd /var/lib/dbus /var/cache/fontconfig /tmp/.X11-unix /tmp/.ICE-unix {PREFIX}/var/log /run/groove
     chmod 1777 /tmp /tmp/.X11-unix /tmp/.ICE-unix
     chown 1000:1000 /run/user/1000 /home/groove
     chmod 0700 /run/user/1000
-    chown 18:18 /run/dbus
-    chown -R 65:65 /var/lib/lightdm /var/cache/lightdm /var/log/lightdm /var/lib/lightdm-data /run/lightdm
+    chown dbus:dbus /run/dbus 2>/dev/null || chown 18:18 /run/dbus 2>/dev/null || true
+    chown -R lightdm:lightdm /var/lib/lightdm /var/cache/lightdm /var/log/lightdm /var/lib/lightdm-data /run/lightdm 2>/dev/null || chown -R 65:65 /var/lib/lightdm /var/cache/lightdm /var/log/lightdm /var/lib/lightdm-data /run/lightdm 2>/dev/null || true
     chmod 0755 /var/log/lightdm
     chmod 0750 /var/lib/lightdm /var/cache/lightdm
     chmod 0711 /var/lib/lightdm-data
-    chmod 0777 {PREFIX}/var/log
+    chmod 0777 {PREFIX}/var/log 2>/dev/null || true
     [ -e /usr/bin/xkbcomp ] || ln -sfn {PREFIX}/bin/xkbcomp /usr/bin/xkbcomp
     [ -e {PREFIX}/var ] || ln -sfn /var {PREFIX}/var
-    {PREFIX}/bin/dbus-uuidgen --ensure=/etc/machine-id
-    {PREFIX}/bin/dbus-uuidgen --ensure=/var/lib/dbus/machine-id
+    if [ ! -s /etc/machine-id ]; then
+        if command -v systemd-machine-id-setup >/dev/null 2>&1; then
+            systemd-machine-id-setup 2>/dev/null || true
+        elif command -v dbus-uuidgen >/dev/null 2>&1; then
+            dbus-uuidgen --ensure=/etc/machine-id 2>/dev/null || true
+        fi
+    fi
+    if [ ! -s /var/lib/dbus/machine-id ] && [ -s /etc/machine-id ]; then
+        cp /etc/machine-id /var/lib/dbus/machine-id 2>/dev/null || true
+    fi
+    if [ -f /lib/modules/6.12.0/extra/groove_rt.ko ]; then
+        insmod /lib/modules/6.12.0/extra/groove_rt.ko 2>/dev/null || true
+    fi
+    echo LINUX_GROOVE_LIVE > /run/groove/live
+    chmod 0644 /run/groove/live
     ''')
     # Install BusyBox static binary and symlink missing system utilities for a complete CLI experience
     busybox_src = Path('/usr/bin/busybox')
-    if busybox_src.exists():
+    if not is_arch and busybox_src.exists():
         bb_dest = root / 'bin/busybox'
         bb_dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(busybox_src, bb_dest)
@@ -361,7 +432,7 @@ EOF
                     target = root / 'usr/bin' / applet
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.symlink_to('/bin/busybox')
-    script('groove-device-trigger',f'{PREFIX}/bin/udevadm trigger --action=add\n{PREFIX}/bin/udevadm settle --timeout=15\n')
+    script('groove-device-trigger',f'{bin_prefix}/udevadm trigger --action=add\n{bin_prefix}/udevadm settle --timeout=15\n')
     daemon_env=f'PATH = "{PREFIX}/bin:{PREFIX}/sbin:/usr/bin:/usr/sbin:/bin:/sbin"'
     services=root/'etc/groove/services';services.mkdir(parents=True,exist_ok=True)
     # Remove obsolete manifests only from the staging copy; graph does not depend on audio.
@@ -376,29 +447,34 @@ EOF
         body+='environment={ '+daemon_env+' }\n'
         return body
     put('/etc/groove/services/runtime.toml',service('runtime','/usr/libexec/groove-runtime',kind='oneshot',restart='never'))
-    put('/etc/groove/services/udev.toml',service('udev',PREFIX+'/sbin/udevd',requires=['runtime'],ready='/run/udev/control'))
+    put('/etc/groove/services/udev.toml',service('udev',udevd_bin,requires=['runtime'],ready='/run/udev/control'))
     put('/etc/groove/services/device-trigger.toml',service('device-trigger','/usr/libexec/groove-device-trigger',requires=['udev'],kind='oneshot'))
-    put('/etc/groove/services/dbus.toml',service('dbus',PREFIX+'/bin/dbus-daemon',['--system','--nofork','--nopidfile'],requires=['runtime'],ready='/run/dbus/system_bus_socket'))
-    put('/etc/groove/services/seatd.toml',service('seatd',PREFIX+'/bin/seatd',['-g','video'],requires=['device-trigger'],ready='/run/seatd.sock'))
-    put('/etc/groove/services/network.toml',service('network',PREFIX+'/sbin/dhcpcd',['--nobackground'],requires=['runtime','device-trigger']))
-    put('/etc/groove/services/lightdm.toml',service('lightdm',PREFIX+'/sbin/lightdm',['--debug','--config=/etc/lightdm/lightdm.conf'],requires=['dbus','device-trigger','seatd']))
-    put('/etc/groove/services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],requires=['runtime'],restart='always'))
-    put('/etc/groove/services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty3','linux'],requires=['runtime'],restart='always'))
+    put('/etc/groove/services/dbus.toml',service('dbus',bin_prefix+'/dbus-daemon',['--system','--nofork','--nopidfile'],requires=['runtime'],ready='/run/dbus/system_bus_socket'))
+    put('/etc/groove/services/seatd.toml',service('seatd',bin_prefix+'/seatd',['-g','video'],requires=['device-trigger'],ready='/run/seatd.sock'))
+    put('/etc/groove/services/network.toml',service('network',sbin_prefix+'/dhcpcd',['--nobackground'],requires=['runtime','device-trigger']))
+    put('/etc/groove/services/lightdm.toml',service('lightdm',sbin_prefix+'/lightdm',['--debug','--config=/etc/lightdm/lightdm.conf'],requires=['dbus','device-trigger','seatd']))
+    put('/etc/groove/services/serial.toml',service('serial',sbin_prefix+'/agetty',['--noclear','--login-program',bin_prefix+'/login','ttyAMA0','115200','linux'],requires=['runtime'],restart='always'))
+    put('/etc/groove/services/console.toml',service('console',sbin_prefix+'/agetty',['--noclear','--login-program',bin_prefix+'/login','tty3','linux'],requires=['runtime'],restart='always'))
     wayland_services=root/'etc/groove/wayland-services';wayland_services.mkdir(parents=True,exist_ok=True)
     for old in wayland_services.glob('*.toml'):old.unlink()
     put('/etc/groove/wayland-services/runtime.toml',service('runtime','/usr/libexec/groove-runtime',kind='oneshot',restart='never'))
-    put('/etc/groove/wayland-services/udev.toml',service('udev',PREFIX+'/sbin/udevd',requires=['runtime'],ready='/run/udev/control'))
+    put('/etc/groove/wayland-services/udev.toml',service('udev',udevd_bin,requires=['runtime'],ready='/run/udev/control'))
     put('/etc/groove/wayland-services/device-trigger.toml',service('device-trigger','/usr/libexec/groove-device-trigger',requires=['udev'],kind='oneshot'))
-    put('/etc/groove/wayland-services/dbus.toml',service('dbus',PREFIX+'/bin/dbus-daemon',['--system','--nofork','--nopidfile'],requires=['runtime'],ready='/run/dbus/system_bus_socket'))
-    put('/etc/groove/wayland-services/seatd.toml',service('seatd',PREFIX+'/bin/seatd',['-g','video'],requires=['device-trigger'],ready='/run/seatd.sock'))
-    put('/etc/groove/wayland-services/network.toml',service('network',PREFIX+'/sbin/dhcpcd',['--nobackground'],requires=['runtime','device-trigger']))
+    put('/etc/groove/wayland-services/dbus.toml',service('dbus',bin_prefix+'/dbus-daemon',['--system','--nofork','--nopidfile'],requires=['runtime'],ready='/run/dbus/system_bus_socket'))
+    put('/etc/groove/wayland-services/seatd.toml',service('seatd',bin_prefix+'/seatd',['-g','video'],requires=['device-trigger'],ready='/run/seatd.sock'))
+    put('/etc/groove/wayland-services/network.toml',service('network',sbin_prefix+'/dhcpcd',['--nobackground'],requires=['runtime','device-trigger']))
     put('/etc/groove/wayland-services/weston.toml',service('weston','/usr/libexec/groove-weston',requires=['dbus','device-trigger','seatd'],user='groove',group='groove',restart='always'))
-    put('/etc/groove/wayland-services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],requires=['runtime'],restart='always'))
-    put('/etc/groove/wayland-services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty3','linux'],requires=['runtime'],restart='always'))
-    put('/etc/groove/recovery-services/console.toml',service('console',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','tty1','linux'],console=True,restart='always'))
-    put('/etc/groove/recovery-services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],console=True,restart='always'))
-    for folder,uid,gid in [('home/groove',1000,1000),('var/lib/lightdm',65,65),('var/cache/lightdm',65,65),('var/log/lightdm',65,65)]:
-        dest=root/folder;dest.mkdir(parents=True,exist_ok=True);os.chown(dest,uid,gid)
+    put('/etc/groove/wayland-services/serial.toml',service('serial',sbin_prefix+'/agetty',['--noclear','--login-program',bin_prefix+'/login','ttyAMA0','115200','linux'],requires=['runtime'],restart='always'))
+    put('/etc/groove/wayland-services/console.toml',service('console',sbin_prefix+'/agetty',['--noclear','--login-program',bin_prefix+'/login','tty3','linux'],requires=['runtime'],restart='always'))
+    put('/etc/groove/recovery-services/console.toml',service('console',sbin_prefix+'/agetty',['--noclear','--login-program',bin_prefix+'/login','tty1','linux'],console=True,restart='always'))
+    put('/etc/groove/recovery-services/serial.toml',service('serial',sbin_prefix+'/agetty',['--noclear','--login-program',bin_prefix+'/login','ttyAMA0','115200','linux'],console=True,restart='always'))
+    lightdm_id = 963 if is_arch else 65
+    for folder,uid,gid in [('home/groove',1000,1000),('var/lib/lightdm',lightdm_id,lightdm_id),('var/cache/lightdm',lightdm_id,lightdm_id),('var/log/lightdm',lightdm_id,lightdm_id)]:
+        dest=root/folder;dest.mkdir(parents=True,exist_ok=True)
+        try:
+            os.chown(dest,uid,gid)
+        except PermissionError:
+            pass
     for name,target in [('var/run','/run'),('var/lock','/run/lock'),('usr/share/mime','/opt/groove-graphics/share/mime')]:
         path=root/name
         path.parent.mkdir(parents=True,exist_ok=True)
@@ -412,6 +488,8 @@ EOF
     install_blue_note(root, environment)
     from configure_xfce_macos import install as install_xfce_macos
     install_xfce_macos(root)
+    from configure_window_design import install as install_window_design
+    install_window_design(root)
     version=os.environ.get('VERSION','0.2.0')
     for name in ['etc/os-release','usr/bin/groove-sysinfo']:
         target=root/name

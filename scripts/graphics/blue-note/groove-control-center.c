@@ -20,10 +20,12 @@ typedef struct {
 static const ControlAction actions[] = {
     {"video-display", "Pantalla", "Resolución y orientación", "/opt/groove-graphics/bin/xfce4-display-settings"},
     {"preferences-desktop-theme", "Apariencia", "Temas GTK, iconos y fuentes", "/opt/groove-graphics/bin/xfce4-appearance-settings"},
+    {"preferences-desktop-display", "Transparencia", "Opacidad de ventanas y sombras", "/usr/libexec/groove-transparency-settings"},
     {"preferences-desktop-wallpaper", "Fondo", "Fondo de escritorio y estilos", "/opt/groove-graphics/bin/xfdesktop-settings"},
     {"preferences-system-windows", "Ventanas", "Bordes y comportamiento xfwm4", "/opt/groove-graphics/bin/xfwm4-settings"},
     {"input-keyboard", "Teclado", "Distribución de teclas y atajos", "/opt/groove-graphics/bin/xfce4-keyboard-settings"},
     {"input-mouse", "Ratón", "Velocidad del puntero y touchpad", "/opt/groove-graphics/bin/xfce4-mouse-settings"},
+    {"system-software-install", "Instalar App", "Extraer e instalar .tar.xz, .zip, .deb", "/usr/libexec/groove-package-installer"},
     {"utilities-terminal", "Terminal", "Línea de comandos Groove", "/usr/libexec/groove-terminal"},
     {"preferences-system", "Efectos 3D", "Cubo 3D, Wobbly y rotación Wayfire", "/usr/libexec/groove-effects-info"},
     {"drive-harddisk", "Instalar OS", "Instalar Linux Groove en disco", "/usr/libexec/groove-installer-gui"}
@@ -86,20 +88,28 @@ int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
     GtkWidget *win = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(win), "Centro de Control · Linux Groove OS");
-    gtk_window_set_default_size(GTK_WINDOW(win), 640, 480);
+    gtk_window_set_default_size(GTK_WINDOW(win), 660, 520);
     gtk_window_set_position(GTK_WINDOW(win), GTK_WIN_POS_CENTER);
-    gtk_container_set_border_width(GTK_CONTAINER(win), 16);
     g_signal_connect(win, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+    // Native CSD HeaderBar for ultra-smooth anti-aliased titlebars
+    GtkWidget *header = gtk_header_bar_new();
+    gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(header), TRUE);
+    gtk_header_bar_set_title(GTK_HEADER_BAR(header), "Centro de Control");
+    gtk_header_bar_set_subtitle(GTK_HEADER_BAR(header), "Linux Groove OS · Blue Note");
+    gtk_window_set_titlebar(GTK_WINDOW(win), header);
+
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 16);
+    gtk_container_set_border_width(GTK_CONTAINER(main_box), 16);
     gtk_container_add(GTK_CONTAINER(win), main_box);
 
     // Header Card
     GtkWidget *hdr_frame = gtk_frame_new(NULL);
-    gtk_frame_set_shadow_type(GTK_FRAME(hdr_frame), GTK_SHADOW_ETCHED_IN);
+    GtkStyleContext *h_ctx = gtk_widget_get_style_context(hdr_frame);
+    gtk_style_context_add_class(h_ctx, "groove-header-card");
+    gtk_frame_set_shadow_type(GTK_FRAME(hdr_frame), GTK_SHADOW_NONE);
     GtkWidget *hdr_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
-    gtk_container_set_border_width(GTK_CONTAINER(hdr_box), 12);
+    gtk_container_set_border_width(GTK_CONTAINER(hdr_box), 4);
     gtk_container_add(GTK_CONTAINER(hdr_frame), hdr_box);
 
     GtkWidget *icon = gtk_image_new_from_icon_name("preferences-system", GTK_ICON_SIZE_DIALOG);
@@ -124,6 +134,8 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < num_actions; i++) {
         GtkWidget *btn = gtk_button_new();
+        GtkStyleContext *btn_ctx = gtk_widget_get_style_context(btn);
+        gtk_style_context_add_class(btn_ctx, "groove-action-btn");
         GtkWidget *btn_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
         gtk_container_set_border_width(GTK_CONTAINER(btn_box), 8);
 
