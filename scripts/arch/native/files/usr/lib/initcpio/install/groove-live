@@ -1,0 +1,15 @@
+#!/bin/bash
+build() {
+    add_binary /usr/bin/mount
+    add_binary /usr/bin/umount
+    add_binary /usr/bin/mkdir
+    add_binary /usr/bin/findfs
+    add_binary /usr/bin/blkid
+    add_binary /usr/bin/sleep
+    add_module loop
+    add_module squashfs
+    add_module overlay
+    add_module isofs
+    add_runscript
+}
+help() { echo 'Mount the Groove Live squashfs with writable RAM overlay from the installation medium.'; }

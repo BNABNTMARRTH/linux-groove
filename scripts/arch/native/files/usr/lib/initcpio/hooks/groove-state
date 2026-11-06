@@ -1,0 +1,26 @@
+#!/usr/bin/ash
+run_latehook() {
+    version=$(getarg groove.version)
+    [ -n "$version" ] || return 0
+    case "$version" in *[!a-zA-Z0-9.]*|'') err 'Invalid Groove version'; launch_interactive_shell --exec;; esac
+    state=$(resolve_device 'LABEL=groove-state')
+    mount -t ext4 -o rw "$state" /sysroot/state || { err 'Cannot mount Groove state'; launch_interactive_shell --exec; }
+    slot=/sysroot/state/slots/$version
+    mkdir -p "$slot/etc-upper" "$slot/etc-work" /sysroot/state/home /sysroot/state/log
+    if [ ! -f "$slot/var-ready" ]; then
+        # A partial initial copy is never treated as ready after a power loss.
+        mkdir -p "$slot/var"
+        cp -a /sysroot/var/. "$slot/var/" || { err 'Cannot initialize slot state'; launch_interactive_shell --exec; }
+        sync
+        touch "$slot/var-ready"
+    fi
+    mount -t overlay overlay -o "lowerdir=/sysroot/etc,upperdir=$slot/etc-upper,workdir=$slot/etc-work" /sysroot/etc || launch_interactive_shell --exec
+    mount --bind "$slot/var" /sysroot/var || launch_interactive_shell --exec
+    mount --bind /sysroot/state/home /sysroot/home || launch_interactive_shell --exec
+    mount --bind /sysroot/state/log /sysroot/var/log || launch_interactive_shell --exec
+    if [ ! -s /sysroot/state/machine-id ]; then
+        cat /proc/sys/kernel/random/uuid | tr -d '-' > /sysroot/state/machine-id
+    fi
+    touch /sysroot/etc/machine-id
+    mount --bind /sysroot/state/machine-id /sysroot/etc/machine-id || launch_interactive_shell --exec
+}

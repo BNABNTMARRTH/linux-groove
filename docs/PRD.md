@@ -1,21 +1,18 @@
 # Product Requirements Document (PRD)
 
-## Entrega vigente: GrooveWindow — 2026-11-05
+## Entrega vigente: Groove estable — 2026-11-06
 
-XFCE/X11 adopta una apariencia coherente inspirada en Brave: cabecera carbón,
-herramientas gris oscuro, controles monocromáticos a la izquierda y hover
-circular. XFWM gestiona decoración y composición; GTK comparte los valores.
-La coherencia se valida por aplicación, sin prometer decoración idéntica en
-software con cabecera propia. Brave conserva su interfaz y ONLYOFFICE recibe
-un valor predeterminado oscuro que respeta preferencias existentes.
-
-La entrega incluye nitidez tipográfica y transparencia correcta del dock.
-Wayfire se adapta después; Weston y consola permanecen como alternativas.
-Smithay continúa como hoja de ruta, sin ser requisito de esta entrega.
+La entrega vigente usa Arch Linux ARM nativo con systemd, SDDM, Plasma Wayland
+como escritorio principal y Wayfire como sesión alternativa. Groove comparte
+paleta, tipografía, portales y acciones; cada compositor conserva sus controles.
+La instalación usa raíces A/B con UKI y systemd-sysupdate; la ISO Live es solo
+prueba y recuperación. PipeWire/WirePlumber ofrece perfiles UTM de 48 kHz a
+1024 y 256 muestras. No se promete identidad visual exacta entre aplicaciones,
+cero xruns, PREEMPT_RT ni soporte físico hasta reunir evidencia UTM.
 Especificación normativa: [013 — GrooveWindow](specs/013-unified-window-design-spec.md).
 La implementación no se declara validada hasta completar la matriz UTM.
 
-## Linux Groove OS — "The Blue Note Edition"
+## Linux Groove OS — "Groove estable"
 *A Minimal, High-Performance Linux Distribution Built from Scratch in Rust for Digital Artists and Creators*
 
 ---

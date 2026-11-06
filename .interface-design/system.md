@@ -43,22 +43,23 @@ Controles monocromáticos a la derecha; radios 12 px. Blur solo en superficies
 translúcidas, no sobre el texto de la terminal. Animaciones 160–180 ms;
 perfil reducido conservado. Weston usa los mismos cuatro lanzadores básicos.
 
-## Vigente en XFCE: GrooveWindow — spec 013
+## Evolución Definitiva — 2026-11-06: Arquitectura SteamOS + KDE Plasma 6 (Wayland)
 
-Sustituye los controles y superficies anteriores solo en XFCE. Audiencia:
-creadores que alternan documentos, archivos, terminal y navegador. Dominio:
-estudio, mezcla, pista, partitura, toma y edición. Colores de referencia:
-carbón de equipos, gris de controles, negro de vinilo, texto claro y latón.
-Firma Groove: foco latón y escritorio existente; la ventana acompaña al trabajo.
-Se sustituyen semáforos por símbolos, marcos gruesos por borde discreto y
-translucidez de herramientas por superficies opacas legibles.
+Se adopta como entorno de escritorio principal el estándar oficial de **Valve SteamOS 3.0** sobre **Arch Linux ARM (`aarch64`)**: **KDE Plasma 6 con motor Wayland nativo**.
 
-Tokens normativos: scripts/graphics/window-design/tokens.json. Cabecera #202124,
-herramientas #353535, contenido #15181e, texto #e8e6e0, secundario #9aa0a6,
-borde #45464a de 1 px y foco #d4af37. Barra 36 px, zona de botón 32 px, hover
-circular 28 px, esquinas superiores 8 px. Inter 10.5 y título Medium 10.5;
-DejaVu Sans como alternativa. Controles a la izquierda; título centrado.
-Activo/inactivo/hover/pulsado/restaurar definidos, sin añadir animaciones.
-XFWM compone; GTK conserva controles funcionales Adwaita dark. Sin rediseño
-del panel ni iconos. CSD de terceros se verifica por aplicación, sin duplicarla.
-GrooveWindow-2x ofrece recursos XFWM a 2× sin modificar automáticamente DPI.
+### 1. Motivación y Causa Raíz Erradicada
+- **Aislamiento de Procesos Wayland**: A diferencia de los entornos X11 clásicos donde un cuelgue de cliente o bloqueo de puntero (como en aplicaciones pesadas de IA/Electron como OpenCode) congela el bucle sincrónico del servidor gráfico, KWin Wayland ejecuta cada cliente en su propio búfer de memoria aislado. Si una aplicación falla, el cursor, el dock y el compositor se mantienen fluidos a 60 fps.
+- **Entorno de Escritorio Maduro y Completo**: Resuelve de raíz las limitaciones de compositores mínimos (Wayfire/Weston), ofreciendo menú contextual completo en el escritorio con clic derecho (Crear carpeta, abrir terminal, configurar pantalla), centro de ajustes del sistema integrado (`systemsettings`), control de resoluciones dinámicas Mac Retina en UTM, y bandeja con calendario funcional.
+
+### 2. Firma Visual: macOS Glass + SteamOS Studio
+- **Botones de Ventana (Estilo Semáforo macOS)**: Controles en la esquina superior izquierda (`ButtonsOnLeft=XIA`: Cerrar, Minimizar, Maximizar) con bordes suavizados y espaciado ergonómico.
+- **Paleta y Superficies**: Tema oscuro `BreezeDark` con efecto Glass translúcido y desenfoque (blur KWin nativo por hardware) en paneles y decoraciones.
+- **Tipografía**: `Inter` 10 pt para interfaz general y `Inter Medium` para barras de título, con renderizado LCD subpixel nítido sin pixelado.
+- **Fondo de Estudio**: El piano 4K iluminado (*Groove Piano Neon Studio*) configurado como fondo predeterminado del escritorio y del greeter.
+- **Gestión de Archivos**: `Dolphin` con pestañas, previsualizaciones y menú contextual de acciones rápidas.
+
+### 3. Failsafes y Atajos Universales
+- **Forzar Salida Instantánea**: Atajo nativo de terminación con cursor selector (`Cmd + Option + Esc` en teclado Mac, `Ctrl + Alt + Esc` en PC) que envía `SIGKILL` directo al proceso colgado sin tocar la terminal.
+- **Cierre Rápido**: Atajo `Cmd + Q` / `Alt + F4` integrado en KWin para cierre inmediato de ventanas activas.
+- **Convivencia**: XFCE 4.20 se conserva como sesión secundaria optimizada con watchdog `ping_timeout=3000` y tema `WhiteSur-Dark`.
+

@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+# Called inside the session, after WAYLAND_DISPLAY exists, never from SDDM.
+[[ -n ${WAYLAND_DISPLAY:-} && -S "${XDG_RUNTIME_DIR:?}/$WAYLAND_DISPLAY" ]]
+dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP
+printf '%s\n' "$(cat /proc/sys/kernel/random/boot_id)" > "$XDG_RUNTIME_DIR/groove-graphical-ready"

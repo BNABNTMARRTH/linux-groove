@@ -1,0 +1,19 @@
+#!/usr/bin/env python3
+"""Read-only diagnostics. Deliberately excludes the complete environment."""
+import json, subprocess, datetime
+commands = {
+ 'kernel':['uname','-a'], 'session':['loginctl','session-status'],
+ 'services':['systemctl','--failed','--no-pager'],
+ 'user_services':['systemctl','--user','--failed','--no-pager'],
+ 'renderer':['eglinfo','-B'], 'outputs':['kscreen-doctor','-o'],
+ 'memory':['free','-m'], 'input':['libinput','list-devices'],
+ 'audio':['wpctl','status'], 'audio_clock':['pw-metadata','-n','settings'],
+ 'compositors':['pgrep','-a','-f','kwin_wayland|wayfire|picom|xfwm4'],
+ 'errors':['journalctl','-b','-p','err','--no-pager','-n','120']}
+result={'timestamp':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+for name,cmd in commands.items():
+ try:
+  p=subprocess.run(cmd,text=True,capture_output=True,timeout=15)
+  result[name]={'command':cmd,'status':p.returncode,'stdout':p.stdout,'stderr':p.stderr}
+ except (OSError,subprocess.TimeoutExpired) as e: result[name]={'error':str(e)}
+print(json.dumps(result,indent=2))

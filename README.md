@@ -1,38 +1,32 @@
-# Linux Groove OS — The Blue Note Edition
+# Linux Groove OS — Groove estable sobre Arch Linux ARM
 
-## GrooveWindow: integración XFCE/X11
+Sistema operativo Linux de alto rendimiento para creadores de música, código y contenido en Apple Silicon (MacBooks M1, M2, M3, M4) y hardware ARM64 (`aarch64`), compatible tanto en virtualización nativa (UTM / Hypervisor.framework) como en bare metal.
 
-Nueva apariencia de ventanas inspirada en Brave, con tema propio XFWM/GTK,
-fuentes coherentes y corrección de transparencia del dock. XFWM es el compositor
-predeterminado; la adaptación visual de Wayfire queda para después.
-[Spec 013](docs/specs/013-unified-window-design-spec.md) ·
-[Validación](docs/validation/unified-window-design/README.md) ·
-[PRD](docs/PRD.md). La candidata **0.3.0-rc21** está construida y tiene checksum verificado; requiere aceptación UTM antes de promoción.
+Groove usa una base nativa de Arch Linux ARM con systemd, KDE Plasma Wayland
+como escritorio principal y Wayfire como sesión alternativa. No es SteamOS
+oficial ni una certificación de Arch o KDE.
 
+## Estado actual (0.4.1 candidate — Noviembre 2026)
 
-Distribución ARM64 basada en LFS 12.2, con PID 1 y herramientas propias en Rust.
-El escritorio Wayland propio con Smithay es parte de la hoja de ruta.
-
-## Estado real
-
-La ISO **0.1.0** arranca mediante UEFI/ACPI en UTM y ofrece la TUI Blue Note.
-`groove-compositor` todavía contiene una TUI y una demo gráfica minifb para macOS;
-no es aún un compositor Wayland funcional. Los indicadores de la demostración
-son simulados. Audio RT, suites creativas y métricas requieren validación real.
-
-La entrega **0.2.0 gráfica está en implementación**: selector LightDM, XFCE/X11,
-Weston como sesión alternativa, utilidades y Firefox ESR. Las dependencias se
-compilan desde fuentes siguiendo BLFS; no se sustituye la base por otra distro.
-Consultar el [check de avance con evidencia](docs/PROGRESS_TRACKER.md).
+- **Imagen ISO:** `linux-groove-0.4.0-steamos-arch-aarch64.iso` (2.6 GB, SHA-256: `9b40c9229894b7ffe4e40aea400083a6af399acb27bab66f5deda7e1a6a758b3`).
+- **Base del Sistema:** Arch Linux ARM oficial con `pacman`, `systemd`, `logind`, SDDM, NetworkManager, PipeWire/WirePlumber y Flatpak.
+- **Entorno Predeterminado:** **KDE Plasma 6 Wayland** (acelerado por KWin, con soporte de resoluciones dinámicas Mac Retina, menú contextual completo con clic derecho y centro de ajustes del sistema integrado).
+- **Diseño Visual:** Groove oscuro sobrio, acento latón, controles monocromáticos a la izquierda y Breeze nativo; blur solo en el perfil Expresivo.
+- **Protección Anti-Cuelgues:**
+  - Aislamiento nativo de memoria Wayland (si una aplicación pesada de IA o Electron se congela, el ratón y el dock se mantienen fluidos a 60 fps).
+  - Atajo global universal para forzar salida: `Cmd + Option + Esc` / `Ctrl + Alt + Esc` con terminador instantáneo `Kill Window`.
+  - Cierre rápido con `Cmd + Q` / `Alt + F4`.
+- **Sesiones Disponibles en GRUB y Pantalla de Inicio:**
+  1. **Groove · SteamOS Edition (KDE Plasma 6 Wayland)** *(Predeterminada)*.
+  2. **Groove · Wayfire (Wayfire 0.11 con plugins compatibles)**.
+  4. **Consola de recuperación**.
 
 ## Documentación
 
-- [Plan de implementación](docs/plans/GRAPHICAL_DESKTOP_IMPLEMENTATION.md).
-- [PRD](docs/PRD.md) y [plan maestro](docs/phases/MASTER_PLAN_PHASES.md).
-- [Spec 007: sesiones gráficas](docs/specs/007-graphical-sessions-spec.md).
-- [Spec 008: escritorio Rust/Smithay](docs/specs/008-smithay-desktop-roadmap-spec.md).
-- [Diagnóstico del arranque UTM/ACPI](docs/UTM_BOOT.md).
-- [Construcción gráfica desde fuentes](docs/GRAPHICAL_BUILD.md).
+- [Diseño del Sistema e Interfaz (.interface-design/system.md)](.interface-design/system.md).
+- [Plan Maestro de Arquitectura SteamOS (docs/plans/PLAN_ARQUITECTURA_STEAMOS_ARCH.md)](docs/plans/PLAN_ARQUITECTURA_STEAMOS_ARCH.md).
+- [Registro de Avance y Mediciones (docs/PROGRESS_TRACKER.md)](docs/PROGRESS_TRACKER.md).
+- [Diagnóstico del arranque UTM/ACPI (docs/UTM_BOOT.md)](docs/UTM_BOOT.md).
 
 ## Desarrollo
 
