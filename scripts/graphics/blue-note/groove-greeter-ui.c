@@ -163,7 +163,7 @@ static void on_authentication_complete(LightDMGreeter *g, gpointer data) {
     } else if (!lightdm_greeter_get_is_authenticated(g)) {
         login_requested = FALSE;
         gtk_widget_set_sensitive(login_button, TRUE);
-        gtk_button_set_label(GTK_BUTTON(login_button), "▶ Entrar a Linux Groove");
+        gtk_button_set_label(GTK_BUTTON(login_button), "Iniciar");
     }
 }
 
@@ -245,6 +245,21 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer use
     return FALSE;
 }
 
+static void on_window_realize(GtkWidget *widget, gpointer user_data) {
+    (void)user_data;
+    GdkWindow *win = gtk_widget_get_window(widget);
+    GdkDisplay *disp = gtk_widget_get_display(widget);
+    GdkCursor *cursor = gdk_cursor_new_from_name(disp, "left_ptr");
+    if (!cursor) cursor = gdk_cursor_new_from_name(disp, "default");
+    if (cursor) {
+        if (win) gdk_window_set_cursor(win, cursor);
+        GdkScreen *screen = gtk_widget_get_screen(widget);
+        GdkWindow *root = gdk_screen_get_root_window(screen);
+        if (root) gdk_window_set_cursor(root, cursor);
+        g_object_unref(cursor);
+    }
+}
+
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
@@ -271,6 +286,7 @@ int main(int argc, char *argv[]) {
     gtk_window_resize(GTK_WINDOW(main_window), scr_w, scr_h);
     gtk_window_move(GTK_WINDOW(main_window), 0, 0);
     gtk_window_fullscreen(GTK_WINDOW(main_window));
+    g_signal_connect(main_window, "realize", G_CALLBACK(on_window_realize), NULL);
     g_signal_connect(main_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     g_signal_connect(main_window, "key-press-event", G_CALLBACK(on_key_press), NULL);
 
@@ -310,13 +326,34 @@ int main(int argc, char *argv[]) {
     GtkWidget *card_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 14);
     gtk_widget_set_name(card_box, "glass-login-card");
     gtk_widget_set_halign(card_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_size_request(card_box, 360, -1);
+    gtk_widget_set_size_request(card_box, 320, -1);
 
-    /* Native Vector Avatar (Groove Warm Soundwave Disc) */
-    GtkWidget *avatar = gtk_drawing_area_new();
-    gtk_widget_set_size_request(avatar, 76, 76);
+    /* Official Groove Soundwave Logo PNG */
+    GtkWidget *avatar = gtk_image_new();
+    const char *logo_candidates[] = {
+        "/usr/share/groove/groove-greeter-logo.png",
+        "/usr/share/icons/groove-glass/groove-logo.png",
+        "/usr/share/icons/hicolor/scalable/apps/groove-logo.svg",
+        NULL
+    };
+    GdkPixbuf *logo_pixbuf = NULL;
+    for (int i = 0; logo_candidates[i]; i++) {
+        if (g_file_test(logo_candidates[i], G_FILE_TEST_EXISTS)) {
+            logo_pixbuf = gdk_pixbuf_new_from_file_at_scale(logo_candidates[i], 120, 60, TRUE, NULL);
+            if (logo_pixbuf) break;
+        }
+    }
+    if (logo_pixbuf) {
+        gtk_image_set_from_pixbuf(GTK_IMAGE(avatar), logo_pixbuf);
+        g_object_unref(logo_pixbuf);
+    } else {
+        GtkWidget *fallback_avatar = gtk_drawing_area_new();
+        gtk_widget_set_size_request(fallback_avatar, 76, 76);
+        gtk_widget_set_halign(fallback_avatar, GTK_ALIGN_CENTER);
+        g_signal_connect(fallback_avatar, "draw", G_CALLBACK(on_avatar_draw), NULL);
+        avatar = fallback_avatar;
+    }
     gtk_widget_set_halign(avatar, GTK_ALIGN_CENTER);
-    g_signal_connect(avatar, "draw", G_CALLBACK(on_avatar_draw), NULL);
     gtk_box_pack_start(GTK_BOX(card_box), avatar, FALSE, FALSE, 0);
 
     /* User Name & System Subtitle */
@@ -337,9 +374,11 @@ int main(int argc, char *argv[]) {
     gtk_combo_box_set_active_id(GTK_COMBO_BOX(session_combo), "groove-xfce");
     gtk_box_pack_start(GTK_BOX(card_box), session_combo, FALSE, FALSE, 0);
 
-    /* Primary Login Button */
-    login_button = gtk_button_new_with_label("▶ Entrar a Linux Groove");
+    /* Primary Login Button (Transparent Pill) */
+    login_button = gtk_button_new_with_label("Iniciar");
     gtk_widget_set_name(login_button, "login-pill-button");
+    gtk_widget_set_halign(login_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(login_button, 140, 38);
     g_signal_connect(login_button, "clicked", G_CALLBACK(on_login_clicked), NULL);
     gtk_box_pack_start(GTK_BOX(card_box), login_button, FALSE, FALSE, 0);
 
@@ -399,45 +438,49 @@ int main(int argc, char *argv[]) {
         "  color: #e2e8f0;"
         "  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.80);"
         "}"
-        "#glass-login-card {"
-        "  background-color: rgba(18, 22, 32, 0.82);"
-        "  border: 1px solid rgba(255, 255, 255, 0.22);"
-        "  border-radius: 24px;"
-        "  padding: 28px 32px;"
-        "  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);"
-        "}"
-        "#user-name {"
-        "  font-family: 'Inter', 'DejaVu Sans', sans-serif;"
-        "  font-size: 17pt;"
-        "  font-weight: 700;"
-        "  color: #f8fafc;"
-        "}"
-        "#sub-title {"
-        "  font-family: 'Inter', 'DejaVu Sans', sans-serif;"
-        "  font-size: 11pt;"
-        "  color: #94a3b8;"
-        "}"
-        "#session-combo {"
-        "  background: rgba(30, 41, 59, 0.75);"
-        "  border: 1px solid rgba(255, 255, 255, 0.16);"
-        "  border-radius: 10px;"
-        "  color: #ffffff;"
-        "  padding: 4px 8px;"
-        "}"
-        "#login-pill-button {"
-        "  background-image: linear-gradient(135deg, #ffe629 0%, #ff9e00 50%, #ff4800 100%);"
-        "  color: #0b0e17;"
-        "  font-weight: 700;"
-        "  font-size: 12pt;"
-        "  border: none;"
-        "  border-radius: 12px;"
-        "  padding: 10px 20px;"
-        "  box-shadow: 0 4px 14px rgba(255, 158, 0, 0.40);"
-        "}"
-        "#login-pill-button:hover {"
-        "  background-image: linear-gradient(135deg, #fff066 0%, #ffb733 50%, #ff6622 100%);"
-        "  box-shadow: 0 6px 20px rgba(255, 158, 0, 0.60);"
-        "}"
+        "#glass-login-card {\n"
+        "  background-color: rgba(18, 22, 32, 0.82);\n"
+        "  border: 1px solid rgba(255, 255, 255, 0.22);\n"
+        "  border-radius: 24px;\n"
+        "  padding: 24px 28px;\n"
+        "  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);\n"
+        "}\n"
+        "#user-name {\n"
+        "  font-family: 'Inter', 'DejaVu Sans', sans-serif;\n"
+        "  font-size: 16pt;\n"
+        "  font-weight: 700;\n"
+        "  color: #f8fafc;\n"
+        "}\n"
+        "#sub-title {\n"
+        "  font-family: 'Inter', 'DejaVu Sans', sans-serif;\n"
+        "  font-size: 10.5pt;\n"
+        "  color: #94a3b8;\n"
+        "}\n"
+        "#session-combo, #session-combo button, #session-combo box {\n"
+        "  background-color: rgba(255, 255, 255, 0.05);\n"
+        "  border: 1px solid rgba(255, 255, 255, 0.22);\n"
+        "  border-radius: 12px;\n"
+        "  color: #f8fafc;\n"
+        "  padding: 4px 10px;\n"
+        "}\n"
+        "#session-combo:hover, #session-combo button:hover {\n"
+        "  background-color: rgba(255, 255, 255, 0.12);\n"
+        "  border-color: rgba(255, 255, 255, 0.40);\n"
+        "}\n"
+        "#login-pill-button {\n"
+        "  background-color: rgba(255, 255, 255, 0.08);\n"
+        "  color: #f8fafc;\n"
+        "  font-weight: 600;\n"
+        "  font-size: 12pt;\n"
+        "  border: 1px solid rgba(255, 255, 255, 0.28);\n"
+        "  border-radius: 18px;\n"
+        "  padding: 6px 18px;\n"
+        "}\n"
+        "#login-pill-button:hover {\n"
+        "  background-color: rgba(255, 255, 255, 0.20);\n"
+        "  border-color: rgba(255, 255, 255, 0.50);\n"
+        "  color: #ffffff;\n"
+        "}\n"
         "#bottom-pill-btn {"
         "  background-color: rgba(18, 22, 32, 0.75);"
         "  color: #f1f5f9;"

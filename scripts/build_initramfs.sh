@@ -70,8 +70,8 @@ if [ "$FOUND" -eq 1 ]; then
     echo ">> Montando sistema de archivos SquashFS (Compresión ZSTD)..."
     mount -t squashfs -o loop /mnt/live/groove/rootfs.squashfs /mnt/squash
     
-    echo ">> Creando capa volátil RAM OverlayFS..."
-    mount -t tmpfs tmpfs /mnt/ram
+    echo ">> Creando capa volátil RAM OverlayFS (75% RAM backed by ZRAM)..."
+    mount -t tmpfs -o size=75%,mode=0755 tmpfs /mnt/ram
     mkdir -p /mnt/ram/upper /mnt/ram/work
     mount -t overlay overlay -o lowerdir=/mnt/squash,upperdir=/mnt/ram/upper,workdir=/mnt/ram/work /mnt/merged
     

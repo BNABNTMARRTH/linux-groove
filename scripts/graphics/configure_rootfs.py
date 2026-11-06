@@ -27,7 +27,7 @@ def main():
     put('/etc/nsswitch.conf','passwd: files\ngroup: files\nshadow: files\nhosts: files dns\nnetworks: files\n')
     put('/etc/login.defs','ENV_PATH PATH=/opt/groove-graphics/bin:/opt/groove-graphics/sbin:/usr/bin:/bin\nLOGIN_RETRIES 3\nFAIL_DELAY 2\nDEFAULT_HOME yes\nUID_MIN 1000\nGID_MIN 1000\n')
     put('/etc/ld.so.conf','include /etc/ld.so.conf.d/*.conf\n/usr/lib\n/lib\n')
-    put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n{PREFIX}/lib/firefox\n')
+    put('/etc/ld.so.conf.d/groove-graphics.conf',f'{PREFIX}/lib\n{PREFIX}/lib/weston\n{PREFIX}/lib/firefox\n/opt/groove-apps/lib\n{PREFIX}/opt/onlyoffice/desktopeditors\n{PREFIX}/opt/onlyoffice/desktopeditors/converter\n{PREFIX}/opt/brave\n')
     profile=root/'etc/profile'
     if not profile.exists():put('/etc/profile','for script in /etc/profile.d/*.sh; do [ ! -r "$script" ] || . "$script"; done\n')
     put('/etc/profile.d/groove-graphics.sh',f'export PATH={PREFIX}/bin:{PREFIX}/sbin:$PATH\nexport XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share\n')
@@ -135,10 +135,25 @@ def main():
         desktop_names = "XFCE;" if "xfce" in path else ("Weston;" if "weston" in path else "LightDM;")
         put('/usr/share/'+path,f'[Desktop Entry]\nName={name}\nComment=Linux Groove OS\nExec={exec_}\nTryExec={exec_}\nType=Application\nDesktopNames={desktop_names}\n')
     put('/etc/X11/xorg.conf',f'''
+    Section "ServerFlags"
+        Option "BlankTime" "0"
+        Option "StandbyTime" "0"
+        Option "SuspendTime" "0"
+        Option "OffTime" "0"
+        Option "DPMS" "false"
+    EndSection
     Section "Device"
         Identifier "VirtIO"
         Driver "modesetting"
         Option "AccelMethod" "none"
+    EndSection
+    Section "Screen"
+        Identifier "Screen0"
+        Device "VirtIO"
+        SubSection "Display"
+            Depth 24
+            Modes "1920x1080" "1920x1200" "1600x900" "1440x900" "1280x800"
+        EndSubSection
     EndSection
     Section "InputClass"
         Identifier "Groove input"
@@ -384,7 +399,7 @@ EOF
     put('/etc/groove/recovery-services/serial.toml',service('serial',PREFIX+'/sbin/agetty',['--noclear','--login-program',PREFIX+'/bin/login','ttyAMA0','115200','linux'],console=True,restart='always'))
     for folder,uid,gid in [('home/groove',1000,1000),('var/lib/lightdm',65,65),('var/cache/lightdm',65,65),('var/log/lightdm',65,65)]:
         dest=root/folder;dest.mkdir(parents=True,exist_ok=True);os.chown(dest,uid,gid)
-    for name,target in [('var/run','/run'),('var/lock','/run/lock')]:
+    for name,target in [('var/run','/run'),('var/lock','/run/lock'),('usr/share/mime','/opt/groove-graphics/share/mime')]:
         path=root/name
         path.parent.mkdir(parents=True,exist_ok=True)
         if not path.exists() and not path.is_symlink():path.symlink_to(target)

@@ -15,14 +15,50 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
-#define BASE_ICON_SIZE 48
+#define DEFAULT_ICON_SIZE 48
 #define MAX_ZOOM_SCALE 1.38
 #define SIGMA 54.0
-#define CAPSULE_HEIGHT 66
-#define WIN_HEIGHT 136
-#define DOCK_BOTTOM_MARGIN 10
-#define ITEM_SPACING 12
 #define CAPSULE_PAD_X 16
+
+static int base_icon_size = DEFAULT_ICON_SIZE;
+static int capsule_height = 66;
+static int win_height = 136;
+static int dock_bottom_margin = 10;
+static int item_spacing = 12;
+static gboolean zoom_enabled = TRUE;
+
+static void load_dock_config(void) {
+    const char *home = g_get_home_dir();
+    char *conf_path = g_build_filename(home, ".config", "groove", "dock.conf", NULL);
+    GKeyFile *kf = g_key_file_new();
+    if (g_key_file_load_from_file(kf, conf_path, G_KEY_FILE_NONE, NULL)) {
+        int sz = g_key_file_get_integer(kf, "Dock", "icon_size", NULL);
+        if (sz >= 32 && sz <= 64) {
+            base_icon_size = sz;
+            capsule_height = base_icon_size + 18;
+            win_height = capsule_height + 70;
+        }
+        if (g_key_file_has_key(kf, "Dock", "zoom_enabled", NULL)) {
+            zoom_enabled = g_key_file_get_boolean(kf, "Dock", "zoom_enabled", NULL);
+        }
+    }
+    g_key_file_free(kf);
+    g_free(conf_path);
+}
+
+static void save_dock_config(void) {
+    const char *home = g_get_home_dir();
+    char *dir_path = g_build_filename(home, ".config", "groove", NULL);
+    g_mkdir_with_parents(dir_path, 0755);
+    char *conf_path = g_build_filename(dir_path, "dock.conf", NULL);
+    GKeyFile *kf = g_key_file_new();
+    g_key_file_set_integer(kf, "Dock", "icon_size", base_icon_size);
+    g_key_file_set_boolean(kf, "Dock", "zoom_enabled", zoom_enabled);
+    g_key_file_save_to_file(kf, conf_path, NULL);
+    g_key_file_free(kf);
+    g_free(dir_path);
+    g_free(conf_path);
+}
 
 typedef struct {
     const char *id;
@@ -144,13 +180,13 @@ static void update_dock_position(void) {
 
     double total_w = CAPSULE_PAD_X * 2;
     for (int i = 0; i < num_items; i++) {
-        total_w += (BASE_ICON_SIZE * items[i].current_scale) + ITEM_SPACING;
+        total_w += (base_icon_size * items[i].current_scale) + item_spacing;
     }
-    total_w -= ITEM_SPACING;
+    total_w -= item_spacing;
     int win_w = (int)ceil(total_w) + 32;
-    int win_h = WIN_HEIGHT;
+    int win_h = win_height;
     int pos_x = (screen_w - win_w) / 2;
-    int pos_y = screen_h - win_h - DOCK_BOTTOM_MARGIN;
+    int pos_y = screen_h - win_h - dock_bottom_margin;
 
     gtk_window_resize(GTK_WINDOW(dock_window), win_w, win_h);
     gtk_window_move(GTK_WINDOW(dock_window), pos_x, pos_y);
@@ -159,13 +195,13 @@ static void update_dock_position(void) {
     if (gtk_widget_get_realized(dock_window)) {
         double cap_w = total_w;
         double cap_x = (win_w - cap_w) / 2.0;
-        double cap_y = win_h - CAPSULE_HEIGHT - 6.0;
+        double cap_y = win_h - capsule_height - 6.0;
 
         cairo_region_t *input_region = cairo_region_create_rectangle(&(cairo_rectangle_int_t){
             .x = (int)cap_x - 10,
             .y = (int)cap_y - 48,
             .width = (int)cap_w + 20,
-            .height = CAPSULE_HEIGHT + 54
+            .height = capsule_height + 54
         });
         gtk_widget_input_shape_combine_region(dock_window, input_region);
 
@@ -222,7 +258,7 @@ static void trigger_anim(void) {
 }
 
 static void recalculate_target_scales(void) {
-    if (!mouse_in_dock) {
+    if (!mouse_in_dock || !zoom_enabled) {
         for (int i = 0; i < num_items; i++) {
             items[i].target_scale = 1.0;
         }
@@ -258,20 +294,20 @@ static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     // Compute capsule rectangle
     double content_w = 0;
     for (int i = 0; i < num_items; i++) {
-        content_w += (BASE_ICON_SIZE * items[i].current_scale) + ITEM_SPACING;
+        content_w += (base_icon_size * items[i].current_scale) + item_spacing;
     }
-    content_w -= ITEM_SPACING;
+    content_w -= item_spacing;
     double capsule_w = content_w + (CAPSULE_PAD_X * 2);
-    double capsule_h = CAPSULE_HEIGHT;
+    double cap_h = capsule_height;
     double capsule_x = (w - capsule_w) / 2.0;
-    double capsule_y = h - capsule_h - 6.0;
+    double capsule_y = h - cap_h - 6.0;
     double corner_radius = 18.0;
 
     // Draw Capsule Glass Background
     cairo_new_sub_path(cr);
     cairo_arc(cr, capsule_x + capsule_w - corner_radius, capsule_y + corner_radius, corner_radius, -M_PI/2, 0);
-    cairo_arc(cr, capsule_x + capsule_w - corner_radius, capsule_y + capsule_h - corner_radius, corner_radius, 0, M_PI/2);
-    cairo_arc(cr, capsule_x + corner_radius, capsule_y + capsule_h - corner_radius, corner_radius, M_PI/2, M_PI);
+    cairo_arc(cr, capsule_x + capsule_w - corner_radius, capsule_y + cap_h - corner_radius, corner_radius, 0, M_PI/2);
+    cairo_arc(cr, capsule_x + corner_radius, capsule_y + cap_h - corner_radius, corner_radius, M_PI/2, M_PI);
     cairo_arc(cr, capsule_x + corner_radius, capsule_y + corner_radius, corner_radius, M_PI, 3*M_PI/2);
     cairo_close_path(cr);
 
@@ -287,10 +323,10 @@ static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
     // Draw Icons and Running Indicators
     double cur_x = capsule_x + CAPSULE_PAD_X;
     for (int i = 0; i < num_items; i++) {
-        double icon_size = BASE_ICON_SIZE * items[i].current_scale;
+        double icon_size = base_icon_size * items[i].current_scale;
         double icon_x = cur_x;
         // Icons grow upwards when magnified, minus bounce offset
-        double icon_y = (capsule_y + capsule_h - 10.0) - icon_size - items[i].bounce_offset;
+        double icon_y = (capsule_y + cap_h - 10.0) - icon_size - items[i].bounce_offset;
 
         items[i].draw_x = icon_x;
         items[i].draw_w = icon_size;
@@ -301,6 +337,7 @@ static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
             double scale = icon_size / (double)gdk_pixbuf_get_width(items[i].pixbuf);
             cairo_scale(cr, scale, scale);
             gdk_cairo_set_source_pixbuf(cr, items[i].pixbuf, 0, 0);
+            cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_BEST);
             cairo_paint(cr);
             cairo_restore(cr);
         }
@@ -308,7 +345,7 @@ static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
         // Draw running dot indicator below icon
         if (items[i].is_running) {
             double dot_x = icon_x + (icon_size / 2.0);
-            double dot_y = capsule_y + capsule_h - 4.5;
+            double dot_y = capsule_y + cap_h - 4.5;
             cairo_arc(cr, dot_x, dot_y, 2.5, 0, 2*M_PI);
             if (items[i].is_active) {
                 // Active: bright glowing cyan
@@ -320,7 +357,7 @@ static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
             cairo_fill(cr);
         }
 
-        cur_x += icon_size + ITEM_SPACING;
+        cur_x += icon_size + item_spacing;
     }
 
     // Draw label for hovered item if active
@@ -334,7 +371,7 @@ static gboolean on_draw(GtkWidget *widget, cairo_t *cr, gpointer user_data) {
         double lbl_w = ext.width + 18.0;
         double lbl_h = ext.height + 10.0;
         double lbl_x = items[hovered_item_idx].draw_x + (items[hovered_item_idx].draw_w / 2.0) - (lbl_w / 2.0);
-        double icon_top = (capsule_y + capsule_h - 10.0) - (BASE_ICON_SIZE * items[hovered_item_idx].current_scale) - items[hovered_item_idx].bounce_offset;
+        double icon_top = (capsule_y + cap_h - 10.0) - (base_icon_size * items[hovered_item_idx].current_scale) - items[hovered_item_idx].bounce_offset;
         double lbl_y = icon_top - lbl_h - 8.0;
         if (lbl_y < 6.0) lbl_y = 6.0; // Never cut off at top of window
 
@@ -415,18 +452,109 @@ static void activate_or_launch(DockItem *item) {
     }
 }
 
+static void on_size_menu_select(GtkMenuItem *mi, gpointer user_data) {
+    (void)mi;
+    int sz = GPOINTER_TO_INT(user_data);
+    base_icon_size = sz;
+    capsule_height = base_icon_size + 18;
+    win_height = capsule_height + 70;
+    save_dock_config();
+    set_dock_strut(dock_window, capsule_height + dock_bottom_margin + 6);
+    update_dock_position();
+    gtk_widget_queue_draw(draw_area);
+}
+
+static void on_toggle_zoom(GtkCheckMenuItem *mi, gpointer user_data) {
+    (void)user_data;
+    zoom_enabled = gtk_check_menu_item_get_active(mi);
+    save_dock_config();
+    recalculate_target_scales();
+}
+
+static void on_launch_item(GtkMenuItem *mi, gpointer user_data) {
+    (void)mi;
+    DockItem *item = (DockItem *)user_data;
+    if (item) {
+        g_spawn_command_line_async(item->command, NULL);
+    }
+}
+
+static void on_open_effects(GtkMenuItem *mi, gpointer user_data) {
+    (void)mi; (void)user_data;
+    g_spawn_command_line_async("/opt/groove-graphics/bin/groove-effects-dialog", NULL);
+}
+
+static void show_dock_context_menu(GdkEventButton *event, int item_idx) {
+    GtkWidget *menu = gtk_menu_new();
+
+    if (item_idx >= 0 && item_idx < num_items) {
+        char title_buf[128];
+        snprintf(title_buf, sizeof(title_buf), "Abrir nueva ventana de %s", items[item_idx].name);
+        GtkWidget *item_launch = gtk_menu_item_new_with_label(title_buf);
+        g_signal_connect(item_launch, "activate", G_CALLBACK(on_launch_item), &items[item_idx]);
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), item_launch);
+
+        GtkWidget *sep = gtk_separator_menu_item_new();
+        gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep);
+    }
+
+    // Size submenu
+    GtkWidget *size_menu_item = gtk_menu_item_new_with_label("Tamaño del Dock");
+    GtkWidget *size_sub = gtk_menu_new();
+    gtk_menu_item_set_submenu(GTK_MENU_ITEM(size_menu_item), size_sub);
+
+    struct { const char *label; int size; } sizes[] = {
+        {"Pequeño (38 px)", 38},
+        {"Mediano (48 px)", 48},
+        {"Grande (58 px)", 58}
+    };
+    for (size_t s = 0; s < sizeof(sizes)/sizeof(sizes[0]); s++) {
+        GtkWidget *s_item = gtk_menu_item_new_with_label(sizes[s].label);
+        g_signal_connect(s_item, "activate", G_CALLBACK(on_size_menu_select), GINT_TO_POINTER(sizes[s].size));
+        gtk_menu_shell_append(GTK_MENU_SHELL(size_sub), s_item);
+    }
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), size_menu_item);
+
+    // Zoom toggle
+    GtkWidget *zoom_item = gtk_check_menu_item_new_with_label("Efecto de ampliación (Zoom)");
+    gtk_check_menu_item_set_active(GTK_CHECK_MENU_ITEM(zoom_item), zoom_enabled);
+    g_signal_connect(zoom_item, "toggled", G_CALLBACK(on_toggle_zoom), NULL);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), zoom_item);
+
+    // Effects dialog
+    GtkWidget *sep2 = gtk_separator_menu_item_new();
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), sep2);
+
+    GtkWidget *fx_item = gtk_menu_item_new_with_label("Efectos 3D del Escritorio...");
+    g_signal_connect(fx_item, "activate", G_CALLBACK(on_open_effects), NULL);
+    gtk_menu_shell_append(GTK_MENU_SHELL(menu), fx_item);
+
+    gtk_widget_show_all(menu);
+    gtk_menu_popup_at_pointer(GTK_MENU(menu), (GdkEvent *)event);
+}
+
 static gboolean on_button_press(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
     (void)widget; (void)user_data;
-    if (event->button != 1) return FALSE;
-
-    for (int i = 0; i < num_items; i++) {
-        if (event->x >= items[i].draw_x && event->x <= (items[i].draw_x + items[i].draw_w)) {
-            items[i].bounce_active = TRUE;
-            items[i].bounce_phase = 0.0;
-            trigger_anim();
-            activate_or_launch(&items[i]);
-            return TRUE;
+    if (event->button == 1) {
+        for (int i = 0; i < num_items; i++) {
+            if (event->x >= items[i].draw_x && event->x <= (items[i].draw_x + items[i].draw_w)) {
+                items[i].bounce_active = TRUE;
+                items[i].bounce_phase = 0.0;
+                trigger_anim();
+                activate_or_launch(&items[i]);
+                return TRUE;
+            }
         }
+    } else if (event->button == 3) {
+        int clicked_item = -1;
+        for (int i = 0; i < num_items; i++) {
+            if (event->x >= items[i].draw_x && event->x <= (items[i].draw_x + items[i].draw_w)) {
+                clicked_item = i;
+                break;
+            }
+        }
+        show_dock_context_menu(event, clicked_item);
+        return TRUE;
     }
     return FALSE;
 }
@@ -443,11 +571,12 @@ static void on_screen_changed(GtkWidget *widget, GdkScreen *old_screen, gpointer
 
 static void on_window_realize(GtkWidget *widget, gpointer user_data) {
     (void)user_data;
-    set_dock_strut(widget, CAPSULE_HEIGHT + DOCK_BOTTOM_MARGIN + 6);
+    set_dock_strut(widget, capsule_height + dock_bottom_margin + 6);
 }
 
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
+    load_dock_config();
 
     dock_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_type_hint(GTK_WINDOW(dock_window), GDK_WINDOW_TYPE_HINT_DOCK);

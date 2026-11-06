@@ -69,6 +69,8 @@ else
 fi
 ''', 0o755)
     put('/usr/libexec/groove-office', '''#!/bin/sh
+export XDG_DATA_DIRS=/opt/groove-graphics/share:/usr/share:${XDG_DATA_DIRS:-}
+export GDK_PIXBUF_MODULE_FILE=/opt/groove-graphics/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache
 export LD_PRELOAD=/opt/groove-apps/lib/libgroove-gtkfix.so:${LD_PRELOAD:-}
 export LD_LIBRARY_PATH=/opt/groove-graphics/opt/onlyoffice/desktopeditors:/opt/groove-apps/lib:/opt/groove-graphics/lib:${LD_LIBRARY_PATH:-}
 exec /usr/libexec/groove-launch "OnlyOffice" office /opt/groove-graphics/opt/onlyoffice/desktopeditors/DesktopEditors "$@"

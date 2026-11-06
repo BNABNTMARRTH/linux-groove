@@ -23,21 +23,22 @@ done
 mkdir -p "$ROOT$PREFIX" "$ROOT/sbin" "$ROOT/tmp" "$STAGING/boot/grub/fonts" /tmp/graphical-images
 chmod 1777 "$ROOT/tmp"
 # Build the shared native binaries against source-built GTK and X11 only.
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig"
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-desktop.c" -o "$PREFIX/bin/groove-desktop"
 cc -O2 "$SOURCE_ROOT/scripts/graphics/blue-note/groove-launch-error.c" \
-    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs gtk+-3.0) \
+    $(pkg-config --cflags --libs gtk+-3.0) \
     -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-launch-error"
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-dock.c" \
-    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs gtk+-3.0 libwnck-3.0 x11) \
+    $(pkg-config --cflags --libs gtk+-3.0 libwnck-3.0 x11) \
     -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -lm -o "$PREFIX/bin/groove-dock"
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-control-center.c" \
-    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs gtk+-3.0) \
+    $(pkg-config --cflags --libs gtk+-3.0) \
     -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-control-center"
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-greeter-ui.c" \
-    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs liblightdm-gobject-1 gtk+-3.0) \
+    $(pkg-config --cflags --libs liblightdm-gobject-1 gtk+-3.0) \
     -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-greeter-ui"
 cc -O2 -Wall -Wextra "$SOURCE_ROOT/scripts/graphics/blue-note/groove-effects-dialog.c" \
-    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs gtk+-3.0) \
+    $(pkg-config --cflags --libs gtk+-3.0) \
     -L"$PREFIX/lib" -Wl,-rpath,"$PREFIX/lib" -o "$PREFIX/bin/groove-effects-dialog"
 # Copy only the compiled source prefix. Never copy libraries from builder /usr.
 "$PREFIX/bin/gdk-pixbuf-query-loaders" > "$PREFIX/lib/gdk-pixbuf-2.0/2.10.0/loaders.cache.tmp"
@@ -76,7 +77,7 @@ chroot "$ROOT" /usr/bin/localedef -i es_MX -f UTF-8 es_MX.UTF-8
 /sbin/ldconfig -r "$ROOT"
 # Validate the catalogue through the same API used by the greeter.
 cc -O2 "$SOURCE_ROOT"/scripts/graphics/tests/session_catalog_check.c \
-    $(PKG_CONFIG_LIBDIR="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs liblightdm-gobject-1) \
+    $(PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig" pkg-config --cflags --libs liblightdm-gobject-1) \
     -Wl,-rpath,"$PREFIX/lib" -o "$ROOT/tmp/groove-session-catalog-check"
 if [[ "$ENABLE_WAYFIRE" == 1 ]]; then
     chroot --userspec=65:65 "$ROOT" /tmp/groove-session-catalog-check --wayfire
@@ -104,6 +105,9 @@ fi
 bash "$SOURCE_ROOT"/scripts/graphics/test_live_access.sh "$ROOT"
 bash "$SOURCE_ROOT"/scripts/graphics/tests/test_launchers.sh "$ROOT"
 IMAGES_DIR=/tmp/graphical-images bash "$SOURCE_ROOT"/scripts/build_initramfs.sh
+if [[ ! -f /tmp/graphical-images/vmlinuz-6.12-groove-rt && -f /images/vmlinuz-6.12-groove-rt ]]; then
+    cp /images/vmlinuz-6.12-groove-rt /tmp/graphical-images/vmlinuz-6.12-groove-rt
+fi
 cp /tmp/graphical-images/vmlinuz-6.12-groove-rt "$STAGING/boot/vmlinuz"
 cp /tmp/graphical-images/initramfs-6.12-groove.cpio.gz "$STAGING/boot/initramfs.cpio.gz"
 if command -v grub-mkfont >/dev/null; then

@@ -470,6 +470,7 @@ fn setup_mounts() {
         ("tmpfs", "/run", "tmpfs", "mode=0755"),
         ("devpts", "/dev/pts", "devpts", "mode=0620,gid=5"),
         ("tmpfs", "/dev/shm", "tmpfs", "mode=1777"),
+        ("tmpfs", "/tmp", "tmpfs", "mode=1777"),
     ] {
         let _ = fs::create_dir_all(target);
         // Preserve initramfs mounts (including /run/media) across switch_root.
@@ -488,6 +489,72 @@ fn setup_mounts() {
                 eprintln!("[groove-init] mount {target}: {e}");
             }
         }
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn setup_zram() {
+    use std::io::Write;
+    let mem_total_kb = fs::read_to_string("/proc/meminfo")
+        .unwrap_or_default()
+        .lines()
+        .find(|line| line.starts_with("MemTotal:"))
+        .and_then(|line| {
+            line.split_whitespace()
+                .nth(1)
+                .and_then(|v| v.parse::<u64>().ok())
+        })
+        .unwrap_or(2048 * 1024);
+
+    let zram_bytes = mem_total_kb * 1024 * 3 / 4; // 75% of RAM
+    let comp_algos = ["zstd", "lzo-rle", "lzo"];
+
+    // Try setting compression algorithm
+    for algo in comp_algos {
+        if fs::write("/sys/block/zram0/comp_algorithm", algo).is_ok() {
+            println!("[groove-init] zram0 algorithm set to {algo}");
+            break;
+        }
+    }
+
+    if let Err(e) = fs::write("/sys/block/zram0/disksize", format!("{zram_bytes}\n")) {
+        eprintln!("[groove-init] zram0 disksize: {e}");
+        return;
+    }
+
+    // Write Linux swap header (SWAPSPACE2) directly to /dev/zram0
+    let mut header = vec![0u8; 4096];
+    let page_size = 4096u64;
+    let last_page = (zram_bytes / page_size) as u32;
+    // version = 1
+    header[1024..1028].copy_from_slice(&1u32.to_le_bytes());
+    // last_page
+    header[1028..1032].copy_from_slice(&last_page.to_le_bytes());
+    // nr_badpages = 0
+    header[1032..1036].copy_from_slice(&0u32.to_le_bytes());
+    // magic "SWAPSPACE2" at end of 4096-byte page
+    header[4086..4096].copy_from_slice(b"SWAPSPACE2");
+
+    if let Ok(mut dev) = OpenOptions::new().write(true).open("/dev/zram0") {
+        if let Err(e) = dev.write_all(&header) {
+            eprintln!("[groove-init] write swap header to zram0: {e}");
+            return;
+        }
+        let _ = dev.flush();
+    } else {
+        eprintln!("[groove-init] open /dev/zram0 for swap failed");
+        return;
+    }
+
+    // Call swapon via libc
+    let c_path = std::ffi::CString::new("/dev/zram0").unwrap();
+    let swap_flags = 0x8000 | (100 << 0); // SWAP_FLAG_PREFER | priority 100
+    let ret = unsafe { nix::libc::swapon(c_path.as_ptr(), swap_flags) };
+    if ret == 0 {
+        println!("[groove-init] zram0 active swap: {} MiB", zram_bytes / (1024 * 1024));
+        let _ = fs::write("/proc/sys/vm/swappiness", "100\n");
+    } else {
+        eprintln!("[groove-init] swapon /dev/zram0 failed: {}", io::Error::last_os_error());
     }
 }
 #[cfg(target_os = "linux")]
@@ -567,6 +634,8 @@ fn run() -> Result<(), String> {
     }
     #[cfg(target_os = "linux")]
     setup_mounts();
+    #[cfg(target_os = "linux")]
+    setup_zram();
     #[cfg(target_os = "linux")]
     setup_loopback();
     let cmdline = fs::read_to_string("/proc/cmdline").unwrap_or_default();

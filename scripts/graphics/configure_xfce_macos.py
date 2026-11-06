@@ -13,16 +13,20 @@ APPS_ARCHIVE_DIR = Path('/backup/sources/apps')
 WALLPAPERS_SOURCE_DIR = Path('/tmp/groove-wayfire-inputs/backgrouds_groove')
 
 def create_svg_button(color, border_color, glyph=None, glyph_color=None):
+    # 24x28 button with solid background matching titlebar (#373737 with top border #1a1a1a)
+    # Output must be converted to RGB (no alpha) to avoid xfwm4 1-bit binary thresholding
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="32" viewBox="0 0 20 32">',
-        f'  <circle cx="10" cy="16" r="6.2" fill="{color}" stroke="{border_color}" stroke-width="0.8"/>'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="28" viewBox="0 0 24 28">',
+        '  <rect width="24" height="28" fill="#373737"/>',
+        '  <rect width="24" height="1" fill="#1a1a1a"/>',
+        f'  <circle cx="12" cy="14" r="5.6" fill="{color}" stroke="{border_color}" stroke-width="0.8"/>'
     ]
     if glyph == 'x':
-        svg.append(f'  <path d="M7.8 13.8l4.4 4.4m0-4.4l-4.4 4.4" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M10 12l4 4m0-4l-4 4" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     elif glyph == '-':
-        svg.append(f'  <path d="M7.4 16h5.2" fill="none" stroke="{glyph_color}" stroke-width="1.3" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M9.5 14h5" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     elif glyph == '+':
-        svg.append(f'  <path d="M10 13.4v5.2m-2.6-2.6h5.2" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
+        svg.append(f'  <path d="M12 11.5v5m-2.5-2.5h5" fill="none" stroke="{glyph_color}" stroke-width="1.2" stroke-linecap="round"/>')
     svg.append('</svg>')
     return '\n'.join(svg)
 
@@ -251,65 +255,23 @@ def install(root):
         svg_path.write_text(svg_content)
         png_path = theme_dir / f'{name}.png'
         if converter.exists():
-            subprocess.run([str(converter), '-w', '20', '-h', '32',
+            subprocess.run([str(converter), '-w', '24', '-h', '28',
                             str(svg_path), '-o', str(png_path)], env=env, check=True)
             png_path.chmod(0o644)
 
-    # 3. Window Top Corners (12px rounded corner) and XPM masks
-    corner_svg_left = '''<svg xmlns="http://www.w3.org/2000/svg" width="12" height="32" viewBox="0 0 12 32">
-      <path d="M12 0H12v32H0V12A12 12 0 0 1 12 0z" fill="#20242b"/>
-      <path d="M12 0H12v1H0v31" fill="none" stroke="#2e3849" stroke-width="1"/>
-    </svg>'''
-    corner_svg_right = '''<svg xmlns="http://www.w3.org/2000/svg" width="12" height="32" viewBox="0 0 12 32">
-      <path d="M0 0h0A12 12 0 0 1 12 12v20H0V0z" fill="#20242b"/>
-      <path d="M0 0h0v1h12v31" fill="none" stroke="#2e3849" stroke-width="1"/>
-    </svg>'''
-    (tmp_dir / 'top-left-active.svg').write_text(corner_svg_left)
-    (tmp_dir / 'top-right-active.svg').write_text(corner_svg_right)
+    # 3. Window Top Corners and titlebars from original WhiteSur-Dark
+    # Extract them cleanly from WhiteSur-Dark archive
+    ws_extract_tmp = root / 'tmp/ws-orig-xfwm4'
+    ws_extract_tmp.mkdir(parents=True, exist_ok=True)
+    if ws_gtk_tar.exists():
+        subprocess.run(['tar', '-xJf', str(ws_gtk_tar), '-C', str(ws_extract_tmp), 'WhiteSur-Dark/xfwm4'], check=True)
+        orig_xfwm4 = ws_extract_tmp / 'WhiteSur-Dark/xfwm4'
+        if orig_xfwm4.is_dir():
+            for item in orig_xfwm4.iterdir():
+                if item.name.startswith(('title-', 'top-', 'bottom', 'left-', 'right-', 'shade-', 'stick-', 'menu-')):
+                    shutil.copy2(item, theme_dir / item.name)
 
-    if converter.exists():
-        for state in ('active', 'inactive'):
-            subprocess.run([str(converter), '-w', '12', '-h', '32',
-                            str(tmp_dir / 'top-left-active.svg'),
-                            '-o', str(theme_dir / f'top-left-{state}.png')], env=env, check=True)
-            subprocess.run([str(converter), '-w', '12', '-h', '32',
-                            str(tmp_dir / 'top-right-active.svg'),
-                            '-o', str(theme_dir / f'top-right-{state}.png')], env=env, check=True)
-            (theme_dir / f'top-left-{state}.png').chmod(0o644)
-            (theme_dir / f'top-right-{state}.png').chmod(0o644)
-
-    # XPM transparency masks for rounded corners
-    for state in ('active', 'inactive'):
-        write_rounded_xpm(theme_dir / f'top-left-{state}.xpm', 12, 32, 12, is_left=True)
-        write_rounded_xpm(theme_dir / f'top-right-{state}.xpm', 12, 32, 12, is_left=False)
-
-    # 4. Title and Border 1px strips
-    title_svg = '''<svg xmlns="http://www.w3.org/2000/svg" width="1" height="32" viewBox="0 0 1 32">
-      <rect width="1" height="32" fill="#20242b"/>
-      <rect width="1" height="1" fill="#2e3849"/>
-      <rect y="31" width="1" height="1" fill="#141720"/>
-    </svg>'''
-    (tmp_dir / 'title.svg').write_text(title_svg)
-    if converter.exists():
-        for state in ('active', 'inactive'):
-            for i in range(1, 6):
-                dest = theme_dir / f'title-{i}-{state}.png'
-                subprocess.run([str(converter), '-w', '1', '-h', '32',
-                                str(tmp_dir / 'title.svg'), '-o', str(dest)], env=env, check=True)
-                dest.chmod(0o644)
-
-    # Border strips (left, right, bottom)
-    border_svg_side = '''<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1" viewBox="0 0 1 1"><rect width="1" height="1" fill="#20242b"/></svg>'''
-    (tmp_dir / 'border.svg').write_text(border_svg_side)
-    if converter.exists():
-        for name in ('left', 'right', 'bottom', 'bottom-left', 'bottom-right'):
-            for state in ('active', 'inactive'):
-                dest = theme_dir / f'{name}-{state}.png'
-                subprocess.run([str(converter), '-w', '1', '-h', '1',
-                                str(tmp_dir / 'border.svg'), '-o', str(dest)], env=env, check=True)
-                dest.chmod(0o644)
-
-    # Mirror xfwm4 assets into WhiteSur-Dark/xfwm4 so both themes have 12px XPM corner masks and CHM| layout
+    # Mirror xfwm4 assets into WhiteSur-Dark/xfwm4 so both themes have native macOS frames and smooth buttons
     ws_xfwm4 = root / 'usr/share/themes/WhiteSur-Dark/xfwm4'
     if ws_xfwm4.parent.exists():
         ws_xfwm4.mkdir(parents=True, exist_ok=True)
@@ -404,7 +366,7 @@ def install(root):
             if ic_dir.is_dir():
                 subprocess.run([str(icon_cache_bin), '-f', '-t', str(ic_dir)], env=env, check=False)
 
-    # 5. Picom Configuration (Glassmorphism translucency for menus, panel, and windows)
+    # 5. Picom configuration (disabled by default; xfwm4 native compositing is used)
     put('/etc/xdg/picom.conf', '''
     experimental-backends = true;
     backend = "xrender";
@@ -474,16 +436,8 @@ def install(root):
     exec /opt/groove-graphics/bin/picom --experimental-backends --config /etc/xdg/picom.conf "$@"
     ''', 0o755)
 
-    # 6. Autostart Picom and Groove Dock
-    put('/etc/xdg/autostart/groove-picom.desktop', '''
-    [Desktop Entry]
-    Type=Application
-    Name=Picom Compositor
-    Comment=macOS Glass Compositor
-    Exec=/usr/libexec/groove-picom -b
-    OnlyShowIn=XFCE;
-    RunHook=0
-    ''')
+    # 6. Autostart Groove Dock (Picom not autostarted to avoid double compositing)
+    (root / 'etc/xdg/autostart/groove-picom.desktop').unlink(missing_ok=True)
 
     put('/etc/xdg/autostart/groove-dock.desktop', '''
     [Desktop Entry]
@@ -508,7 +462,7 @@ def install(root):
         <property name="title_shadow_active" type="string" value="false"/>
         <property name="title_shadow_inactive" type="string" value="false"/>
         <property name="title_font" type="string" value="Inter Bold 10.5"/>
-        <property name="use_compositing" type="bool" value="false"/>
+        <property name="use_compositing" type="bool" value="true"/>
         <property name="box_resize" type="bool" value="false"/>
         <property name="box_move" type="bool" value="false"/>
         <property name="double_click_action" type="string" value="maximize"/>
@@ -556,10 +510,22 @@ def install(root):
     put('/home/groove/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
     put('/root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml', desktop_xml)
 
-    # Autostart wallpaper script to guarantee matching any dynamic RandR monitor
+    # Autostart wallpaper script to guarantee matching any dynamic RandR monitor and resolution
     wallpaper_script = '''#!/bin/sh
 WP="/usr/share/backgrounds/groove-default.png"
 [ -f "$WP" ] || WP="/usr/share/backgrounds/groove-blue-note.png"
+
+# Set optimal virtual display resolution if available
+if command -v xrandr >/dev/null 2>&1; then
+    for mon in $(xrandr --query 2>/dev/null | awk '/ connected/ {print $1}'); do
+        for res in 1920x1080 1920x1200 1600x900 1440x900 1280x800; do
+            if xrandr --query 2>/dev/null | grep -A 10 "$mon connected" | grep -q "$res"; then
+                xrandr --output "$mon" --mode "$res" 2>/dev/null || true
+                break
+            fi
+        done
+    done
+fi
 
 sleep 1
 if command -v xrandr >/dev/null 2>&1; then
@@ -595,8 +561,8 @@ RunHook=0
           <property name="position-locked" type="bool" value="true"/>
           <property name="icon-size" type="uint" value="20"/>
           <property name="size" type="uint" value="32"/>
-          <property name="enter-opacity" type="uint" value="90"/>
-          <property name="leave-opacity" type="uint" value="75"/>
+          <property name="enter-opacity" type="uint" value="98"/>
+          <property name="leave-opacity" type="uint" value="92"/>
           <property name="plugin-ids" type="array">
             <value type="int" value="1"/>
             <value type="int" value="2"/>
@@ -665,7 +631,7 @@ RunHook=0
     gtk-xft-antialias=1
     gtk-xft-hinting=1
     gtk-xft-hintstyle=hintslight
-    gtk-xft-rgba=rgb
+    gtk-xft-rgba=none
     ''')
 
     put('/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml', '''
@@ -680,12 +646,12 @@ RunHook=0
         <property name="DecorationLayout" type="string" value="close,minimize,maximize:menu"/>
       </property>
       <property name="Xft" type="empty">
-        <property name="DPI" type="int" value="-1"/>
+        <property name="DPI" type="int" value="96"/>
         <property name="Antialias" type="int" value="1"/>
         <property name="Hinting" type="int" value="1"/>
         <property name="HintStyle" type="string" value="hintslight"/>
-        <property name="RGBA" type="string" value="rgb"/>
-        <property name="Lcdfilter" type="string" value="lcddefault"/>
+        <property name="RGBA" type="string" value="none"/>
+        <property name="Lcdfilter" type="string" value="lcdnone"/>
       </property>
     </channel>
     ''')
@@ -723,11 +689,11 @@ RunHook=0
     .context-menu,
     popover,
     popover.background {
-        background-color: rgba(22, 26, 36, 0.84);
+        background-color: rgba(22, 26, 36, 0.96) !important;
         color: #f4efe6;
         border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
     }
     menuitem {
         border-radius: 6px;
@@ -806,3 +772,10 @@ Categories=Utility;
                         os.chown(fp, 1000, 1000)
     for f in desktop_dir.glob('*.desktop'):
         f.chmod(0o755)
+
+    # 13. Rebuild dynamic linker cache (ldconfig) in rootfs
+    ldconfig_bin = root / 'sbin/ldconfig'
+    if not ldconfig_bin.exists():
+        ldconfig_bin = Path('/sbin/ldconfig')
+    if ldconfig_bin.exists():
+        subprocess.run(['ldconfig', '-r', str(root)], check=False)
