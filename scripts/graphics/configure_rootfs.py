@@ -37,6 +37,7 @@ def main():
     profile=root/'etc/profile'
     if not profile.exists():put('/etc/profile','for script in /etc/profile.d/*.sh; do [ ! -r "$script" ] || . "$script"; done\n')
     put('/etc/profile.d/groove-graphics.sh',f'export PATH={PREFIX}/bin:{PREFIX}/sbin:$PATH\nexport XDG_DATA_DIRS={PREFIX}/share:/usr/local/share:/usr/share\n')
+    put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 1.0.0.1\n')
     if is_arch:
         environment=f'''
     export PATH=/usr/local/bin:/usr/bin:/bin:{PREFIX}/bin:{PREFIX}/sbin:/usr/sbin:/sbin
@@ -107,10 +108,10 @@ def main():
     put('/etc/X11/Xwrapper.config','allowed_users=anybody\nneeds_root_rights=yes\n')
     script('groove-xserver','''#!/bin/sh
 set -eu
-if [ -x /usr/lib/Xorg ]; then
-    exec /usr/lib/Xorg -logfile /var/log/lightdm/x-0.log -nolisten tcp "$@"
-elif [ -x /usr/bin/Xorg ]; then
+if [ -x /usr/bin/Xorg ]; then
     exec /usr/bin/Xorg -logfile /var/log/lightdm/x-0.log -nolisten tcp "$@"
+elif [ -x /usr/lib/Xorg ]; then
+    exec /usr/lib/Xorg -logfile /var/log/lightdm/x-0.log -nolisten tcp "$@"
 else
     exec /opt/groove-graphics/bin/Xorg -logfile /var/log/lightdm/x-0.log -modulepath /opt/groove-graphics/lib/xorg/modules -nolisten tcp "$@"
 fi
@@ -181,17 +182,30 @@ fi
         Option "DPMS" "false"
     EndSection
     Section "Device"
-        Identifier "VirtIO"
+        Identifier "VirtIO-KMS"
         Driver "modesetting"
         Option "AccelMethod" "none"
     EndSection
+    Section "Device"
+        Identifier "VirtIO-FB"
+        Driver "fbdev"
+    EndSection
     Section "Screen"
-        Identifier "Screen0"
-        Device "VirtIO"
+        Identifier "Screen-KMS"
+        Device "VirtIO-KMS"
         SubSection "Display"
             Depth 24
             Modes "1920x1080" "1920x1200" "1600x900" "1440x900" "1280x800"
         EndSubSection
+    EndSection
+    Section "Screen"
+        Identifier "Screen-FB"
+        Device "VirtIO-FB"
+    EndSection
+    Section "ServerLayout"
+        Identifier "DefaultLayout"
+        Screen 0 "Screen-KMS"
+        Screen 1 "Screen-FB"
     EndSection
     Section "InputClass"
         Identifier "Groove input"
@@ -481,7 +495,7 @@ application/x-apple-diskimage=groove-package-installer.desktop
         if not path.exists() and not path.is_symlink():path.symlink_to(target)
     marker=root/'run/groove/live'
     if marker.exists() or marker.is_symlink():marker.unlink()
-    if (root/'opt/groove-wayfire/bin/wayfire').is_file():
+    if (root/'usr/bin/wayfire').is_file() or (root/'opt/groove-wayfire/bin/wayfire').is_file():
         from configure_wayfire import install
         install(root, environment, service)
     from configure_blue_note import install as install_blue_note

@@ -80,16 +80,16 @@ if [ -f /boot/grub/fonts/unicode.pf2 ]; then
     fi
 fi
 
-menuentry \"Linux Groove 0.4.0 (Arch ARM + SteamOS) - GrooveWindow (XFCE + XFWM)\" {
+menuentry \"Linux Groove 0.4.0 (Arch ARM + SteamOS) - KDE Plasma 6 (Wayland)\" {
     linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0
+    initrd /boot/initramfs.cpio.gz
+}
+menuentry \"Linux Groove 0.4.0 - macOS Glass (XFCE)\" {
+    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.session=xfce
     initrd /boot/initramfs.cpio.gz
 }
 menuentry \"Linux Groove 0.4.0 - Blue Note Glass (Wayfire 3D Wayland)\" {
     linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.session=wayfire
-    initrd /boot/initramfs.cpio.gz
-}
-menuentry \"Linux Groove 0.4.0 - Weston (Wayland Basico)\" {
-    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.wayland=1
     initrd /boot/initramfs.cpio.gz
 }
 menuentry \"Linux Groove 0.4.0 - Consola de recuperacion\" {

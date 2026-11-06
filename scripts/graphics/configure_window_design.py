@@ -149,7 +149,7 @@ show_app_icon=false
         # wins; no launcher flag, document setting or application patch is needed.
         put(conf + '/onlyoffice/DesktopEditors.conf', '[General]\nUITheme=theme-dark\n')
         put(conf + '/gtk-3.0/settings.ini', f'''[Settings]
-gtk-theme-name={t['name']}
+gtk-theme-name=WhiteSur-Dark
 gtk-icon-theme-name=WhiteSur
 gtk-font-name={t['font']}
 gtk-application-prefer-dark-theme=true
@@ -169,8 +169,8 @@ gtk-xft-lcdfilter=lcddefault
                     ET.SubElement(parent, 'property', name=key, type=kind, value=str(value))
             put(base_conf + f'/xfce4/xfconf/xfce-perchannel-xml/{name}.xml', ET.tostring(node, encoding='unicode'))
         channel('xfwm4', {'general': [
-            ('theme', 'string', t['name']), ('button_layout', 'string', 'CHM|'),
-            ('button_offset', 'int', 8), ('button_spacing', 'int', 4),
+            ('theme', 'string', 'WhiteSur-Dark'), ('button_layout', 'string', 'CHM|'),
+            ('button_offset', 'int', 10), ('button_spacing', 'int', 2),
             ('title_font', 'string', t['title_font']), ('title_alignment', 'string', 'center'),
             ('use_compositing', 'bool', 'true'), ('show_dock_shadow', 'bool', 'false'),
             ('show_frame_shadow', 'bool', 'true'), ('show_popup_shadow', 'bool', 'true'),
@@ -180,11 +180,11 @@ gtk-xft-lcdfilter=lcddefault
             ('box_resize', 'bool', 'false'), ('workspace_count', 'int', 4),
             ('double_click_action', 'string', 'maximize'), ('scroll_workspaces', 'bool', 'false')]})
         channel('xsettings', {
-            'Net': [('ThemeName','string',t['name']), ('IconThemeName','string','WhiteSur')],
+            'Net': [('ThemeName','string','WhiteSur-Dark'), ('IconThemeName','string','WhiteSur')],
             'Gtk': [('FontName','string',t['font']), ('DecorationLayout','string','close,minimize,maximize:menu'),
                     ('DialogsUseHeader','bool','true')],
             'Xft': [('Antialias','int',1), ('Hinting','int',1), ('HintStyle','string','hintslight'),
-                    ('RGBA','string','rgb'), ('Lcdfilter','string','lcddefault')],
+                    ('RGBA','string','rgb'), ('Lcdfilter','string','lcddefault'), ('DPI','int',-1)],
             'Xfce': [('SyncThemes','bool','true')]})
     fonts = root / 'usr/share/fonts/inter'
     fonts.mkdir(parents=True, exist_ok=True)

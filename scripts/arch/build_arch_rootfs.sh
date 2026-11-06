@@ -65,7 +65,7 @@ docker exec "$BUILDER" bash -c "
     echo 'Instalando stack de audio PipeWire y gráficos...'
     arch-chroot '$WORK_ROOT' pacman -S --needed --noconfirm --overwrite '*' \
         pipewire pipewire-pulse pipewire-jack wireplumber alsa-utils rtkit \
-        mesa vulkan-virtio vulkan-swrast xorg-server xorg-xwayland xorg-xinit \
+        mesa vulkan-virtio vulkan-swrast xorg-server xorg-xwayland xorg-xinit xorg-xrandr xf86-video-fbdev \
         xfce4 xfce4-terminal thunar mousepad flatpak \
         lightdm lightdm-gtk-greeter seatd librsvg weston 7zip
 

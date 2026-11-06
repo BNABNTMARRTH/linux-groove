@@ -6,7 +6,7 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-PREFIX = '/opt/groove-wayfire'
+PREFIX = '/usr'
 ASSETS = Path(__file__).resolve().parent / 'wayfire'
 
 def install(root, environment, service):
@@ -22,26 +22,21 @@ def install(root, environment, service):
     reduced['core']['plugins']=' '.join(x for x in reduced['core']['plugins'].split() if x not in ('blur','animate','cube','wrot'))
     reduced['vswitch']['duration']='0'
     reduced['grid']['duration']='0'
-    reduced['pixdecor']['shadow_radius']='0'
+    if 'pixdecor' in reduced:
+        reduced['pixdecor']['shadow_radius']='0'
+    elif 'decoration' in reduced:
+        reduced['decoration']['shadow_radius']='0'
     import io
     buf=io.StringIO();reduced.write(buf);put('/etc/xdg/wayfire/reduced.ini',buf.getvalue())
-    # Session-only paths select the isolated Mesa; Weston/XFCE keep their existing environment.
-    env=environment.replace('export LIBGL_ALWAYS_SOFTWARE=1','unset LIBGL_ALWAYS_SOFTWARE').replace('export PATH=',f'export PATH={PREFIX}/bin:')
-    env+=f'\nexport GSETTINGS_SCHEMA_DIR={PREFIX}/share/glib-2.0/schemas\nexport LD_LIBRARY_PATH={PREFIX}/lib:/opt/groove-graphics/lib\nexport LIBGL_DRIVERS_PATH={PREFIX}/lib/dri\nexport XDG_DATA_DIRS={PREFIX}/share:/opt/groove-graphics/share:/usr/local/share:/usr/share\n'
+    # Session paths
+    env=environment.replace('export LIBGL_ALWAYS_SOFTWARE=1','unset LIBGL_ALWAYS_SOFTWARE')
+    env+='\nexport XDG_DATA_DIRS=/usr/local/share:/usr/share\n'
     script('groove-wayfire',env+'''
     export XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Wayfire LIBSEAT_BACKEND=seatd
     export WLR_BACKENDS=drm,libinput
     unset DISPLAY WAYLAND_DISPLAY WAYFIRE_SOCKET
     export XDG_RUNTIME_DIR=/run/user/$(id -u)
     [ -d "$XDG_RUNTIME_DIR" ] && [ -O "$XDG_RUNTIME_DIR" ] || exit 1
-    if [ "${1:-}" = --fallback-weston ]; then
-        mkdir -p "$HOME/.local/state/groove"
-        if ! /opt/groove-wayfire/bin/groove-gpu-info > "$HOME/.local/state/groove/gpu-info.log" 2>&1; then
-            echo 'GPU VirGL no acreditada; iniciando Weston de recuperación.' >&2
-            unset LD_LIBRARY_PATH LIBGL_DRIVERS_PATH WLR_BACKENDS XDG_CURRENT_DESKTOP GSETTINGS_SCHEMA_DIR
-            exec /usr/libexec/groove-weston
-        fi
-    fi
     waited=0
     xorg_active() {
         for process in /proc/[0-9]*/comm; do
@@ -130,7 +125,7 @@ def install(root, environment, service):
     done
     echo 'Sin enlace'
     ''')
-    put('/usr/share/wayland-sessions/groove-wayfire.desktop','[Desktop Entry]\nName=Groove · Wayfire (Blue Note)\nExec=/usr/libexec/groove-wayfire\nTryExec=/opt/groove-wayfire/bin/wayfire\nType=Application\nDesktopNames=Wayfire;\n')
+    put('/usr/share/wayland-sessions/groove-wayfire.desktop','[Desktop Entry]\nName=Groove · Wayfire 3D (Cubo y Efectos)\nExec=/usr/libexec/groove-wayfire\nTryExec=/usr/bin/wayfire\nType=Application\nDesktopNames=Wayfire;\n')
     schema_dir=root/'opt/groove-wayfire/share/glib-2.0/schemas'
     if schema_dir.is_dir():
         put('/opt/groove-wayfire/share/glib-2.0/schemas/50-groove.gschema.override','''

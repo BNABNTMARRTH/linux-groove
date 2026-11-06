@@ -135,7 +135,7 @@ static void on_login_clicked(GtkButton *btn, gpointer user_data) {
     if (greeter && lightdm_greeter_get_is_authenticated(greeter)) {
         const gchar *selected_session = gtk_combo_box_get_active_id(GTK_COMBO_BOX(session_combo));
         if (!selected_session || strlen(selected_session) == 0) {
-            selected_session = "groove-xfce";
+            selected_session = "plasma";
         }
         lightdm_greeter_start_session_sync(greeter, selected_session, NULL);
     } else if (greeter) {
@@ -157,7 +157,7 @@ static void on_authentication_complete(LightDMGreeter *g, gpointer data) {
     if (login_requested && lightdm_greeter_get_is_authenticated(g)) {
         const gchar *selected_session = gtk_combo_box_get_active_id(GTK_COMBO_BOX(session_combo));
         if (!selected_session || strlen(selected_session) == 0) {
-            selected_session = "groove-xfce";
+            selected_session = "plasma";
         }
         lightdm_greeter_start_session_sync(g, selected_session, NULL);
     } else if (!lightdm_greeter_get_is_authenticated(g)) {
@@ -368,10 +368,10 @@ int main(int argc, char *argv[]) {
     /* Session Selector Dropdown */
     session_combo = gtk_combo_box_text_new();
     gtk_widget_set_name(session_combo, "session-combo");
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "plasma", "Groove · SteamOS Edition (KDE Plasma 6 Wayland)");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-xfce", "Groove · macOS Glass (XFCE)");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-wayfire", "Groove · Wayfire 3D (Cubo y Efectos)");
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "weston", "Groove · Weston (Wayland básico)");
-    gtk_combo_box_set_active_id(GTK_COMBO_BOX(session_combo), "groove-xfce");
+    gtk_combo_box_set_active_id(GTK_COMBO_BOX(session_combo), "plasma");
     gtk_box_pack_start(GTK_BOX(card_box), session_combo, FALSE, FALSE, 0);
 
     /* Primary Login Button (Transparent Pill) */

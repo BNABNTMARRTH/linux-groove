@@ -384,6 +384,16 @@ impl Supervisor {
                         self.retries.insert(name.clone(), 0);
                     }
                     println!("[groove-init] exited {name} success={success}");
+                    if !success {
+                        let log_path = self.log_dir.join(format!("{name}.log"));
+                        if let Ok(content) = fs::read_to_string(&log_path) {
+                            let lines: Vec<&str> = content.lines().collect();
+                            let start = lines.len().saturating_sub(10);
+                            for line in &lines[start..] {
+                                eprintln!("[{name}] {line}");
+                            }
+                        }
+                    }
                     self.failure(&name, success);
                 }
             }
