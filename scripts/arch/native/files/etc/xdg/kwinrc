@@ -7,13 +7,16 @@ ButtonsOnRight=
 blurEnabled=true
 wobblywindowsEnabled=true
 cubeEnabled=true
+dialogparentEnabled=false
+dimscreenEnabled=false
+diminactiveEnabled=false
 
 [Windows]
 BorderlessMaximizedWindows=false
 
 [Compositing]
 AnimationSpeed=1
-DirectScanout=true
+DirectScanout=false
 LatencyPolicy=ExtremelyLow
 
 [Effect-wobblywindows]
