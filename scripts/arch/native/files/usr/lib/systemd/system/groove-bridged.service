@@ -1,0 +1,15 @@
+[Unit]
+Description=Groove MCP Realtime Bridge Server (Port 8080)
+After=network.target multi-user.target
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/groove-bridged
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
