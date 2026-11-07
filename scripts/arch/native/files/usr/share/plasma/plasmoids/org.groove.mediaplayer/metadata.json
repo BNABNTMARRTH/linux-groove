@@ -1,0 +1,24 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "contacto@linuxgroove.org",
+                "Name": "Linux Groove Team"
+            }
+        ],
+        "Category": "Multimedia",
+        "Description": "Reproductor multimedia avanzado exclusivo de Linux Groove con control de volumen integrado, soporte de video en vivo y estética Glassmorphism.",
+        "EnabledByDefault": true,
+        "Icon": "multimedia-audio-player",
+        "Id": "org.groove.mediaplayer",
+        "License": "GPL-3.0+",
+        "Name": "Groove Media Player",
+        "Website": "https://linuxgroove.org"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.multimedia"
+    ]
+}
+
