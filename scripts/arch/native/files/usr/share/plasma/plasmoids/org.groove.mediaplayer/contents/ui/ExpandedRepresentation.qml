@@ -38,18 +38,32 @@ PlasmaExtras.Representation {
     property string lastTrackTitle: ""
     property int lengthProbeAttempts: 0
 
+    // Caché persistente de duración de pista (evita que Firefox al pausar borre mpris:length a 0 y distorsione la barra)
+    property real knownTrackLength: 0
+    readonly property real effectiveLength: (player && player.length > 0) ? player.length : knownTrackLength
+
     // Alturas en tiempo real para las 5 barras de ecualizador y energía real de PipeWire
     property var barHeights: [3.0, 3.0, 3.0, 3.0, 3.0]
     property var realAudioBands: [0.85, 0.55, 0.50, 0.65, 0.80]
     property real realAudioEnergy: 0.75
     property real wavePhase: 0.0
 
+    function updateKnownLength() {
+        if (expandedRoot.player && expandedRoot.player.length && expandedRoot.player.length > 0) {
+            if (expandedRoot.knownTrackLength !== expandedRoot.player.length) {
+                expandedRoot.knownTrackLength = expandedRoot.player.length;
+                var safeTitle = (expandedRoot.player.track || "").replace(/'/g, "").replace(/\n/g, " ");
+                audioExec.connectSource("printf '%s\\t%s\\n' '" + safeTitle + "' '" + Math.round(expandedRoot.knownTrackLength) + "' > /tmp/groove_mpris_length_cache");
+            }
+        } else if (expandedRoot.knownTrackLength <= 0 && expandedRoot.player) {
+            audioExec.connectSource("cat /tmp/groove_mpris_length_cache 2>/dev/null # GROOVE_LEN_CACHE");
+        }
+    }
+
     function reanchorPosition(newPosUs) {
         expandedRoot.anchorPositionUs = Math.max(0, newPosUs);
         expandedRoot.anchorTimestampMs = Date.now();
-        if (!expandedRoot.disablePositionUpdate) {
-            expandedRoot.livePosition = expandedRoot.anchorPositionUs;
-        }
+        expandedRoot.livePosition = expandedRoot.anchorPositionUs;
     }
 
     function syncPositionFromMpris(forceSnap) {
@@ -60,11 +74,61 @@ PlasmaExtras.Representation {
             expandedRoot.lastMprisPosition = -1;
             return;
         }
+        expandedRoot.updateKnownLength();
+        if (expandedRoot.disablePositionUpdate || progressSlider.pressed) {
+            return;
+        }
         var reported = expandedRoot.player.position || 0;
+        // Ignorar el falso Position=0 que Firefox emite cuando YouTube limpia setPositionState(null) tras un Seek o en Pausa
+        if (reported <= 0 && expandedRoot.anchorPositionUs > 3000000 && (!expandedRoot.player.length || expandedRoot.player.length <= 0)) {
+            return;
+        }
         if (forceSnap || Math.abs(reported - expandedRoot.lastMprisPosition) > 50000) {
             expandedRoot.lastMprisPosition = reported;
             expandedRoot.reanchorPosition(reported);
         }
+    }
+
+    // Ejecuta Seek absoluto garantizando que mpris:length esté activo en Firefox/YouTube antes y después de SetPosition
+    function applySeekPosition(targetUs) {
+        if (!expandedRoot.player || !expandedRoot.player.canSeek) {
+            expandedRoot.disablePositionUpdate = false;
+            return;
+        }
+        var clampedUs = Math.max(0, Math.round(targetUs));
+        if (expandedRoot.effectiveLength > 0 && clampedUs > expandedRoot.effectiveLength) {
+            clampedUs = Math.round(expandedRoot.effectiveLength);
+        }
+        expandedRoot.disablePositionUpdate = true;
+        expandedRoot.lastMprisPosition = clampedUs;
+        expandedRoot.reanchorPosition(clampedUs);
+        seekReleaseGuardTimer.restart();
+
+        // 1. Vía estándar libkmpris (para reproductores de escritorio con mpris:trackid y mpris:length permanentes)
+        expandedRoot.player.position = clampedUs;
+
+        // 2. Vía D-Bus para Firefox/YouTube: restaura mpris:length si YouTube limpió setPositionState(null), aplica SetPosition(/org/mpris/MediaPlayer2/firefox) y re-sincroniza MediaSession
+        audioExec.connectSource(
+            "bash -c 'for s in $(qdbus6 2>/dev/null | grep -E \"org\\.mpris\\.MediaPlayer2\\.firefox\"); do "
+            + "st=$(qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlaybackStatus 2>/dev/null); "
+            + "len=$(qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Metadata 2>/dev/null | grep mpris:length); "
+            + "if [ -z \"$len\" ]; then "
+            + "  qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Pause >/dev/null 2>&1; "
+            + "  qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Play >/dev/null 2>&1; "
+            + "  sleep 0.14; "
+            + "fi; "
+            + "dbus-send --session --type=method_call --dest=\"$s\" /org/mpris/MediaPlayer2 "
+            + "org.mpris.MediaPlayer2.Player.SetPosition objpath:/org/mpris/MediaPlayer2/firefox int64:" + clampedUs + " >/dev/null 2>&1; "
+            + "sleep 0.22; "
+            + "len2=$(qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Metadata 2>/dev/null | grep mpris:length); "
+            + "if [ -z \"$len2\" ]; then "
+            + "  qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Pause >/dev/null 2>&1; "
+            + "  if [ \"$st\" = \"Playing\" ]; then "
+            + "    qdbus6 \"$s\" /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Play >/dev/null 2>&1; "
+            + "  fi; "
+            + "fi; "
+            + "done' # GROOVE_SEEK"
+        );
     }
 
     // Motor de comandos para sincronizar volumen del sistema (PipeWire), nivel RMS real y Dock OSD nativo de KDE
@@ -94,6 +158,16 @@ PlasmaExtras.Representation {
                     if (!isNaN(b0) && !isNaN(b1) && !isNaN(b2) && !isNaN(b3) && !isNaN(b4)) {
                         expandedRoot.realAudioBands = [b0, b1, b2, b3, b4];
                         expandedRoot.realAudioEnergy = Math.max(0.25, (b0 + b1 + b2 + b3 + b4) / 5.0);
+                    }
+                }
+            } else if (sourceName.indexOf("GROOVE_LEN_CACHE") !== -1 && out !== "") {
+                var tabParts = out.split("\t");
+                if (tabParts.length >= 2) {
+                    var cachedTitle = tabParts[0].trim();
+                    var cachedLen = parseFloat(tabParts[1]);
+                    var curTitle = (expandedRoot.player && expandedRoot.player.track) ? expandedRoot.player.track.trim() : "";
+                    if (!isNaN(cachedLen) && cachedLen > 0 && (curTitle === "" || cachedTitle === curTitle)) {
+                        expandedRoot.knownTrackLength = cachedLen;
                     }
                 }
             }
@@ -232,12 +306,13 @@ PlasmaExtras.Representation {
         property int tickCount: 0
         onTriggered: {
             if (!expandedRoot.player) return;
+            expandedRoot.updateKnownLength();
             if (expandedRoot.anchorTimestampMs <= 0 || (expandedRoot.livePosition === 0 && expandedRoot.player.position > 0)) {
                 expandedRoot.syncPositionFromMpris(true);
             }
             if (!expandedRoot.disablePositionUpdate && !progressSlider.pressed) {
                 var rate = (expandedRoot.player.rate && expandedRoot.player.rate > 0) ? expandedRoot.player.rate : 1.0;
-                var maxLen = (expandedRoot.player.length && expandedRoot.player.length > 0) ? expandedRoot.player.length : 0;
+                var maxLen = expandedRoot.effectiveLength;
                 var elapsedUs = (Date.now() - expandedRoot.anchorTimestampMs) * 1000.0 * rate;
                 var nextPos = expandedRoot.anchorPositionUs + elapsedUs;
                 if (maxLen > 0 && nextPos > maxLen) {
@@ -252,30 +327,26 @@ PlasmaExtras.Representation {
         }
     }
 
-    // Cola de actualización para Seek (100ms debounce idéntico al reproductor nativo de KDE)
+    // Cola de actualización en tiempo real para Seek (100ms throttle = 10 Hz durante arrastre)
     Timer {
         id: queuedPositionUpdate
         interval: 100
         repeat: false
         onTriggered: {
-            if (!expandedRoot.player || !expandedRoot.player.canSeek) {
-                expandedRoot.disablePositionUpdate = false;
-                return;
-            }
-            var targetUs = Math.round(progressSlider.value);
-            expandedRoot.reanchorPosition(targetUs);
-            expandedRoot.player.position = targetUs;
-            seekReleaseGuardTimer.restart();
+            expandedRoot.applySeekPosition(progressSlider.value);
         }
     }
 
     Timer {
         id: seekReleaseGuardTimer
-        interval: 250
+        interval: 900
         repeat: false
         onTriggered: {
             if (!progressSlider.pressed) {
                 expandedRoot.disablePositionUpdate = false;
+                if (expandedRoot.player && typeof expandedRoot.player.updatePosition === "function") {
+                    expandedRoot.player.updatePosition();
+                }
             }
         }
     }
@@ -303,6 +374,7 @@ PlasmaExtras.Representation {
                     expandedRoot.player.updatePosition();
                 }
                 if (expandedRoot.player.length && expandedRoot.player.length > 0) {
+                    expandedRoot.updateKnownLength();
                     firefoxLengthProbeTimer.stop();
                     expandedRoot.reanchorPosition(expandedRoot.player.position || 0);
                     return;
@@ -321,17 +393,24 @@ PlasmaExtras.Representation {
                 expandedRoot.syncPositionFromMpris(false);
             }
         }
+        function onLengthChanged() {
+            expandedRoot.updateKnownLength();
+        }
         function onPlaybackStatusChanged() {
+            expandedRoot.updateKnownLength();
             if (expandedRoot.player && typeof expandedRoot.player.updatePosition === "function") {
                 expandedRoot.player.updatePosition();
             }
-            expandedRoot.reanchorPosition(expandedRoot.player ? (expandedRoot.player.position || 0) : 0);
-            expandedRoot.syncPositionFromMpris(true);
+            if (!expandedRoot.disablePositionUpdate && !progressSlider.pressed) {
+                expandedRoot.reanchorPosition(expandedRoot.player ? (expandedRoot.player.position || expandedRoot.livePosition) : 0);
+                expandedRoot.syncPositionFromMpris(true);
+            }
         }
         function onMetadataChanged() {
             var curTrack = expandedRoot.player ? (expandedRoot.player.track || "") : "";
             if (curTrack !== "" && curTrack !== expandedRoot.lastTrackTitle) {
                 expandedRoot.lastTrackTitle = curTrack;
+                expandedRoot.knownTrackLength = (expandedRoot.player && expandedRoot.player.length > 0) ? expandedRoot.player.length : 0;
                 expandedRoot.livePosition = 0;
                 expandedRoot.lastMprisPosition = -1;
                 expandedRoot.reanchorPosition(0);
@@ -340,6 +419,7 @@ PlasmaExtras.Representation {
                     firefoxLengthProbeTimer.restart();
                 }
             }
+            expandedRoot.updateKnownLength();
             if (expandedRoot.player && typeof expandedRoot.player.updatePosition === "function") {
                 expandedRoot.player.updatePosition();
             }
@@ -350,6 +430,7 @@ PlasmaExtras.Representation {
     onPlayerChanged: {
         if (expandedRoot.player) {
             expandedRoot.lastTrackTitle = expandedRoot.player.track || "";
+            expandedRoot.updateKnownLength();
             if (typeof expandedRoot.player.updatePosition === "function") {
                 expandedRoot.player.updatePosition();
             }
@@ -360,6 +441,7 @@ PlasmaExtras.Representation {
     Component.onCompleted: {
         if (expandedRoot.player) {
             expandedRoot.lastTrackTitle = expandedRoot.player.track || "";
+            expandedRoot.updateKnownLength();
             if (typeof expandedRoot.player.updatePosition === "function") {
                 expandedRoot.player.updatePosition();
             }
@@ -383,18 +465,14 @@ PlasmaExtras.Representation {
     Keys.onLeftPressed: {
         if (player && player.canSeek) {
             var target = Math.max(0, expandedRoot.livePosition - 5000000);
-            expandedRoot.disablePositionUpdate = true;
-            progressSlider.value = target;
-            queuedPositionUpdate.restart();
+            expandedRoot.applySeekPosition(target);
         }
     }
     Keys.onRightPressed: {
         if (player && player.canSeek) {
-            var maxLen = (player.length && player.length > 0) ? player.length : (expandedRoot.livePosition + 10000000);
+            var maxLen = (expandedRoot.effectiveLength > 0) ? expandedRoot.effectiveLength : (expandedRoot.livePosition + 10000000);
             var target = Math.min(maxLen, expandedRoot.livePosition + 5000000);
-            expandedRoot.disablePositionUpdate = true;
-            progressSlider.value = target;
-            queuedPositionUpdate.restart();
+            expandedRoot.applySeekPosition(target);
         }
     }
     Keys.onUpPressed: expandedRoot.adjustVolumeWithOsd(0.05)
@@ -648,12 +726,12 @@ PlasmaExtras.Representation {
                     anchors.bottomMargin: Kirigami.Units.smallSpacing * 2
                     spacing: 6
 
-                    // 3A. Barra de Progreso en Tiempo Real (Estilo píldora limpia con debounce)
+                    // 3A. Barra de Progreso en Tiempo Real (Estilo píldora limpia con Seek en vivo y proporción temporal protegida)
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
 
-                        readonly property bool hasHours: (player && player.length >= 3600000000)
+                        readonly property bool hasHours: (expandedRoot.effectiveLength >= 3600000000)
 
                         QQC2.Label {
                             text: expandedRoot.formatTime(progressSlider.pressed ? progressSlider.value : expandedRoot.livePosition, parent.hasHours)
@@ -669,7 +747,7 @@ PlasmaExtras.Representation {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 18
                             from: 0
-                            to: (player && player.length > 0) ? player.length : Math.max(100, expandedRoot.livePosition * 1.2)
+                            to: (expandedRoot.effectiveLength > 0) ? expandedRoot.effectiveLength : Math.max(300000000, expandedRoot.livePosition)
                             enabled: player && player.canSeek
 
                             // Vínculo desacoplado protegido por disablePositionUpdate
@@ -685,14 +763,19 @@ PlasmaExtras.Representation {
                                 if (pressed) {
                                     expandedRoot.disablePositionUpdate = true;
                                 } else {
-                                    queuedPositionUpdate.restart();
+                                    queuedPositionUpdate.stop();
+                                    expandedRoot.applySeekPosition(progressSlider.value);
                                 }
                             }
 
                             onMoved: {
                                 if (expandedRoot.player && expandedRoot.player.canSeek) {
                                     expandedRoot.disablePositionUpdate = true;
-                                    queuedPositionUpdate.restart();
+                                    expandedRoot.livePosition = progressSlider.value;
+                                    // Si el usuario hace clic directo sin mantener presionado, o se detiene durante el arrastre, aplica a los 180ms
+                                    if (!progressSlider.pressed) {
+                                        queuedPositionUpdate.restart();
+                                    }
                                 }
                             }
 
@@ -704,9 +787,7 @@ PlasmaExtras.Representation {
                                     if (expandedRoot.player && expandedRoot.player.canSeek) {
                                         var deltaSeek = wheel.angleDelta.y > 0 ? 5000000 : -5000000;
                                         var targetPos = Math.max(0, Math.min(progressSlider.to, expandedRoot.livePosition + deltaSeek));
-                                        expandedRoot.disablePositionUpdate = true;
-                                        progressSlider.value = targetPos;
-                                        queuedPositionUpdate.restart();
+                                        expandedRoot.applySeekPosition(targetPos);
                                     }
                                 }
                             }
@@ -744,7 +825,7 @@ PlasmaExtras.Representation {
                         }
 
                         QQC2.Label {
-                            readonly property real rem: (player && player.length > 0) ? Math.max(0, player.length - (progressSlider.pressed ? progressSlider.value : expandedRoot.livePosition)) : 0
+                            readonly property real rem: (expandedRoot.effectiveLength > 0) ? Math.max(0, expandedRoot.effectiveLength - (progressSlider.pressed ? progressSlider.value : expandedRoot.livePosition)) : 0
                             text: "-" + expandedRoot.formatTime(rem, parent.hasHours)
                             font.pixelSize: 11
                             color: Kirigami.Theme.textColor

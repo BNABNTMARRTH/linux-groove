@@ -41,6 +41,8 @@ def sync_tree(rel_dir):
     print(f"📦 Sincronizando {rel_dir}...")
     for root_dir, dirs, files in os.walk(full_local_dir):
         for f in files:
+            if f.startswith("._") or f == ".DS_Store":
+                continue
             full_p = os.path.join(root_dir, f)
             rel_p = os.path.relpath(full_p, BASE_LOCAL)
             dest_p = "/" + rel_p
