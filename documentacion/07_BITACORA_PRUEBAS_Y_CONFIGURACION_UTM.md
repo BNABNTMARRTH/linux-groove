@@ -106,6 +106,18 @@ Durante la sesión de prueba en vivo con la máquina virtual iniciada desde la I
   - El código de KWin (`WobblyWindowsEffect::supported()`) desactiva explícitamente los efectos de deformación de malla 3D cuando el controlador OpenGL es por software.
 - **Acción requerida:** Configurar la pantalla en UTM como `virtio-ramfb-gl` para habilitar VirGL y Metal 3D.
 
+### Prueba 6: Diagnóstico y Solución del Subsistema de Audio (ALSA / PipeWire / PulseAudio)
+- **Síntoma:** La máquina virtual no reproducía audio al arrancar la ISO.
+- **Causa Raíz:**
+  1. El mezclador de hardware de ALSA (`snd_hda_intel`) tenía el control `Master` silenciado (`Playback 0 [0%] [-74.00dB] [off]`).
+  2. El sumidero por defecto de PulseAudio (`alsa_output.pci-0000_00_03.0.analog-stereo`) tenía la propiedad `Mute: yes` y volumen al 6%.
+  3. El archivo `/etc/pipewire/pipewire.conf.d/20-groove-defaults.conf` tenía permisos restringidos `0700` (`-rwx------`), arrojando `Permiso denegado` al proceso de usuario de PipeWire.
+- **Solución Implementada y Persistida:**
+  1. Permisos de `/etc/pipewire/pipewire.conf.d/` ajustados a `0644`.
+  2. Estado del mezclador desmuteado al 80% y guardado con `alsactl store` en `/var/lib/alsa/asound.state`.
+  3. Modificación del binario nativo en Rust `groove-session-ready` (`crates/groove-cli/src/bin/groove_session_ready.rs`) para desmutear automáticamente ALSA y el sumidero PulseAudio al 80% en cada inicio de sesión gráfica.
+  4. Prueba de reproducción exitosa con `paplay /usr/share/sounds/alsa/Front_Center.wav`.
+
 ---
 
 ## 4. Estructura de Archivos del Sistema Modificados y Rastreados
@@ -155,3 +167,4 @@ scripts/arch/native/files/
             ├── groove-bridged.service             (Servicio systemd del puente)
             └── groove-boostd.service              (Servicio systemd de precarga)
 ```
+

@@ -26,5 +26,11 @@ fn main() {
             let _ = std::fs::write(runtime_dir.join("groove-graphical-ready"), "1\n");
         }
     }
+
+    // Inicializar y desmutear audio de ALSA y PipeWire/PulseAudio al 80%
+    let _ = Command::new("amixer").args(["sset", "Master", "unmute"]).output();
+    let _ = Command::new("amixer").args(["sset", "Master", "80%"]).output();
+    let _ = Command::new("pactl").args(["set-sink-mute", "@DEFAULT_SINK@", "0"]).output();
+    let _ = Command::new("pactl").args(["set-sink-volume", "@DEFAULT_SINK@", "80%"]).output();
 }
 
