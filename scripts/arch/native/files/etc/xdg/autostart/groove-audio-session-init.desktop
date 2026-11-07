@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Groove Audio Session Init
+Comment=Ensure user audio sink is unmuted with optimal preset
+Exec=/bin/sh -c "sleep 0.8; /usr/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 2>/dev/null; /usr/bin/wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.80 2>/dev/null"
+Hidden=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
