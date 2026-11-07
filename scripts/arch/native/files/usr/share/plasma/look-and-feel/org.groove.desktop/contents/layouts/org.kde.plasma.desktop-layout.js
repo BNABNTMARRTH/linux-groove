@@ -3,7 +3,9 @@ if (panels().length === 0) {
     const top = new Panel;
     top.location = "top";
     top.height = 34;
-    top.addWidget("org.kde.plasma.kickoff");
+    const kickoff = top.addWidget("org.kde.plasma.kickoff");
+    kickoff.currentConfigGroup = ["General"];
+    kickoff.writeConfig("icon", "groove-start-here");
     top.addWidget("org.kde.plasma.appmenu");
     top.addWidget("org.kde.plasma.panelspacer");
     top.addWidget("org.kde.plasma.systemtray");

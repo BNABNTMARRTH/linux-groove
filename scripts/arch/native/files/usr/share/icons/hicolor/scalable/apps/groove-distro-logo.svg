@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grooveGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FBE440" />
+      <stop offset="50%" stop-color="#FC9A10" />
+      <stop offset="100%" stop-color="#FC5C00" />
+    </linearGradient>
+  </defs>
+  <rect x="38.0" y="226.8" width="42.7" height="79.1" rx="21.3" ry="21.3" fill="url(#grooveGrad)" />
+  <rect x="110.8" y="208.0" width="43.7" height="111.4" rx="21.9" ry="21.9" fill="url(#grooveGrad)" />
+  <rect x="188.9" y="147.7" width="43.7" height="226.9" rx="21.9" ry="21.9" fill="url(#grooveGrad)" />
+  <rect x="269.0" y="54.0" width="44.7" height="403.8" rx="22.4" ry="22.4" fill="url(#grooveGrad)" />
+  <rect x="350.2" y="147.7" width="43.7" height="226.9" rx="21.9" ry="21.9" fill="url(#grooveGrad)" />
+  <rect x="429.3" y="209.1" width="42.7" height="108.2" rx="21.3" ry="21.3" fill="url(#grooveGrad)" />
+</svg>
