@@ -6,6 +6,9 @@ members = [
     "crates/groove-compositor",
     "crates/groove-session",
     "crates/groove-installer",
+    "crates/groove-preload",
+    "crates/groove-boostd",
+    "crates/groove-cli",
 ]
 resolver = "2"
 

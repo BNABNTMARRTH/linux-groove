@@ -1,0 +1,12 @@
+[package]
+name = "groove-preload"
+version = "0.1.0"
+edition = "2021"
+description = "Inyección dinámica LD_PRELOAD para aceleración de procesos gráficos en Linux Groove"
+
+[lib]
+name = "groove_fast"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+libc = "0.2"

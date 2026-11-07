@@ -1,0 +1,27 @@
+[package]
+name = "groove-cli"
+version = "0.1.0"
+edition = "2021"
+description = "Herramientas de sistema ultrarrápidas en Rust para Linux Groove OS"
+
+[lib]
+name = "groove_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "groove-profile"
+path = "src/bin/groove_profile.rs"
+
+[[bin]]
+name = "groove-diagnostics"
+path = "src/bin/groove_diagnostics.rs"
+
+[[bin]]
+name = "groove-session-ready"
+path = "src/bin/groove_session_ready.rs"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+colored = "2.1"

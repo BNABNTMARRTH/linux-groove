@@ -349,6 +349,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "groove-boostd"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "groove-cli"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "colored",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "groove-common"
 version = "0.1.0"
 dependencies = [
@@ -399,6 +418,13 @@ dependencies = [
  "sha2",
  "toml",
  "walkdir",
+]
+
+[[package]]
+name = "groove-preload"
+version = "0.1.0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
