@@ -126,6 +126,23 @@ Durante la sesión de prueba en vivo con la máquina virtual iniciada desde la I
   2. Apertura instantánea de la ventana de configuración con `systemsettings kcm_kscreen`, permitiendo seleccionar cualquier resolución (1280x800, 1920x1080, 2K, 4K, escala y tasa de refresco).
   3. Instalación definitiva de `kscreen` en el rootfs del constructor para las siguientes imágenes ISO.
 
+### Prueba 8: Logotipo Negro Vectorial en Barra de Tareas y Colección Oficial de Fondos Groove
+- **Requerimiento:** Sustituir el ícono del menú de inicio por el logotipo de onda sonora de Groove en color negro (para máximo contraste con el tema claro de la barra de tareas) e incorporar la galería de fondos de pantalla de Groove.
+- **Implementación y Despliegue:**
+  1. **Logotipo Vectorial Negro (`groove-logo-black.svg`):** Diseñado en SVG con 7 barras redondeadas simétricas en `#181818` idéntico a la imagen oficial provista por el usuario.
+  2. **Integración en Iconos del Sistema:** Reemplazo de `start-here-kde` en todas las resoluciones (16px a 96px) en `/usr/share/icons/breeze/places/` y `/usr/share/icons/breeze-dark/places/`.
+  3. **Colección de Fondos KDE (`/usr/share/wallpapers/`):** Creación de 9 paquetes compatibles con KDE Plasma con sus respectivos archivos `metadata.json`:
+     - `Groove_Default` (Fondo principal de teclas de piano y onda neón)
+     - `Groove_Piano_4K`
+     - `Groove_Ondas_Ambar`
+     - `Groove_Estudio`
+     - `Groove_Creativo`
+     - `Groove_Abstracto`
+     - `Groove_Vidrio_Pink`
+     - `Groove_Jazz_Neon`
+     - `Groove_Portal`
+  4. **Aplicación en Vivo:** Despliegue directo vía API del puente MCP y recarga de `plasmashell` sin cerrar las aplicaciones del usuario.
+
 ---
 
 ## 4. Estructura de Archivos del Sistema Modificados y Rastreados
