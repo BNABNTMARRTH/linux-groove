@@ -7,9 +7,8 @@ ButtonsOnRight=
 blurEnabled=true
 wobblywindowsEnabled=true
 cubeEnabled=true
-dialogparentEnabled=false
-dimscreenEnabled=false
-diminactiveEnabled=false
+dialogparentEnabled=true
+dimscreenEnabled=true
 
 [Windows]
 BorderlessMaximizedWindows=false
