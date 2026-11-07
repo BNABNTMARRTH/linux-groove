@@ -115,3 +115,4 @@ Para crear un nuevo widget (por ejemplo `org.groove.daw-status` o `org.groove.vu
    kbuildsycoca6
    systemctl --user restart plasma-plasmashell
    ```
+
