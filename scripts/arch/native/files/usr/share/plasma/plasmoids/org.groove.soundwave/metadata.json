@@ -1,0 +1,20 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "contacto@linuxgroove.org",
+                "Name": "Linux Groove Team"
+            }
+        ],
+        "Category": "Multimedia",
+        "Description": "Monitor visual de ondas sonoras y estado de audio exclusivo de Linux Groove con transparencia y glassmorphism personalizable.",
+        "EnabledByDefault": true,
+        "Icon": "multimedia-audio-player",
+        "Id": "org.groove.soundwave",
+        "License": "GPL-3.0+",
+        "Name": "Groove Soundwave",
+        "Website": "https://linuxgroove.org"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
