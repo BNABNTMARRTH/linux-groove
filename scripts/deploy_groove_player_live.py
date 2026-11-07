@@ -74,11 +74,22 @@ def main():
     exec_cmd("kscreen-doctor --dpms on 2>/dev/null")
     exec_cmd("sudo -u groove qdbus6 org.freedesktop.ScreenSaver /ScreenSaver org.freedesktop.ScreenSaver.SetActive false 2>/dev/null")
 
-    # 5. Desplegar plasmawindowed org.groove.mediaplayer
+    # 5. Desplegar plasmawindowed org.groove.mediaplayer con el entorno KDE completo (para herencia de tema Claro/Oscuro en vivo)
     print("🚀 Levantando en caliente Groove Media Player...")
     exec_cmd("killall plasmawindowed 2>/dev/null")
     time.sleep(0.5)
-    launch_cmd = f"sudo -u groove XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY={sock_name} DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus nohup plasmawindowed org.groove.mediaplayer >/tmp/groove_mediaplayer.log 2>&1 &"
+    kde_env = (
+        f"HOME=/home/groove "
+        f"XDG_RUNTIME_DIR=/run/user/1000 "
+        f"WAYLAND_DISPLAY={sock_name} "
+        f"DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus "
+        f"XDG_CURRENT_DESKTOP=KDE "
+        f"XDG_SESSION_DESKTOP=KDE "
+        f"KDE_FULL_SESSION=true "
+        f"KDE_SESSION_VERSION=6 "
+        f"XDG_CONFIG_DIRS=/home/groove/.config/kdedefaults:/etc/xdg"
+    )
+    launch_cmd = f"sudo -u groove {kde_env} nohup plasmawindowed org.groove.mediaplayer >/tmp/groove_mediaplayer.log 2>&1 &"
     res_launch = exec_cmd(launch_cmd)
     print("Lanzamiento:", res_launch)
 

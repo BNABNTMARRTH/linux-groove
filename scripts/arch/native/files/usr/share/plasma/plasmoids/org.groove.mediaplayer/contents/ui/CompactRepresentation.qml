@@ -41,9 +41,12 @@ Item {
         var pct = Math.round(nextVol * 100);
         var appName = (root.currentMprisPlayer && root.currentMprisPlayer.identity) ? root.currentMprisPlayer.identity : "Mozilla firefox";
         var safeAppName = appName.replace(/"/g, "");
+        var osdIcon = (root.currentMprisPlayer && root.currentMprisPlayer.iconName && root.currentMprisPlayer.iconName !== "")
+            ? root.currentMprisPlayer.iconName
+            : "emblem-music-symbolic";
         var cmd = "wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 && wpctl set-volume @DEFAULT_AUDIO_SINK@ " + nextVol.toFixed(2)
             + " && qdbus6 org.kde.plasmashell /org/kde/osdService org.kde.osdService.mediaPlayerVolumeChanged "
-            + pct + " \"" + safeAppName + "\" \"multimedia-audio-player\"";
+            + pct + " \"" + safeAppName + "\" \"" + osdIcon + "\"";
         compactAudioExec.connectSource(cmd);
         if (root.currentMprisPlayer && root.currentMprisPlayer.canControl) {
             root.currentMprisPlayer.changeVolume(deltaStep, false);
@@ -62,7 +65,7 @@ Item {
 
         source: {
             if (!root.currentMprisPlayer) {
-                return "multimedia-audio-player";
+                return "emblem-music-symbolic";
             }
             return compactRoot.isPlaying ? "media-playback-start" : "media-playback-pause";
         }
