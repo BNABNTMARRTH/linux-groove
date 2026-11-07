@@ -1,0 +1,11 @@
+[package]
+name = "groove-bridged"
+version = "0.1.0"
+edition = "2021"
+description = "Servidor de Control Total en Tiempo Real (tipo MCP en puerto 8080) para Linux Groove"
+
+[dependencies]
+libc = "0.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+colored = "2.1"

@@ -1,0 +1,14 @@
+[Layout]
+DisplayNames=es,us
+LayoutList=latam,us
+LayoutLoopCount=-1
+Model=pc105
+Options=grp:alt_shift_toggle
+ResetOldOptions=false
+ShowFlag=false
+ShowIndicator=true
+ShowLabel=true
+ShowLayout=true
+ShowSingle=false
+SwitchMode=Global
+Use=true

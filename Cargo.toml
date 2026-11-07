@@ -9,6 +9,7 @@ members = [
     "crates/groove-preload",
     "crates/groove-boostd",
     "crates/groove-cli",
+    "crates/groove-bridged",
 ]
 resolver = "2"
 
