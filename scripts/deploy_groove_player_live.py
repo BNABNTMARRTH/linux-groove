@@ -60,6 +60,7 @@ def main():
     sync_tree("usr/share/plasma/plasmoids/org.groove.soundwave")
     sync_tree("usr/share/plasma/shells/org.kde.plasma.desktop")
     sync_tree("usr/lib/qt6/qml/org/kde/plasma/private/containmentlayoutmanager")
+    sync_tree("usr/lib/qt6/qml/org/kde/plasma/workspace/osd")
 
     # 2. Refrescar base de datos Sycoca
     print("🔄 Actualizando base de datos de plugins Sycoca...")
