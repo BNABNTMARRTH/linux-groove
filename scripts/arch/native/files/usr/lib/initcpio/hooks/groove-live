@@ -59,8 +59,10 @@ run_earlyhook() {
     chmod 0644 /sysroot/run/groove/live
 
     # Expose live medium mount inside sysroot
+    mkdir -p /sysroot/run/media/groove_live
     mount --bind /run/groove-live /sysroot/run/media/groove_live 2>/dev/null || true
 
     # Override mount_handler so mkinitcpio skips default root mount
-    mount_handler() { :; }
+    groove_mount_handler() { :; }
+    mount_handler=groove_mount_handler
 }
