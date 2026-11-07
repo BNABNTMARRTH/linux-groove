@@ -118,6 +118,14 @@ Durante la sesión de prueba en vivo con la máquina virtual iniciada desde la I
   3. Modificación del binario nativo en Rust `groove-session-ready` (`crates/groove-cli/src/bin/groove_session_ready.rs`) para desmutear automáticamente ALSA y el sumidero PulseAudio al 80% en cada inicio de sesión gráfica.
   4. Prueba de reproducción exitosa con `paplay /usr/share/sounds/alsa/Front_Center.wav`.
 
+### Prueba 7: Diagnóstico y Solución del Panel de Resolución de Pantalla (kscreen)
+- **Síntoma:** No aparecía la opción de cambiar resolución ni el apartado de pantallas en Preferencias del Sistema.
+- **Causa Raíz:** Estaba instalado `libkscreen` y `kscreen-doctor` (CLI), pero faltaba el paquete oficial de interfaz gráfica **`kscreen`** que provee el módulo KCM `/usr/lib/qt6/plugins/plasma/kcms/systemsettings/kcm_kscreen.so`.
+- **Solución Implementada y Persistida:**
+  1. Instalación en vivo de `kscreen` en la VM mediante el puente MCP.
+  2. Apertura instantánea de la ventana de configuración con `systemsettings kcm_kscreen`, permitiendo seleccionar cualquier resolución (1280x800, 1920x1080, 2K, 4K, escala y tasa de refresco).
+  3. Instalación definitiva de `kscreen` en el rootfs del constructor para las siguientes imágenes ISO.
+
 ---
 
 ## 4. Estructura de Archivos del Sistema Modificados y Rastreados
