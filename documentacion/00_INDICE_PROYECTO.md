@@ -25,6 +25,12 @@ Bienvenido al repositorio central de documentación técnica, arquitectura, plan
 5. **[`05_ANALISIS_ARQUITECTURA_RUST_KDE.md`](./05_ANALISIS_ARQUITECTURA_RUST_KDE.md)**
    - Estudio técnico de los repositorios Rust en `invent.kde.org` (`cxx-qt`, `cxx-kde-frameworks`, D-Bus runners, `KConfig` + `KWin reconfigure`) y cómo sus mejores patrones arquitectónicos se aplican en Linux Groove.
 
-6. **[`WALKTHROUGH_041_BOOT_FIX.md`](./WALKTHROUGH_041_BOOT_FIX.md)**
+6. **[`06_PLAN_INTEGRAL_LIVE_BRIDGE_Y_UTM.md`](./06_PLAN_INTEGRAL_LIVE_BRIDGE_Y_UTM.md)**
+   - Plan maestro para el puente nativo en Rust (`groove-bridged`), control MCP en tiempo real y optimizaciones para UTM en Apple Silicon.
+
+7. **[`07_BITACORA_PRUEBAS_Y_CONFIGURACION_UTM.md`](./07_BITACORA_PRUEBAS_Y_CONFIGURACION_UTM.md)**
+   - Bitácora forense de pruebas en vivo, especificaciones técnicas de la ISO 0.4.1, diagnóstico y solución del cursor e instructivo de aceleración 3D en UTM (`virtio-ramfb-gl`).
+
+8. **[`WALKTHROUGH_041_BOOT_FIX.md`](./WALKTHROUGH_041_BOOT_FIX.md)**
    - Registro forense exhaustivo del diagnóstico y solución del arranque en Linux Groove 0.4.1, inventario detallado de todos los archivos modificados/creados y código exacto añadido.
 
