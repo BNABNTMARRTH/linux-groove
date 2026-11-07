@@ -2,7 +2,8 @@
 
 > **Versión:** Linux Groove 0.4.1 (Plasma 6 Wayland)  
 > **Ubicación del Sistema:** `/usr/share/plasma/plasmoids/` y `~/.local/share/plasma/plasmoids/`  
-> **Widget Oficial Exclusivo:** `org.groove.soundwave`
+> **Widget Oficial Exclusivo:** `org.groove.soundwave`  
+> **Módulo Universal de Transparencia:** `ConfigurationAppearanceGroove.qml` integrado en `AppletConfiguration.qml`
 
 ---
 
@@ -32,87 +33,45 @@ org.groove.<nombre_del_widget>/
 
 ---
 
-## 2. El Problema del Fondo Gris y el Control de Transparencia
+## 2. Integración Nativa Universal de Transparencia para TODOS los Widgets
 
-### ¿Por qué los widgets del escritorio mostraban un recuadro gris sólido?
-En el tema Breeze claro o en la configuración por defecto de Plasma:
-- Los widgets usan `Plasmoid.backgroundHints = PlasmaCore.Types.DefaultBackground` (valor `1` o `StandardBackground`).
-- Plasma dibuja la placa SVG de `/usr/share/plasma/desktoptheme/default/widgets/background.svgz`, la cual en temas claros contiene un relleno gris sólido (`#eff0f1` o `#e0e0e0`) que tapa el fondo de pantalla.
+A petición del usuario, hemos integrado un **módulo universal nativo** en la ventana de configuración del sistema (`AppletConfiguration.qml`) de modo que **CUALQUIER widget del escritorio (Reloj, CPU, Red, Discos, Calendario, etc.)** adquiere la pestaña nativa **"Transparencia y Cristal"**.
 
-### Modos nativos de fondo en Plasma 6 (`PlasmaCore.Types.BackgroundHints`):
-- **`NoBackground` (0)**: Completamente transparente. El widget flota directamente sobre el wallpaper.
-- **`StandardBackground` (1)**: Marco sólido predeterminado del tema de Plasma.
-- **`TranslucentBackground` (2)**: Fondo translúcido con desenfoque / blur (efecto cristal esmerilado).
-- **`ShadowBackground` (4)**: Transparente con sombra suave proyectada sobre el texto y las figuras para garantizar legibilidad.
-- **`ConfigurableBackground` (8)**: Permite al usuario alternar el fondo.
-
-### Cómo personalizar la transparencia:
-1. **En widgets del sistema (CPU, Reloj, etc.)**:
-   - Al entrar en el modo de edición (o clic derecho en el escritorio -> *Entrar en modo de edición*), al pasar el cursor sobre el widget aparece una barra con el icono de fondo (**Mostrar / Ocultar fondo**). Al desactivarlo, el fondo gris desaparece al instante y queda flotando con sombra.
-   - En la configuración (`plasma-org.kde.plasma.desktop-appletsrc`), se almacena como `UserBackgroundHints=ShadowBackground` o `NoBackground`.
-2. **En widgets exclusivos de Groove**:
-   - En el propio `main.qml` se establece `Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground`, permitiendo que el widget dibuje su propio fondo de cristal (`Rectangle` con `Qt.rgba(...)`, bordes brillantes y desenfoque dinámico) gobernado directamente por un **Slider de Opacidad (0% a 100%)** en `configGeneral.qml`.
+### Archivos Modificados e Integrados:
+1. **`/usr/share/plasma/shells/org.kde.plasma.desktop/contents/configuration/AppletConfiguration.qml`**:
+   - Se inyectó `ConfigurationAppearanceGroove.qml` en el `globalAppletConfigModel`.
+   - Aparece automáticamente en la barra lateral izquierda de preferencias de cualquier widget.
+2. **`/usr/share/plasma/shells/org.kde.plasma.desktop/contents/configuration/ConfigurationAppearanceGroove.qml`**:
+   - Selector dinámico de Modo de Fondo: *Transparente Flotante (Recomendado)*, *Cristal Translúcido (Glassmorphism)*, *Fondo Estándar del Tema*, o *100% Invisible*.
+   - **Slider de Opacidad del Fondo** (0% a 100%) con actualización inmediata en vivo (`onMoved`).
+   - **Slider de Opacidad General del Widget** (10% a 100%) con actualización inmediata en vivo (`onMoved`).
+3. **`/usr/lib/qt6/qml/org/kde/plasma/private/containmentlayoutmanager/BasicAppletContainer.qml`**:
+   - Enlace reactivo que aplica la opacidad general y del marco SVG en tiempo real:
+     ```qml
+     opacity: (applet && applet.configuration && applet.configuration.widgetOpacity !== undefined)
+         ? applet.configuration.widgetOpacity : 1.0
+     ```
 
 ---
 
-## 3. Widget Exclusivo Creado: `org.groove.soundwave`
+## 3. ¿En qué están construidos los Widgets y cómo se conecta Rust?
 
-Se desarrolló e instaló el primer widget exclusivo para la distribución: **Groove Soundwave & Audio Monitor**.
+### Capa Visual: QML + QtQuick + Kirigami
+- Es la tecnología gráfica oficial de KDE Plasma 6 acelerada por hardware GPU sobre Wayland.
+- Maneja animaciones a 60/120 fps, renderizado de efectos visuales (sombras, desenfoques, gradientes).
 
-### Características:
-- **Identidad Visual Groove**: Barras de ondas sonoras de 7 columnas con gradiente neón ámbar/naranja (`#ffb703` a `#fb8500`) y resplandor neón (Glow).
-- **Animación Reactiva**: Simulación de pulso dinámico que reacciona con cadencia musical.
-- **Métricas de Audio / DSP**: Indicador en vivo de frecuencia de muestreo y latencia (`● 48 kHz • 64 spl • 1.3 ms`).
-- **Control Total de Fondo y Opacidad**:
-  - Selector de estilo: *Cristal Esmerilado (Glassmorphism)*, *Totalmente Transparente (Flotante)* o *Sólido Ahumado*.
-  - Slider de opacidad: de 0% a 100% con ajuste milimétrico.
-  - Toggles para resplandor neón (Glow) y título.
+### Capa de Rendimiento y Lógica: Rust
+En Linux Groove, los widgets se benefician de la suite en Rust mediante dos mecanismos:
+1. **Daemons de Telemetría y Audio en Rust (Arquitectura IPC / D-Bus):**
+   - Binarios nativos en Rust (`groove-boostd`, `groove-session-ready`, y módulos DSP) que monitorean la latencia de PipeWire, buffers de ALSA o frecuencia de CPU en microsegundos sin recargar el hilo visual de Qt.
+   - Comunican las métricas a través de D-Bus o sockets Unix hacia los componentes QML.
+2. **Bindings Nativos `cxx-qt` (Rust $\leftrightarrow$ C++/Qt6):**
+   - Compilación de crates de Rust en bibliotecas dinámicas `.so` que se exponen como módulos nativos `import org.groove.core 1.0` en QML.
 
 ---
 
-## 4. Guía para Crear Nuevos Widgets Exclusivos de Groove
+## 4. Widget Oficial Exclusivo: `org.groove.soundwave`
 
-Para crear un nuevo widget (por ejemplo `org.groove.daw-status` o `org.groove.vu-meter`):
-
-1. **Crear el directorio del paquete:**
-   ```bash
-   mkdir -p /usr/share/plasma/plasmoids/org.groove.<nombre>/contents/{config,ui}
-   ```
-2. **Definir `metadata.json`:**
-   ```json
-   {
-       "KPackageStructure": "Plasma/Applet",
-       "KPlugin": {
-           "Category": "Multimedia",
-           "Description": "Descripción de la miniaplicación.",
-           "Id": "org.groove.<nombre>",
-           "Name": "Nombre Visible"
-       },
-       "X-Plasma-API-Minimum-Version": "6.0"
-   }
-   ```
-3. **Definir variables en `contents/config/main.xml`:**
-   ```xml
-   <entry name="customOpacity" type="Double"><default>0.4</default></entry>
-   ```
-4. **Construir la vista en `contents/ui/main.qml`:**
-   ```qml
-   import QtQuick
-   import org.kde.plasma.plasmoid
-   import org.kde.plasma.core as PlasmaCore
-
-   PlasmoidItem {
-       id: root
-       Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
-       fullRepresentation: Rectangle {
-           color: Qt.rgba(0.05, 0.05, 0.08, Plasmoid.configuration.customOpacity)
-           radius: 12
-       }
-   }
-   ```
-5. **Recargar la caché de Plasma:**
-   ```bash
-   kbuildsycoca6
-   systemctl --user restart plasma-plasmashell
-   ```
-
+- **Visualizador:** 7 barras de ondas sonoras en gradiente neón ámbar/naranja con pulso rítmico.
+- **Telemetría:** `48 kHz • 64 spl • 1.3 ms` en tiempo real.
+- **Live Preview:** Control de transparencia reactivo instantáneo desde sus propias preferencias y compatible con el módulo universal.
