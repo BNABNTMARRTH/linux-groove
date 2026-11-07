@@ -31,6 +31,9 @@ Bienvenido al repositorio central de documentación técnica, arquitectura, plan
 7. **[`07_BITACORA_PRUEBAS_Y_CONFIGURACION_UTM.md`](./07_BITACORA_PRUEBAS_Y_CONFIGURACION_UTM.md)**
    - Bitácora forense de pruebas en vivo, especificaciones técnicas de la ISO 0.4.1, diagnóstico y solución del cursor e instructivo de aceleración 3D en UTM (`virtio-ramfb-gl`).
 
-8. **[`WALKTHROUGH_041_BOOT_FIX.md`](./WALKTHROUGH_041_BOOT_FIX.md)**
+8. **[`08_ARQUITECTURA_Y_DESARROLLO_WIDGETS_GROOVE.md`](./08_ARQUITECTURA_Y_DESARROLLO_WIDGETS_GROOVE.md)**
+   - Arquitectura y anatomía interna de Plasmoids en KDE Plasma 6, control milimétrico de transparencia/opacidad y guía para crear widgets exclusivos Groove (con el plasmoid oficial `org.groove.soundwave`).
+
+9. **[`WALKTHROUGH_041_BOOT_FIX.md`](./WALKTHROUGH_041_BOOT_FIX.md)**
    - Registro forense exhaustivo del diagnóstico y solución del arranque en Linux Groove 0.4.1, inventario detallado de todos los archivos modificados/creados y código exacto añadido.
 
