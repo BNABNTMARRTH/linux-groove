@@ -8,3 +8,8 @@ wobblywindowsEnabled=true
 cubeEnabled=true
 [Windows]
 BorderlessMaximizedWindows=false
+[Compositing]
+AnimationSpeed=1
+DirectScanout=true
+LatencyPolicy=ExtremelyLow
+

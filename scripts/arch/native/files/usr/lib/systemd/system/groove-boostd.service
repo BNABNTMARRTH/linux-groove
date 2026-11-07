@@ -1,0 +1,15 @@
+[Unit]
+Description=Groove Boost Daemon (RAM Pre-caching and Latency Tuning)
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/groove-boostd
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target
