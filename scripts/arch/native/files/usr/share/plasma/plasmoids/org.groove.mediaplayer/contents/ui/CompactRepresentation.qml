@@ -8,7 +8,7 @@ import org.kde.plasma.components as PlasmaComponents
 Item {
     id: compactRoot
 
-    readonly property bool isPlaying: root.currentMprisPlayer && root.currentMprisPlayer.playbackStatus === 1 // Playing
+    readonly property bool isPlaying: root.currentMprisPlayer && root.currentMprisPlayer.playbackStatus === 2 // Playing
 
     implicitWidth: Kirigami.Units.iconSizes.medium
     implicitHeight: Kirigami.Units.iconSizes.medium

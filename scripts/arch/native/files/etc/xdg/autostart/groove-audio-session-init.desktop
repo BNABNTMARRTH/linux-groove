@@ -6,3 +6,4 @@ Exec=/bin/sh -c "sleep 0.8; /usr/bin/wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 2>/de
 Hidden=false
 NoDisplay=true
 X-GNOME-Autostart-enabled=true
+
