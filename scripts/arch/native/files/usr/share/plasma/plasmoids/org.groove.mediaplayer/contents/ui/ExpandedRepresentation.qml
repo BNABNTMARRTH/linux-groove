@@ -14,6 +14,7 @@ Item {
 
     implicitWidth: Kirigami.Units.gridUnit * 21
     implicitHeight: Kirigami.Units.gridUnit * 16.5
+    focus: true
 
     readonly property var player: root.currentMprisPlayer
     readonly property bool isPlaying: player ? (player.playbackStatus === Mpris.PlaybackStatus.Playing || player.playbackStatus === 2) : false
@@ -22,25 +23,39 @@ Item {
     property real systemVolume: 0.80
     property bool systemMuted: false
 
-    // Motor de interpolación de tiempo real para navegadores (Firefox/Chromium) que congelan D-Bus Position durante Play
+    // Motor de reloj monotónico real (Anchor Clock) para avance 100% fluido y sin deriva
     property real livePosition: 0
+    property real anchorPositionUs: 0
+    property double anchorTimestampMs: 0
+    property bool disablePositionUpdate: false
     property real lastMprisPosition: -1
     property string lastTrackTitle: ""
+    property int lengthProbeAttempts: 0
+
+    function reanchorPosition(newPosUs) {
+        expandedRoot.anchorPositionUs = Math.max(0, newPosUs);
+        expandedRoot.anchorTimestampMs = Date.now();
+        if (!expandedRoot.disablePositionUpdate) {
+            expandedRoot.livePosition = expandedRoot.anchorPositionUs;
+        }
+    }
 
     function syncPositionFromMpris(forceSnap) {
         if (!expandedRoot.player) {
             expandedRoot.livePosition = 0;
+            expandedRoot.anchorPositionUs = 0;
+            expandedRoot.anchorTimestampMs = Date.now();
             expandedRoot.lastMprisPosition = -1;
             return;
         }
         var reported = expandedRoot.player.position || 0;
         if (forceSnap || Math.abs(reported - expandedRoot.lastMprisPosition) > 50000) {
             expandedRoot.lastMprisPosition = reported;
-            expandedRoot.livePosition = reported;
+            expandedRoot.reanchorPosition(reported);
         }
     }
 
-    // Motor de comandos para sincronizar volumen del sistema (PipeWire) cuando el navegador bloquea MPRIS Volume
+    // Motor de comandos para sincronizar volumen del sistema (PipeWire) y Dock OSD nativo de KDE
     Plasma5Support.DataSource {
         id: audioExec
         engine: "executable"
@@ -74,9 +89,29 @@ Item {
         }
     }
 
+    // Ajusta volumen y muestra el Dock Flotante (OSD) nativo de KDE Plasma
+    function adjustVolumeWithOsd(deltaStep) {
+        var baseVol = expandedRoot.systemMuted ? 0.0 : expandedRoot.systemVolume;
+        var nextVol = Math.min(1.0, Math.max(0.0, baseVol + deltaStep));
+        expandedRoot.setRealVolume(nextVol);
+        var pct = Math.round(nextVol * 100);
+        var appName = (expandedRoot.player && expandedRoot.player.identity) ? expandedRoot.player.identity : "Mozilla firefox";
+        var safeAppName = appName.replace(/"/g, "");
+        audioExec.connectSource(
+            "qdbus6 org.kde.plasmashell /org/kde/osdService org.kde.osdService.mediaPlayerVolumeChanged "
+            + pct + " \"" + safeAppName + "\" \"multimedia-audio-player\""
+        );
+    }
+
     function toggleMute() {
         expandedRoot.systemMuted = !expandedRoot.systemMuted;
         audioExec.connectSource("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle");
+        var pct = expandedRoot.systemMuted ? 0 : Math.round(expandedRoot.systemVolume * 100);
+        var appName = (expandedRoot.player && expandedRoot.player.identity) ? expandedRoot.player.identity : "Mozilla firefox";
+        audioExec.connectSource(
+            "qdbus6 org.kde.plasmashell /org/kde/osdService org.kde.osdService.mediaPlayerVolumeChanged "
+            + pct + " \"" + appName.replace(/"/g, "") + "\" \"multimedia-audio-player\""
+        );
     }
 
     // Formateador de tiempo inteligente (H:MM:SS si dura más de 1 hora, M:SS si es menor)
@@ -94,30 +129,59 @@ Item {
         return min + ":" + secStr;
     }
 
-    // Timer en tiempo real (250ms) que avanza suavemente la barra de progreso y sincroniza D-Bus
+    // Timer de avance en tiempo real (100ms) basado en reloj monotónico sin deriva
     Timer {
         id: positionPollTimer
-        interval: 250
+        interval: 100
         repeat: true
         running: expandedRoot.isPlaying && expandedRoot.visible
         property int tickCount: 0
         onTriggered: {
             if (!expandedRoot.player) return;
-            if (expandedRoot.livePosition === 0 && expandedRoot.player.position > 0) {
+            if (expandedRoot.anchorTimestampMs <= 0 || (expandedRoot.livePosition === 0 && expandedRoot.player.position > 0)) {
                 expandedRoot.syncPositionFromMpris(true);
             }
-            if (!progressSlider.pressed) {
+            if (!expandedRoot.disablePositionUpdate && !progressSlider.pressed) {
                 var rate = (expandedRoot.player.rate && expandedRoot.player.rate > 0) ? expandedRoot.player.rate : 1.0;
                 var maxLen = (expandedRoot.player.length && expandedRoot.player.length > 0) ? expandedRoot.player.length : 0;
-                var nextPos = expandedRoot.livePosition + (250000 * rate);
+                var elapsedUs = (Date.now() - expandedRoot.anchorTimestampMs) * 1000.0 * rate;
+                var nextPos = expandedRoot.anchorPositionUs + elapsedUs;
                 if (maxLen > 0 && nextPos > maxLen) {
                     nextPos = maxLen;
                 }
                 expandedRoot.livePosition = nextPos;
             }
-            tickCount = (tickCount + 1) % 8;
+            tickCount = (tickCount + 1) % 20; // Cada 2 segundos solicita alineación silenciosa con D-Bus
             if (tickCount === 0 && typeof expandedRoot.player.updatePosition === "function") {
                 expandedRoot.player.updatePosition();
+            }
+        }
+    }
+
+    // Cola de actualización para Seek (100ms debounce idéntico al reproductor nativo de KDE)
+    Timer {
+        id: queuedPositionUpdate
+        interval: 100
+        repeat: false
+        onTriggered: {
+            if (!expandedRoot.player || !expandedRoot.player.canSeek) {
+                expandedRoot.disablePositionUpdate = false;
+                return;
+            }
+            var targetUs = Math.round(progressSlider.value);
+            expandedRoot.reanchorPosition(targetUs);
+            expandedRoot.player.position = targetUs;
+            seekReleaseGuardTimer.restart();
+        }
+    }
+
+    Timer {
+        id: seekReleaseGuardTimer
+        interval: 250
+        repeat: false
+        onTriggered: {
+            if (!progressSlider.pressed) {
+                expandedRoot.disablePositionUpdate = false;
             }
         }
     }
@@ -132,26 +196,26 @@ Item {
         onTriggered: expandedRoot.refreshSystemVolume()
     }
 
-    // Sincronizador automático de duración para transiciones de YouTube/Firefox (cuando mpris:length llega en 0)
+    // Sondeo no intrusivo de duración para transiciones de YouTube/Firefox (sin pausar audio)
     Timer {
         id: firefoxLengthProbeTimer
-        interval: 1200
-        repeat: false
+        interval: 400
+        repeat: true
+        running: false
         onTriggered: {
-            if (expandedRoot.player && expandedRoot.isPlaying && (!expandedRoot.player.length || expandedRoot.player.length <= 0)) {
-                expandedRoot.player.Pause();
-                firefoxResumeTimer.start();
-            }
-        }
-    }
-
-    Timer {
-        id: firefoxResumeTimer
-        interval: 120
-        repeat: false
-        onTriggered: {
+            expandedRoot.lengthProbeAttempts++;
             if (expandedRoot.player) {
-                expandedRoot.player.Play();
+                if (typeof expandedRoot.player.updatePosition === "function") {
+                    expandedRoot.player.updatePosition();
+                }
+                if (expandedRoot.player.length && expandedRoot.player.length > 0) {
+                    firefoxLengthProbeTimer.stop();
+                    expandedRoot.reanchorPosition(expandedRoot.player.position || 0);
+                    return;
+                }
+            }
+            if (expandedRoot.lengthProbeAttempts >= 10) {
+                firefoxLengthProbeTimer.stop();
             }
         }
     }
@@ -159,12 +223,15 @@ Item {
     Connections {
         target: expandedRoot.player
         function onPositionChanged() {
-            expandedRoot.syncPositionFromMpris(false);
+            if (!expandedRoot.disablePositionUpdate && !progressSlider.pressed) {
+                expandedRoot.syncPositionFromMpris(false);
+            }
         }
         function onPlaybackStatusChanged() {
             if (expandedRoot.player && typeof expandedRoot.player.updatePosition === "function") {
                 expandedRoot.player.updatePosition();
             }
+            expandedRoot.reanchorPosition(expandedRoot.player ? (expandedRoot.player.position || 0) : 0);
             expandedRoot.syncPositionFromMpris(true);
         }
         function onMetadataChanged() {
@@ -173,7 +240,9 @@ Item {
                 expandedRoot.lastTrackTitle = curTrack;
                 expandedRoot.livePosition = 0;
                 expandedRoot.lastMprisPosition = -1;
+                expandedRoot.reanchorPosition(0);
                 if (expandedRoot.isPlaying && (!expandedRoot.player.length || expandedRoot.player.length <= 0)) {
+                    expandedRoot.lengthProbeAttempts = 0;
                     firefoxLengthProbeTimer.restart();
                 }
             }
@@ -204,6 +273,38 @@ Item {
         }
         expandedRoot.refreshSystemVolume();
     }
+
+    // Soporte global de rueda del ratón en toda la ventana para subir/bajar volumen con OSD
+    WheelHandler {
+        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+        onWheel: event => {
+            var delta = event.angleDelta.y > 0 ? 0.05 : -0.05;
+            expandedRoot.adjustVolumeWithOsd(delta);
+        }
+    }
+
+    // Atajos de teclado para transporte y volumen
+    Keys.onSpacePressed: if (player && (player.canPlay || player.canPause)) player.PlayPause()
+    Keys.onReturnPressed: if (player && (player.canPlay || player.canPause)) player.PlayPause()
+    Keys.onLeftPressed: {
+        if (player && player.canSeek) {
+            var target = Math.max(0, expandedRoot.livePosition - 5000000);
+            expandedRoot.disablePositionUpdate = true;
+            progressSlider.value = target;
+            queuedPositionUpdate.restart();
+        }
+    }
+    Keys.onRightPressed: {
+        if (player && player.canSeek) {
+            var maxLen = (player.length && player.length > 0) ? player.length : (expandedRoot.livePosition + 10000000);
+            var target = Math.min(maxLen, expandedRoot.livePosition + 5000000);
+            expandedRoot.disablePositionUpdate = true;
+            progressSlider.value = target;
+            queuedPositionUpdate.restart();
+        }
+    }
+    Keys.onUpPressed: expandedRoot.adjustVolumeWithOsd(0.05)
+    Keys.onDownPressed: expandedRoot.adjustVolumeWithOsd(-0.05)
 
     ColumnLayout {
         anchors.fill: parent
@@ -238,38 +339,6 @@ Item {
                     opacity: 0.85
                     elide: Text.ElideRight
                     Layout.fillWidth: true
-                }
-
-                // Mini indicador de ondas estilo Apple Now Playing (monocromático al tema)
-                Row {
-                    spacing: 2
-                    Layout.alignment: Qt.AlignVCenter
-                    Layout.rightMargin: 4
-                    visible: player !== null
-
-                    property real phase: 0.0
-                    NumberAnimation on phase {
-                        from: 0; to: 6.28318
-                        duration: 1100
-                        loops: Animation.Infinite
-                        running: expandedRoot.isPlaying && expandedRoot.visible
-                    }
-
-                    Repeater {
-                        model: 4
-                        Rectangle {
-                            width: 2.5
-                            radius: 1.25
-                            color: Kirigami.Theme.textColor
-                            opacity: expandedRoot.isPlaying ? 0.75 : 0.35
-                            height: {
-                                if (!expandedRoot.isPlaying) return 4;
-                                var offsets = [0.0, 1.4, 2.8, 0.9];
-                                return 4 + Math.abs(Math.sin(parent.phase + offsets[index])) * 9;
-                            }
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
                 }
 
                 QQC2.ToolButton {
@@ -422,6 +491,52 @@ Item {
                     }
                 }
             }
+
+            // Badge de 5 barras de ecualizador (estilo Apple Now Playing)
+            Item {
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                anchors.rightMargin: Kirigami.Units.largeSpacing + 4
+                anchors.bottomMargin: Kirigami.Units.mediumSpacing + 2
+                implicitWidth: 32
+                implicitHeight: 22
+                visible: player !== null
+
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 2.5
+
+                    property real wavePhase: 0.0
+                    NumberAnimation on wavePhase {
+                        from: 0; to: 6.28318
+                        duration: 850
+                        loops: Animation.Infinite
+                        running: expandedRoot.isPlaying && expandedRoot.visible
+                    }
+
+                    Repeater {
+                        model: 5
+                        Rectangle {
+                            width: 2.5
+                            radius: 1.25
+                            color: "#ffffff"
+                            opacity: expandedRoot.isPlaying ? 0.90 : 0.40
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            // Si está en pausa se colapsa suavemente a 2.5px (un punto cuadrado ▪ ▪ ▪ ▪ ▪)
+                            height: {
+                                if (!expandedRoot.isPlaying) return 2.5;
+                                var offsets = [0.0, 1.4, 2.8, 0.9, 2.2];
+                                var amp = Math.abs(Math.sin(parent.wavePhase + offsets[index]));
+                                return 3.5 + (amp * 11.5);
+                            }
+
+                            Behavior on height { NumberAnimation { duration: 160 } }
+                            Behavior on opacity { NumberAnimation { duration: 160 } }
+                        }
+                    }
+                }
+            }
         }
 
         // =========================================================================
@@ -448,7 +563,7 @@ Item {
                 anchors.bottomMargin: Kirigami.Units.smallSpacing * 2
                 spacing: 6
 
-                // 3A. Barra de Progreso en Tiempo Real (Estilo píldora limpia)
+                // 3A. Barra de Progreso en Tiempo Real (Estilo píldora limpia con debounce)
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8
@@ -472,23 +587,42 @@ Item {
                         to: (player && player.length > 0) ? player.length : Math.max(100, expandedRoot.livePosition * 1.2)
                         enabled: player && player.canSeek
 
-                        // Mantiene el vínculo en tiempo real con livePosition sin romperse al arrastrar
+                        // Vínculo desacoplado protegido por disablePositionUpdate
                         Binding {
                             target: progressSlider
                             property: "value"
                             value: expandedRoot.livePosition
-                            when: !progressSlider.pressed
+                            when: !progressSlider.pressed && !expandedRoot.disablePositionUpdate
                             restoreMode: Binding.RestoreBindingOrValue
+                        }
+
+                        onPressedChanged: {
+                            if (pressed) {
+                                expandedRoot.disablePositionUpdate = true;
+                            } else {
+                                queuedPositionUpdate.restart();
+                            }
                         }
 
                         onMoved: {
                             if (expandedRoot.player && expandedRoot.player.canSeek) {
-                                var targetPos = Math.round(value);
-                                var delta = targetPos - expandedRoot.livePosition;
-                                expandedRoot.livePosition = targetPos;
-                                expandedRoot.lastMprisPosition = targetPos;
-                                expandedRoot.player.Seek(delta);
-                                expandedRoot.player.position = targetPos;
+                                expandedRoot.disablePositionUpdate = true;
+                                queuedPositionUpdate.restart();
+                            }
+                        }
+
+                        // Soporte de rueda de scroll sobre la barra para saltos de 5s
+                        MouseArea {
+                            anchors.fill: parent
+                            acceptedButtons: Qt.NoButton
+                            onWheel: wheel => {
+                                if (expandedRoot.player && expandedRoot.player.canSeek) {
+                                    var deltaSeek = wheel.angleDelta.y > 0 ? 5000000 : -5000000;
+                                    var targetPos = Math.max(0, Math.min(progressSlider.to, expandedRoot.livePosition + deltaSeek));
+                                    expandedRoot.disablePositionUpdate = true;
+                                    progressSlider.value = targetPos;
+                                    queuedPositionUpdate.restart();
+                                }
                             }
                         }
 
@@ -535,7 +669,7 @@ Item {
                     }
                 }
 
-                // 3B. Botones de Transporte Limpios (Sin marcos cuadrados)
+                // 3B. Botones de Transporte Limpios con Nueva Jerarquía Armónica
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: Kirigami.Units.largeSpacing
@@ -554,15 +688,15 @@ Item {
                         }
                         contentItem: Kirigami.Icon {
                             anchors.centerIn: parent
-                            width: 16
-                            height: 16
+                            width: 14
+                            height: 14
                             source: "media-playlist-shuffle"
                             color: Kirigami.Theme.textColor
                             opacity: (player && player.shuffle) ? 1.0 : 0.45
                         }
                     }
 
-                    // Anterior
+                    // Anterior (Skip Backward) - Más pequeño que Play para margen amplio en hover
                     QQC2.AbstractButton {
                         id: prevBtn
                         implicitWidth: 32
@@ -580,38 +714,38 @@ Item {
                         }
                         contentItem: Kirigami.Icon {
                             anchors.centerIn: parent
-                            width: 22
-                            height: 22
+                            width: 17
+                            height: 17
                             source: "media-skip-backward"
                             color: Kirigami.Theme.textColor
                             opacity: prevBtn.enabled ? 0.9 : 0.35
                         }
                     }
 
-                    // Play / Pause limpio y sin bordes cuadrados
+                    // Play / Pause Central - Botón Rey Destacado
                     QQC2.AbstractButton {
                         id: playPauseBtn
-                        implicitWidth: 38
-                        implicitHeight: 38
+                        implicitWidth: 42
+                        implicitHeight: 42
                         focusPolicy: Qt.NoFocus
                         enabled: player ? (player.canPlay || player.canPause) : false
                         onClicked: if (player) player.PlayPause()
 
                         background: Rectangle {
-                            radius: 19
-                            color: Qt.alpha(Kirigami.Theme.textColor, playPauseBtn.pressed ? 0.18 : (playPauseBtn.hovered ? 0.10 : 0.0))
+                            radius: 21
+                            color: Qt.alpha(Kirigami.Theme.textColor, playPauseBtn.pressed ? 0.20 : (playPauseBtn.hovered ? 0.10 : 0.0))
                         }
 
                         contentItem: Kirigami.Icon {
                             anchors.centerIn: parent
-                            width: 26
-                            height: 26
+                            width: 24
+                            height: 24
                             source: expandedRoot.isPlaying ? "media-playback-pause" : "media-playback-start"
                             color: Kirigami.Theme.textColor
                         }
                     }
 
-                    // Siguiente
+                    // Siguiente (Skip Forward) - Más pequeño que Play
                     QQC2.AbstractButton {
                         id: nextBtn
                         implicitWidth: 32
@@ -629,8 +763,8 @@ Item {
                         }
                         contentItem: Kirigami.Icon {
                             anchors.centerIn: parent
-                            width: 22
-                            height: 22
+                            width: 17
+                            height: 17
                             source: "media-skip-forward"
                             color: Kirigami.Theme.textColor
                             opacity: nextBtn.enabled ? 0.9 : 0.35
@@ -651,8 +785,8 @@ Item {
                         }
                         contentItem: Kirigami.Icon {
                             anchors.centerIn: parent
-                            width: 16
-                            height: 16
+                            width: 14
+                            height: 14
                             source: "media-playlist-repeat"
                             color: Kirigami.Theme.textColor
                             opacity: (player && player.loopStatus > 0) ? 1.0 : 0.45
@@ -660,7 +794,7 @@ Item {
                     }
                 }
 
-                // 3C. Control de Volumen Sutil y Compacto (Referencia Apple, sin ocupar todo el ancho)
+                // 3C. Control de Volumen Sutil y Compacto (Referencia Apple con integración OSD)
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: 184
@@ -671,6 +805,16 @@ Item {
                     border.color: Qt.alpha(Kirigami.Theme.textColor, 0.08)
                     border.width: 1
                     visible: Plasmoid.configuration.showVolumeSlider
+
+                    // Soporte de rueda sobre la píldora de volumen
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.NoButton
+                        onWheel: wheel => {
+                            var delta = wheel.angleDelta.y > 0 ? 0.05 : -0.05;
+                            expandedRoot.adjustVolumeWithOsd(delta);
+                        }
+                    }
 
                     RowLayout {
                         anchors.fill: parent
@@ -709,6 +853,13 @@ Item {
 
                             onMoved: {
                                 expandedRoot.setRealVolume(value);
+                                var pct = Math.round(value * 100);
+                                var appName = (expandedRoot.player && expandedRoot.player.identity) ? expandedRoot.player.identity : "Mozilla firefox";
+                                var safeAppName = appName.replace(/"/g, "");
+                                audioExec.connectSource(
+                                    "qdbus6 org.kde.plasmashell /org/kde/osdService org.kde.osdService.mediaPlayerVolumeChanged "
+                                    + pct + " \"" + safeAppName + "\" \"multimedia-audio-player\""
+                                );
                             }
 
                             background: Rectangle {
@@ -748,7 +899,7 @@ Item {
                             width: 14
                             height: 14
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: expandedRoot.setRealVolume(Math.min(1.0, volumeSlider.value + 0.10))
+                            onClicked: expandedRoot.adjustVolumeWithOsd(0.10)
                             Kirigami.Icon {
                                 anchors.fill: parent
                                 source: "audio-volume-high"

@@ -30,13 +30,11 @@ def exec_cmd(cmd):
         return json.loads(resp.read().decode("utf-8"))
 
 def upload_file(local_path, remote_path):
-    with open(local_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    req = urllib.request.Request(f"{VM_URL}/write?path={remote_path}",
-        data=content.encode("utf-8"),
-        headers={"Content-Type": "text/plain; charset=utf-8"})
-    with urllib.request.urlopen(req) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    import gzip, base64
+    with open(local_path, "rb") as f:
+        gz_b64 = base64.b64encode(gzip.compress(f.read())).decode("ascii")
+    exec_cmd(f"echo '{gz_b64}' | base64 -d | gunzip > '{remote_path}'")
+    return {"success": True}
 
 def sync_tree(rel_dir):
     full_local_dir = os.path.join(BASE_LOCAL, rel_dir)
