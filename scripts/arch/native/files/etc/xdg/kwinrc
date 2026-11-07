@@ -3,7 +3,8 @@ library=org.kde.breeze
 ButtonsOnLeft=XIA
 ButtonsOnRight=
 [Plugins]
-blurEnabled=false
-wobblywindowsEnabled=false
+blurEnabled=true
+wobblywindowsEnabled=true
+cubeEnabled=true
 [Windows]
 BorderlessMaximizedWindows=false
