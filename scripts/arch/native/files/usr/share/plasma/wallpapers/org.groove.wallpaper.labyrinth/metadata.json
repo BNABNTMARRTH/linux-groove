@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "info@linuxgroove.org",
+                "Name": "Linux Groove Team"
+            }
+        ],
+        "Category": "Graphics",
+        "Description": "Interactive Cyberpunk ASCII Matrix Wallpaper with Reactive Light Runners and Pure White Soundwave Logo",
+        "Description[es]": "Fondo de pantalla interactivo estilo ASCII Matrix con corredores de luz reactivos al cursor y logo Soundwave blanco puro",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "org.groove.wallpaper.labyrinth",
+        "License": "GPL-2.0-or-later",
+        "Name": "Groove Labyrinth Interactivo",
+        "Version": "1.0.0",
+        "Website": "https://linuxgroove.org"
+    },
+    "X-KDE-ParentApp": "org.kde.plasmashell"
+}
