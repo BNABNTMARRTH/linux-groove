@@ -250,27 +250,28 @@ body {
 
 .story-section:nth-child(1) {
     justify-content: flex-start;
-    padding-left: 4vw;
+    padding-left: 2vw;
 }
 
 .story-section:nth-child(2) {
     justify-content: flex-end;
-    padding-right: 4vw;
+    padding-right: 2vw;
 }
 
 .story-section:nth-child(3) {
-    justify-content: center;
+    justify-content: flex-start;
+    padding-left: 2vw;
 }
 
 .glass-panel {
-    max-width: 580px;
-    background: var(--panel-bg);
+    max-width: 380px;
+    background: rgba(3, 7, 18, 0.52);
     border: 1px solid var(--panel-border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    padding: 2.2rem 2.5rem;
-    border-radius: 8px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(0, 243, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 1.3rem 1.6rem;
+    border-radius: 6px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(0, 243, 255, 0.05);
     position: relative;
     overflow: hidden;
 }
@@ -288,37 +289,37 @@ body {
 .badge {
     display: inline-block;
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     letter-spacing: 0.1em;
     color: var(--neon-cyan);
-    margin-bottom: 1rem;
+    margin-bottom: 0.6rem;
 }
 
 .glass-panel h1 {
-    font-size: 2.2rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.15;
-    margin-bottom: 1rem;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
     background: linear-gradient(135deg, #ffffff 40%, var(--neon-cyan) 80%, var(--neon-amber) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .glass-panel h2 {
-    font-size: 1.8rem;
+    font-size: 1.3rem;
     font-weight: 700;
     letter-spacing: -0.01em;
     line-height: 1.2;
-    margin-bottom: 1rem;
+    margin-bottom: 0.6rem;
     color: #ffffff;
 }
 
 .glass-panel p {
-    font-size: 0.95rem;
-    line-height: 1.6;
+    font-size: 0.85rem;
+    line-height: 1.5;
     color: var(--text-muted);
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .scroll-cue {
@@ -407,3 +408,4 @@ body {
         font-size: 1.7rem;
     }
 }
+

@@ -55,28 +55,26 @@
             </div>
         </div>
 
-        <!-- PANEL DE CONTROL DE ENTROPIA Y REENSAMBLAJE -->
-        <div class="control-overlay">
-            <div class="control-card">
-                <span class="badge">[ FISICA DE PARTICULAS // FRACTURA PROCEDURAL ]</span>
-                <h1>Deconstruccion y Reensamblaje</h1>
-                <p>Aumenta la entropia para romper las aristas estructurales y dispersar miles de particulas atomicas en un vortice turbulento calculado en Rust. Cambia de figura para atraer los fragmentos y reensamblarlos gravitatoriamente.</p>
-
-                <!-- SLIDER DE ENTROPIA -->
-                <div class="slider-row">
-                    <span class="slider-label">// ENTROPIA:</span>
+        <!-- DOCK DE CONTROL MINIMALISTA (100% VISIBILIDAD 3D) -->
+        <div class="control-dock">
+            <div class="dock-row">
+                <div class="slider-group">
+                    <span class="control-label">// ENTROPIA:</span>
                     <input type="range" id="entropy-slider" min="0" max="100" value="0" class="custom-slider">
                     <span class="slider-readout" id="slider-readout">00%</span>
                 </div>
-
-                <!-- SELECTOR DE GEOMETRIA OBJETIVO -->
-                <div class="action-bar">
-                    <span class="selector-label">// REENSAMBLAR EN:</span>
+                <div class="geom-group">
+                    <span class="control-label">// FIGURA:</span>
                     <button class="geom-btn" data-geom="0">[ Esfera ]</button>
                     <button class="geom-btn" data-geom="1">[ Cubo ]</button>
-                    <button class="geom-btn active" data-geom="2">[ Dona (Torus) ]</button>
-                    <button class="burst-btn" id="burst-trigger">[ Pulso de Explosion ]</button>
+                    <button class="geom-btn active" data-geom="2">[ Dona ]</button>
                 </div>
+                <button class="burst-btn" id="burst-trigger">[ Pulso Explosion ]</button>
+                <button class="info-toggle-btn" id="info-toggle" title="Alternar Info">[ ? ]</button>
+            </div>
+            <!-- Info colapsable (oculta por defecto para no tapar el objeto 3D) -->
+            <div class="dock-info-collapsible" id="dock-info">
+                <p>// Fisica Verlet en Rust Wasm: 3,840 particulas integradas en tiempo real. Aumenta la entropia para romper las aristas y dispersar los atomos en un vortice turbulento. Cambia de figura para reensamblarlos.</p>
             </div>
         </div>
     </main>
@@ -91,6 +89,12 @@
         const hudState = document.getElementById('hud-quantum-state');
         const geomBtns = document.querySelectorAll('.geom-btn');
         const burstBtn = document.getElementById('burst-trigger');
+        const infoToggle = document.getElementById('info-toggle');
+        const dockInfo = document.getElementById('dock-info');
+
+        infoToggle.addEventListener('click', () => {
+            dockInfo.classList.toggle('visible');
+        });
 
         createGroove3DEngine('canvas3d', {
             particleCount: 3840,
@@ -162,3 +166,4 @@
 
 </body>
 </html>
+

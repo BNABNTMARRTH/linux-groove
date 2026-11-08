@@ -222,144 +222,98 @@ html, body {
 }
 
 /* ==========================================================================
-   PANEL DE CONTROL FLOTANTE Y CONTROLES DE ENTROPIA
+   DOCK DE CONTROL MINIMALISTA (100% VISIBILIDAD DEL OBJETO 3D)
    ========================================================================== */
 
-.control-overlay {
-    position: absolute;
-    bottom: 2.5rem;
+.control-dock {
+    position: fixed;
+    bottom: 1.2rem;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
+    width: calc(100% - 3rem);
+    max-width: 920px;
     pointer-events: auto;
-    width: calc(100% - 4rem);
-    max-width: 720px;
 }
 
-.control-card {
-    background: var(--panel-bg);
-    border: 1px solid var(--panel-border);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    padding: 1.8rem 2rem;
-    border-radius: 8px;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(255, 170, 0, 0.06);
-    position: relative;
-    overflow: hidden;
-}
-
-.control-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--neon-amber), var(--neon-cyan), transparent);
-}
-
-.badge {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    color: var(--neon-amber);
-    margin-bottom: 0.6rem;
-}
-
-.control-card h1 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    line-height: 1.2;
-    margin-bottom: 0.6rem;
-    background: linear-gradient(135deg, #ffffff 40%, var(--neon-amber) 80%, var(--neon-cyan) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.control-card p {
-    font-size: 0.88rem;
-    line-height: 1.5;
-    color: var(--text-muted);
-    margin-bottom: 1.2rem;
-}
-
-/* SLIDER DE ENTROPIA */
-.slider-row {
+.dock-row {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.2rem;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 0.6rem 1rem;
-    border-radius: 6px;
-    border: 1px solid rgba(255, 170, 0, 0.2);
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    background: rgba(4, 9, 6, 0.76);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 12px rgba(255, 170, 0, 0.05);
 }
 
-.slider-label {
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 220px;
+}
+
+.control-label {
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--text-muted);
     letter-spacing: 0.05em;
-    min-width: 90px;
+    white-space: nowrap;
 }
 
 .custom-slider {
     flex: 1;
     -webkit-appearance: none;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.12);
+    height: 5px;
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 3px;
     outline: none;
 }
 
 .custom-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     background: var(--neon-amber);
-    box-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+    box-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
     cursor: pointer;
     transition: transform 0.1s ease;
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
+    transform: scale(1.25);
 }
 
 .slider-readout {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: var(--neon-amber);
-    min-width: 45px;
+    min-width: 38px;
     text-align: right;
 }
 
-/* ACCIONES DE REENSAMBLAJE */
-.action-bar {
+.geom-group {
     display: flex;
-    gap: 0.5rem;
     align-items: center;
-    flex-wrap: wrap;
-}
-
-.selector-label {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    color: var(--text-muted);
+    gap: 0.4rem;
 }
 
 .geom-btn {
     background: rgba(255, 170, 0, 0.06);
     color: var(--text-muted);
     border: 1px solid rgba(255, 170, 0, 0.25);
-    padding: 0.45rem 0.85rem;
+    padding: 0.35rem 0.65rem;
     border-radius: 4px;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -375,18 +329,17 @@ html, body {
     color: #030504;
     font-weight: 700;
     border-color: var(--neon-amber);
-    box-shadow: 0 0 12px rgba(255, 170, 0, 0.45);
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.4);
 }
 
 .burst-btn {
-    margin-left: auto;
     background: rgba(255, 51, 102, 0.12);
     color: var(--neon-red);
     border: 1px solid var(--neon-red);
-    padding: 0.45rem 0.9rem;
+    padding: 0.35rem 0.75rem;
     border-radius: 4px;
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     cursor: pointer;
     font-weight: 700;
     transition: all 0.2s ease;
@@ -395,7 +348,48 @@ html, body {
 .burst-btn:hover {
     background: var(--neon-red);
     color: #ffffff;
-    box-shadow: 0 0 14px rgba(255, 51, 102, 0.6);
+    box-shadow: 0 0 12px rgba(255, 51, 102, 0.6);
+}
+
+.info-toggle-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 170, 0, 0.25);
+    padding: 0.35rem 0.55rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.info-toggle-btn:hover {
+    color: var(--neon-amber);
+    border-color: var(--neon-amber);
+}
+
+.dock-info-collapsible {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    background: rgba(3, 7, 5, 0.9);
+    border-radius: 6px;
+    margin-top: 0.4rem;
+}
+
+.dock-info-collapsible.visible {
+    max-height: 120px;
+    opacity: 1;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgba(255, 170, 0, 0.2);
+}
+
+.dock-info-collapsible p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--text-muted);
 }
 
 /* ==========================================================================
@@ -433,3 +427,4 @@ html, body {
         margin-top: 0.5rem;
     }
 }
+

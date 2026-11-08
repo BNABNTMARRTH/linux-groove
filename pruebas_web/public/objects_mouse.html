@@ -55,19 +55,17 @@
             </div>
         </div>
 
-        <!-- PANEL DE CONTROL FLOTANTE Y SELECTOR DE GEOMETRIA -->
-        <div class="control-overlay">
-            <div class="control-card">
-                <span class="badge">[ INTERACCION DINAMICA // 0% JS LATENCY ]</span>
-                <h1>Giroscopo 3D & Lente Magnetica</h1>
-                <p>Mueve el cursor libremente por la pantalla para rotar la figura tridimensional en el espacio mediante calculo giroscopico inercial en Rust. Al acercar el cursor al objeto, las particulas se dispersan formando un halo magnetico.</p>
-
-                <!-- SELECTOR DE GEOMETRIA (SIN EMOJIS) -->
-                <div class="geom-selector">
-                    <span class="selector-label">// GEOMETRIA:</span>
+        <!-- DOCK DE CONTROL MINIMALISTA (100% VISIBILIDAD 3D) -->
+        <div class="control-dock">
+            <div class="dock-row">
+                <div class="geom-group">
+                    <span class="control-label">// GEOMETRIA:</span>
                     <button class="selector-btn" data-geom="0">[ Esfera ]</button>
                     <button class="selector-btn" data-geom="1">[ Cubo ]</button>
                     <button class="selector-btn active" data-geom="2">[ Dona (Torus) ]</button>
+                </div>
+                <div class="dock-hint">
+                    <span class="hint-bullet">[~]</span> Mueve el cursor para inclinar en 3D (Tilt) y repeler particulas
                 </div>
             </div>
         </div>
@@ -112,3 +110,4 @@
 
 </body>
 </html>
+
