@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Anatomia 3D // Inspeccion y Pulso ECG (Rust Wasm)</title>
+    <link rel="stylesheet" href="styles_anatomy_inspect.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (SIN EMOJIS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">ANATOMIA // TILT & ECG 72 BPM</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Rayos ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto 3D ]</a>
+            <a href="city.html" class="nav-btn">[ Ciudad Lluviosa ]</a>
+            <a href="objects_scroll.html" class="nav-btn">[ 3D: Primitivas ]</a>
+            <a href="anatomy_scroll.html" class="nav-btn">[ Bio: Scroll ]</a>
+            <a href="anatomy_inspect.html" class="nav-btn active">[ Bio: Mouse ]</a>
+            <a href="anatomy_deconstruct.html" class="nav-btn">[ Bio: Deconstruccion ]</a>
+        </nav>
+    </header>
+
+    <!-- ESCENARIO 3D INTERACTIVO -->
+    <main class="interactive-stage">
+        <canvas id="canvas3d" class="canvas-3d"></canvas>
+        <div class="screen-grid"></div>
+        <div class="screen-vignette"></div>
+
+        <!-- HUD DE TELEMETRIA EN TIEMPO REAL -->
+        <div class="hud-layer" aria-hidden="true">
+            <div class="hud-reticle"></div>
+            <div class="hud-corner top-left">
+                <span class="hud-label">// SENSOR VECTORIAL</span>
+                <span class="hud-val" id="hud-mouse-coords">X: +0.00 // Y: +0.00</span>
+            </div>
+            <div class="hud-corner top-right">
+                <span class="hud-label">// MONITOR ECG</span>
+                <span class="hud-val" id="hud-ecg-rate">72 LPM // SINUSAL ACTIVO</span>
+            </div>
+            <div class="hud-corner bottom-left">
+                <span class="hud-label">// TOPOLOGIA EN PANTALLA</span>
+                <span class="hud-val" id="hud-topology-name">CORAZON CARDIOIDE 3D</span>
+            </div>
+            <div class="hud-corner bottom-right">
+                <span class="hud-label">// COMPUTO EN RUST</span>
+                <span class="hud-val">0 MS LAG // FISIOLOGIA 60 FPS</span>
+            </div>
+        </div>
+
+        <!-- DOCK DE CONTROL MINIMALISTA (100% VISIBILIDAD CENTRAL DESPEJADA) -->
+        <div class="control-dock">
+            <div class="dock-row">
+                <div class="geom-group">
+                    <span class="control-label">// FIGURA ANATOMICA:</span>
+                    <button class="selector-btn" data-geom="0">[ Mano ]</button>
+                    <button class="selector-btn" data-geom="1">[ Cabeza ]</button>
+                    <button class="selector-btn active" data-geom="2">[ Corazon ]</button>
+                </div>
+                <div class="dock-status" id="dock-dynamic-hint">
+                    <span class="status-bullet">[~]</span> Contraccion sistolica/diastolica continua en Rust
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- INICIALIZACION DEL MOTOR WASM -->
+    <script type="module">
+        import { createGroove3DEngine } from './wasm_loader.js';
+
+        const hudCoords = document.getElementById('hud-mouse-coords');
+        const hudTopology = document.getElementById('hud-topology-name');
+        const hudEcg = document.getElementById('hud-ecg-rate');
+        const dockHint = document.getElementById('dock-dynamic-hint');
+        const buttons = document.querySelectorAll('.selector-btn');
+
+        createGroove3DEngine('canvas3d', {
+            particleCount: 3840,
+            anatomyMode: true,
+            initialGeometry: 2, // Corazon
+            morphOnScroll: false,
+        }).then(controller => {
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const geomId = parseInt(btn.getAttribute('data-geom'), 10);
+                    controller.setAnatomyGeometry(geomId);
+
+                    if (geomId === 0) {
+                        hudTopology.textContent = "MANO HUMANA ARTICULADA";
+                        hudEcg.textContent = "CINEMATICA: 5 DEDOS";
+                        dockHint.innerHTML = '<span class="status-bullet">[~]</span> Mueve el cursor verticalmente para flexionar los dedos';
+                    } else if (geomId === 1) {
+                        hudTopology.textContent = "CABEZA HUMANA & RED NEURAL";
+                        hudEcg.textContent = "IMPULSOS CEREBRALES: 40 HZ";
+                        dockHint.innerHTML = '<span class="status-bullet">[~]</span> Giroscopo 3D de alta precision e impulsos sinapticos';
+                    } else {
+                        hudTopology.textContent = "CORAZON CARDIOIDE 3D";
+                        hudEcg.textContent = "72 LPM // SINUSAL ACTIVO";
+                        dockHint.innerHTML = '<span class="status-bullet">[~]</span> Contraccion sistolica/diastolica continua en Rust';
+                    }
+                });
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                const normX = (e.clientX / window.innerWidth) * 2.0 - 1.0;
+                const normY = (e.clientY / window.innerHeight) * 2.0 - 1.0;
+                const signX = normX >= 0 ? '+' : '';
+                const signY = normY >= 0 ? '+' : '';
+                hudCoords.textContent = `X: ${signX}${normX.toFixed(2)} // Y: ${signY}${normY.toFixed(2)}`;
+            });
+        });
+    </script>
+
+</body>
+</html>

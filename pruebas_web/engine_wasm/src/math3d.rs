@@ -120,3 +120,4 @@ impl Camera {
         (screen_x, screen_y, z_cam, scale, true)
     }
 }
+

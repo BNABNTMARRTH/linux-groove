@@ -1,0 +1,415 @@
+/* ==========================================================================
+   LINUX GROOVE - ANATOMIA 3D DECONSTRUCCION (STYLESHEET)
+   Motor Rust Wasm | Cero Emojis | Dock Minimalista 46px | 60 FPS
+   ========================================================================== */
+
+:root {
+    --bg-dark: #030504;
+    --bio-ruby: #ff2255;
+    --bio-amber: #ffaa00;
+    --bio-emerald: #00ffaa;
+    --bio-cyan: #00f3ff;
+    --panel-bg: rgba(4, 9, 6, 0.78);
+    --panel-border: rgba(255, 34, 85, 0.3);
+    --text-primary: #f0fbf5;
+    --text-muted: #88af9e;
+    --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACION
+   ========================================================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background: rgba(3, 8, 5, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 34, 85, 0.2);
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.brand-bullet {
+    color: var(--bio-ruby);
+    font-weight: 700;
+}
+
+.brand-title {
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+}
+
+.brand-tag {
+    color: var(--bio-amber);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 170, 0, 0.12);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.4rem 0.75rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    color: var(--bio-ruby);
+    border-color: rgba(255, 34, 85, 0.3);
+    background: rgba(255, 34, 85, 0.05);
+}
+
+.nav-btn.active {
+    color: #ffffff;
+    background: rgba(255, 34, 85, 0.18);
+    border-color: var(--bio-ruby);
+    box-shadow: 0 0 12px rgba(255, 34, 85, 0.35);
+}
+
+/* ==========================================================================
+   ESCENARIO DE DECONSTRUCCION 3D
+   ========================================================================== */
+
+.deconstruct-stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.canvas-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.screen-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(255, 34, 85, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 34, 85, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+}
+
+.screen-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(2, 5, 3, 0.92) 100%);
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   HUD BIOMEDICO HOLOGRAFICO
+   ========================================================================== */
+
+.hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    font-family: var(--font-mono);
+}
+
+.hud-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 240px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(255, 34, 85, 0.2);
+    border-radius: 50%;
+}
+
+.hud-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(4, 10, 7, 0.7);
+    border: 1px solid rgba(255, 34, 85, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.hud-corner.top-left {
+    top: 80px;
+    left: 2rem;
+    border-left: 3px solid var(--bio-ruby);
+}
+
+.hud-corner.top-right {
+    top: 80px;
+    right: 2rem;
+    border-right: 3px solid var(--bio-emerald);
+    text-align: right;
+}
+
+.hud-corner.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+    border-left: 3px solid var(--bio-amber);
+}
+
+.hud-corner.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+    border-right: 3px solid var(--bio-ruby);
+    text-align: right;
+}
+
+.hud-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.hud-val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--bio-ruby);
+}
+
+/* ==========================================================================
+   DOCK DE CONTROL MINIMALISTA (100% VISIBILIDAD CENTRAL DESPEJADA)
+   ========================================================================== */
+
+.control-dock {
+    position: fixed;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: calc(100% - 3rem);
+    max-width: 920px;
+    pointer-events: auto;
+}
+
+.dock-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    background: rgba(4, 9, 6, 0.78);
+    border: 1px solid rgba(255, 34, 85, 0.3);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.6rem 1.1rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 0 12px rgba(255, 34, 85, 0.05);
+}
+
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex: 1;
+    min-width: 220px;
+}
+
+.control-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.custom-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 3px;
+    outline: none;
+}
+
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--bio-ruby);
+    box-shadow: 0 0 8px rgba(255, 34, 85, 0.8);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+}
+
+.slider-readout {
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--bio-ruby);
+    min-width: 38px;
+    text-align: right;
+}
+
+.geom-group {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.geom-btn {
+    background: rgba(255, 34, 85, 0.06);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 34, 85, 0.25);
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.geom-btn:hover {
+    color: var(--bio-ruby);
+    border-color: var(--bio-ruby);
+    background: rgba(255, 34, 85, 0.12);
+}
+
+.geom-btn.active {
+    background: var(--bio-ruby);
+    color: #ffffff;
+    font-weight: 700;
+    border-color: var(--bio-ruby);
+    box-shadow: 0 0 10px rgba(255, 34, 85, 0.45);
+}
+
+.burst-btn {
+    background: rgba(255, 170, 0, 0.12);
+    color: var(--bio-amber);
+    border: 1px solid var(--bio-amber);
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.burst-btn:hover {
+    background: var(--bio-amber);
+    color: #030504;
+    box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
+}
+
+.info-toggle-btn {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 34, 85, 0.25);
+    padding: 0.35rem 0.55rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.info-toggle-btn:hover {
+    color: var(--bio-ruby);
+    border-color: var(--bio-ruby);
+}
+
+.dock-info-collapsible {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    background: rgba(3, 7, 5, 0.9);
+    border-radius: 6px;
+    margin-top: 0.4rem;
+}
+
+.dock-info-collapsible.visible {
+    max-height: 120px;
+    opacity: 1;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid rgba(255, 34, 85, 0.2);
+}
+
+.dock-info-collapsible p {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .top-nav {
+        flex-direction: column;
+        height: auto;
+        padding: 0.8rem 1rem;
+        gap: 0.6rem;
+    }
+
+    .hud-corner {
+        display: none;
+    }
+
+    .control-dock {
+        bottom: 1rem;
+        width: calc(100% - 2rem);
+    }
+}

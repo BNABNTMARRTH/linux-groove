@@ -21,7 +21,12 @@ export async function createGroove3DEngine(canvasId, options = {}) {
     const particleCount = options.particleCount || 3584;
     wasm.init_engine(particleCount);
 
-    if (options.initialGeometry !== undefined) {
+    if (options.anatomyMode) {
+        wasm.set_anatomy_mode(1);
+        if (options.initialGeometry !== undefined) {
+            wasm.set_anatomy_geometry(options.initialGeometry);
+        }
+    } else if (options.initialGeometry !== undefined) {
         wasm.set_geometry(options.initialGeometry);
     }
 
@@ -160,7 +165,15 @@ export async function createGroove3DEngine(canvasId, options = {}) {
     return {
         setGeometry(id) {
             state.selectedGeom = id;
-            wasm.set_geometry(id);
+            if (options.anatomyMode) {
+                wasm.set_anatomy_geometry(id);
+            } else {
+                wasm.set_geometry(id);
+            }
+        },
+        setAnatomyGeometry(id) {
+            state.selectedGeom = id;
+            wasm.set_anatomy_geometry(id);
         },
         setDeconstruct(factor) {
             state.deconstruct = Math.max(0.0, Math.min(1.0, factor));

@@ -1,0 +1,403 @@
+/* ==========================================================================
+   LINUX GROOVE - ANATOMIA 3D SCROLL-DRIVEN (STYLESHEET)
+   Motor Rust Wasm | Cero Emojis | 100% Visibilidad Central | 60 FPS
+   ========================================================================== */
+
+:root {
+    --bg-dark: #030504;
+    --bio-ruby: #ff2255;
+    --bio-emerald: #00ffaa;
+    --bio-amber: #ffaa00;
+    --bio-cyan: #00f3ff;
+    --panel-bg: rgba(4, 10, 7, 0.55);
+    --panel-border: rgba(0, 255, 170, 0.28);
+    --text-primary: #f0fbf5;
+    --text-muted: #88af9e;
+    --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #06140b 0%, #010402 100%);
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACION
+   ========================================================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background: rgba(3, 8, 5, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(0, 255, 170, 0.2);
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.brand-bullet {
+    color: var(--bio-emerald);
+    font-weight: 700;
+}
+
+.brand-title {
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+}
+
+.brand-tag {
+    color: var(--bio-amber);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 170, 0, 0.12);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.4rem 0.75rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    color: var(--bio-emerald);
+    border-color: rgba(0, 255, 170, 0.3);
+    background: rgba(0, 255, 170, 0.05);
+}
+
+.nav-btn.active {
+    color: #ffffff;
+    background: rgba(0, 255, 170, 0.16);
+    border-color: var(--bio-emerald);
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.35);
+}
+
+/* ==========================================================================
+   VIEWPORT FIJO DE RENDERIZADO 3D (CANVAS WASM)
+   ========================================================================== */
+
+.viewport-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.canvas-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.screen-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(0, 255, 170, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 170, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+}
+
+.screen-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(2, 5, 3, 0.92) 100%);
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   HUD BIOMEDICO HOLOGRAFICO
+   ========================================================================== */
+
+.hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    font-family: var(--font-mono);
+}
+
+.hud-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 240px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(0, 255, 170, 0.18);
+    border-radius: 50%;
+}
+
+.hud-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(4, 10, 7, 0.7);
+    border: 1px solid rgba(0, 255, 170, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.hud-corner.top-left {
+    top: 80px;
+    left: 2rem;
+    border-left: 3px solid var(--bio-emerald);
+}
+
+.hud-corner.top-right {
+    top: 80px;
+    right: 2rem;
+    border-right: 3px solid var(--bio-ruby);
+    text-align: right;
+}
+
+.hud-corner.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+    border-left: 3px solid var(--bio-amber);
+}
+
+.hud-corner.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+    border-right: 3px solid var(--bio-emerald);
+    text-align: right;
+}
+
+.hud-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.hud-val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--bio-emerald);
+}
+
+/* ==========================================================================
+   PISTA DE SCROLL Y TARJETAS LATERALES (CENTRO 100% DESPEJADO)
+   ========================================================================== */
+
+.scroll-track {
+    position: relative;
+    z-index: 10;
+    min-height: 300vh;
+    padding: 0 2rem;
+    pointer-events: auto;
+}
+
+.story-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 4rem 0;
+}
+
+.story-section:nth-child(1) {
+    justify-content: flex-start;
+    padding-left: 2vw;
+}
+
+.story-section:nth-child(2) {
+    justify-content: flex-end;
+    padding-right: 2vw;
+}
+
+.story-section:nth-child(3) {
+    justify-content: flex-start;
+    padding-left: 2vw;
+}
+
+.glass-panel {
+    max-width: 380px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    padding: 1.4rem 1.6rem;
+    border-radius: 6px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(0, 255, 170, 0.05);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bio-emerald), var(--bio-ruby), transparent);
+}
+
+.badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--bio-emerald);
+    margin-bottom: 0.6rem;
+}
+
+.glass-panel h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+    background: linear-gradient(135deg, #ffffff 40%, var(--bio-emerald) 80%, var(--bio-ruby) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-panel h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+    color: #ffffff;
+}
+
+.glass-panel p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.scroll-cue {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--bio-amber);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cue-bullet {
+    font-weight: 700;
+    color: var(--bio-emerald);
+}
+
+.action-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+}
+
+.action-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    background: var(--bio-emerald);
+    color: #030504;
+    font-weight: 700;
+    border: 1px solid var(--bio-emerald);
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background: #ffffff;
+    border-color: #ffffff;
+    box-shadow: 0 0 12px rgba(0, 255, 170, 0.6);
+}
+
+.action-btn.secondary {
+    background: transparent;
+    color: var(--bio-emerald);
+    border-color: rgba(0, 255, 170, 0.4);
+}
+
+.action-btn.secondary:hover {
+    background: rgba(0, 255, 170, 0.12);
+    border-color: var(--bio-emerald);
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .top-nav {
+        flex-direction: column;
+        height: auto;
+        padding: 0.8rem 1rem;
+        gap: 0.6rem;
+    }
+
+    .hud-corner {
+        display: none;
+    }
+
+    .story-section:nth-child(1),
+    .story-section:nth-child(2),
+    .story-section:nth-child(3) {
+        justify-content: center;
+        padding: 2rem 1rem;
+    }
+
+    .glass-panel {
+        padding: 1.2rem;
+    }
+}
