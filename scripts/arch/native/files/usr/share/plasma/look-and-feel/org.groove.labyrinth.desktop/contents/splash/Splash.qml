@@ -1,5 +1,6 @@
 /*
     Linux Groove - Groove Labyrinth Screensaver Splash Screen (Cyberpunk ASCII Matrix Edition)
+    Dynamic Light Projection on SVG Soundwave + Seamless Matrix Maze
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 
@@ -46,69 +47,71 @@ Rectangle {
         running: true
     }
 
+    // Respiración de escala cinematográfica (zoom de 7 segundos)
+    property real logoScale: 1.0
+    SequentialAnimation on logoScale {
+        loops: Animation.Infinite
+        running: true
+        NumberAnimation {
+            from: 1.00
+            to: 1.035
+            duration: 7000
+            easing.type: Easing.InOutSine
+        }
+        NumberAnimation {
+            from: 1.035
+            to: 1.00
+            duration: 7000
+            easing.type: Easing.InOutSine
+        }
+    }
+
     // -------------------------------------------------------------------------
-    // CAPA 1: Laberinto ASCII y Luces Neón en GPU (60 FPS)
+    // CAPA 1: Textura Fuente del Emblema Soundwave (Cargada en VRAM para GLSL)
+    // -------------------------------------------------------------------------
+    Image {
+        id: logoSource
+        source: "images/groove-soundwave-clean.png"
+        visible: false
+        smooth: true
+        asynchronous: false
+    }
+
+    // -------------------------------------------------------------------------
+    // CAPA 2: Laberinto ASCII + Corredores Neón + Iluminación Dinámica sobre SVG
     // -------------------------------------------------------------------------
     ShaderEffect {
         id: labyrinthShader
         z: 1
         anchors.fill: parent
-        opacity: 1.0
-
-        property real uTime: root.screensaverTime
-        property vector2d uResolution: Qt.vector2d(width, height)
-
-        fragmentShader: "shaders/labyrinth.frag.qsb"
-    }
-
-    // -------------------------------------------------------------------------
-    // CAPA 2: Emblema SVG / PNG Central de Groove (Cámara Central del Laberinto)
-    // -------------------------------------------------------------------------
-    Item {
-        id: logoCenter
-        z: 10
-        anchors.centerIn: parent
-        width: Math.min(parent.width * 0.44, Kirigami.Units.gridUnit * 21)
-        height: width * 0.66
         opacity: 0.0
 
-        // Deriva suave y continua de cámara flotante
-        x: (parent.width - width) / 2 + Math.sin(root.screensaverPhase) * 10
-        y: (parent.height - height) / 2 + Math.cos(root.screensaverPhase * 0.8) * 7
+        property real uTime: root.screensaverTime
+        property vector2d uResolution: Qt.vector2d(Math.max(1.0, width), Math.max(1.0, height))
 
-        Image {
-            id: logoImage
-            anchors.fill: parent
-            fillMode: Image.PreserveAspectFit
-            asynchronous: false
-            smooth: true
-            source: "images/groove-logo-glow.png"
+        // Centro flotante del logotipo con deriva suave de cámara
+        property vector2d uLogoCenter: Qt.vector2d(
+            0.50 + (Math.sin(root.screensaverPhase) * 12.0) / Math.max(1.0, width),
+            0.50 + (Math.cos(root.screensaverPhase * 0.8) * 8.0) / Math.max(1.0, height)
+        )
 
-            // Respiración de escala cinematográfica (zoom de 7 segundos)
-            SequentialAnimation on scale {
-                loops: Animation.Infinite
-                running: true
-                NumberAnimation {
-                    from: 1.00
-                    to: 1.035
-                    duration: 7000
-                    easing.type: Easing.InOutSine
-                }
-                NumberAnimation {
-                    from: 1.035
-                    to: 1.00
-                    duration: 7000
-                    easing.type: Easing.InOutSine
-                }
-            }
-        }
+        // Dimensión normalizada manteniendo aspect ratio 1:1 estricto
+        property real baseLogoWidth: Math.min(width * 0.32, height * 0.50, 400.0) * root.logoScale
+        property vector2d uLogoSize: Qt.vector2d(
+            baseLogoWidth / Math.max(1.0, width),
+            baseLogoWidth / Math.max(1.0, height)
+        )
+
+        property var sourceLogo: logoSource
+
+        fragmentShader: "shaders/labyrinth.frag.qsb"
     }
 
     // -------------------------------------------------------------------------
     // CAPA 3: Tipografía Minimalista
     // -------------------------------------------------------------------------
     Text {
-        z: 12
+        z: 10
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottomMargin: Kirigami.Units.gridUnit * 2.2
@@ -127,14 +130,6 @@ Rectangle {
         id: introAnim
         NumberAnimation {
             target: labyrinthShader
-            property: "opacity"
-            from: 0.0
-            to: 1.0
-            duration: 1000
-            easing.type: Easing.OutCubic
-        }
-        NumberAnimation {
-            target: logoCenter
             property: "opacity"
             from: 0.0
             to: 1.0

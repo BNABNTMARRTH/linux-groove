@@ -471,9 +471,9 @@ El archivo resultante `.qsb` encapsula:
 ### 5.1. Concepto y Filosofía
 Ubicado en: `/usr/share/plasma/look-and-feel/org.groove.labyrinth.desktop/`
 
-Inspirado en la cultura *demoscene*, la estética terminal *cyberpunk* y los clásicos laberintos de caracteres ASCII de los años 80 y 90, pero impulsado por shaders de GPU modernos:
+Inspirado en la cultura *demoscene*, la estética terminal *cyberpunk* y los laberintos de caracteres ASCII procesados enteramente en hardware gráfico GPU a 60 FPS:
 
-1. **La Cuadrícula de Terminal ASCII ($80 \times 50$ celdas):**
+1. **La Cuadrícula de Terminal ASCII Continua ($80 \times 50$ celdas):**
    - La pantalla se subdivide matemáticamente en celdas regulares monoespaciadas.
    - Cada celda evalúa proceduralmente su tipo de muro o pasillo mediante funciones de distancia firmada (SDF) en GLSL:
      - Cruce / intersección: `+`
@@ -481,28 +481,46 @@ Inspirado en la cultura *demoscene*, la estética terminal *cyberpunk* y los cl�
      - Muro vertical: `|`
      - Bloque denso: `#`
      - Guía de pasillo: `·`
+   - **Cero recortes circulares:** El laberinto fluye de forma continua y limpia por toda la pantalla, extendiéndose por detrás y entre los espacios transparentes de las barras del logotipo.
+
 2. **10 Pulsos de Luz Neón (*Data Runners*):**
    - Corredores de luz tricolor (cian eléctrico, magenta neón Tesla y fuego ámbar) viajan a alta velocidad a través de los pasillos del laberinto.
    - Al iluminar un carácter ASCII, este arde con su color vibrante y un núcleo blanco incandescente.
-   - Al atravesar zonas vacías, proyectan un halo volumétrico sutil en el pasillo.
-3. **Cámara Central y Revelación del SVG:**
-   - En el centro de la pantalla ($r < 0.26$), los muros del laberinto se disuelven en un portal luminoso suave.
-   - En el corazón del laberinto, el emblema de teclas de piano de **Linux Groove** flota con cámara flotante y respiración continua de escala.
+   - Al atravesar zonas vacías, proyectan un halo volumétrico de luz ambiental en el pasillo.
+
+3. **Iluminación Dinámica en Tiempo Real sobre el Logotipo SVG Soundwave:**
+   - El logotipo de barras ecualizadoras de piano de **Linux Groove** se muestrea directamente en la GPU mediante `uniform sampler2D sourceLogo`.
+   - Posee transparencia alfa 100% limpia sin halos ni recortes artificiales.
+   - **Proyección de Luz PBR:** Cada uno de los 10 corredores de luz proyecta su flujo de fotones sobre las barras del logotipo en tiempo real:
+     - Cuando un corredor cian pasa cerca, las barras se tiñen y reflejan un brillo cian eléctrico radiante.
+     - Cuando un corredor magenta se aproxima, las barras se bañan en luz púrpura/magenta neón.
+     - Cuando un corredor ámbar recorre la zona, las barras adquieren un tono dorado solar incandescente.
+     - A través de los espacios transparentes entre las barras, la cuadrícula ASCII y los corredores de luz continúan visibles sin oclusión.
 
 ### 5.2. Código Fuente GLSL: `labyrinth.frag`
 
 ```glsl
 #version 440
 
+/*
+    Linux Groove - Groove Labyrinth Screensaver Fragment Shader
+    ASCII Matrix Grid + 10 Neon Light Runners + Dynamic SVG Soundwave Illumination
+    SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
 layout(location = 0) in vec2 qt_TexCoord0;
 layout(location = 0) out vec4 fragColor;
 
 layout(std140, binding = 0) uniform buf {
-    mat4 qt_Matrix;
-    float qt_Opacity;
-    float uTime;
-    vec2 uResolution;
+    mat4 qt_Matrix;       // offset 0, size 64
+    float qt_Opacity;     // offset 64, size 4
+    float uTime;          // offset 68, size 4
+    vec2 uResolution;     // offset 72, size 8
+    vec2 uLogoCenter;     // offset 80, size 8 (normalizado 0..1)
+    vec2 uLogoSize;       // offset 88, size 8 (normalizado 0..1)
 };
+
+layout(binding = 1) uniform sampler2D sourceLogo;
 
 float hash21(vec2 p) {
     p = fract(p * vec2(123.34, 456.21));
@@ -511,88 +529,271 @@ float hash21(vec2 p) {
 }
 
 void main() {
-    vec2 p = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
-    float dCenter = length(p * vec2(1.0, 1.35));
+    vec2 aspectCorr = vec2(uResolution.x / uResolution.y, 1.0);
 
+    // 1. Cuadrícula de Terminal ASCII Continua (Sin agujero circular)
     vec2 gridDim = vec2(80.0, 50.0);
-    vec2 cellSize = uResolution / gridDim;
-    vec2 cellId = floor(gl_FragCoord.xy / cellSize);
-    vec2 cellUv = fract(gl_FragCoord.xy / cellSize);
+    vec2 cellId = floor(qt_TexCoord0 * gridDim);
+    vec2 cellUv = fract(qt_TexCoord0 * gridDim);
 
     float h = hash21(cellId);
     float glyphVal = 0.0;
     int glyphType = 0;
 
-    float chamber = smoothstep(0.20, 0.26, dCenter);
+    bool isEvenX = mod(cellId.x, 2.0) < 1.0;
+    bool isEvenY = mod(cellId.y, 2.0) < 1.0;
 
-    if (chamber > 0.01) {
-        bool isEvenX = mod(cellId.x, 2.0) < 1.0;
-        bool isEvenY = mod(cellId.y, 2.0) < 1.0;
-
-        if (isEvenX && isEvenY) {
-            glyphType = 3; // '+'
-        } else if (isEvenY) {
-            glyphType = (h > 0.32) ? 1 : 0; // '-' o '.'
-        } else if (isEvenX) {
-            glyphType = (h > 0.32) ? 2 : 0; // '|' o '.'
-        } else {
-            glyphType = (h > 0.70) ? 4 : 0; // '#' o '.'
-        }
-
-        if (glyphType == 1) {
-            if (abs(cellUv.y - 0.5) < 0.10 && abs(cellUv.x - 0.5) < 0.42) glyphVal = 1.0;
-        } else if (glyphType == 2) {
-            if (abs(cellUv.x - 0.5) < 0.10 && abs(cellUv.y - 0.5) < 0.42) glyphVal = 1.0;
-        } else if (glyphType == 3) {
-            if ((abs(cellUv.y - 0.5) < 0.10 && abs(cellUv.x - 0.5) < 0.42) ||
-                (abs(cellUv.x - 0.5) < 0.10 && abs(cellUv.y - 0.5) < 0.42)) glyphVal = 1.0;
-        } else if (glyphType == 4) {
-            if ((abs(cellUv.x - 0.32) < 0.07 || abs(cellUv.x - 0.68) < 0.07) && abs(cellUv.y - 0.5) < 0.36) glyphVal = 1.0;
-            if ((abs(cellUv.y - 0.32) < 0.07 || abs(cellUv.y - 0.68) < 0.07) && abs(cellUv.x - 0.5) < 0.36) glyphVal = 1.0;
-        } else {
-            if (length(cellUv - vec2(0.5)) < 0.11) glyphVal = 0.75;
-        }
+    if (isEvenX && isEvenY) {
+        glyphType = 3; // Cruce '+'
+    } else if (isEvenY) {
+        glyphType = (h > 0.30) ? 1 : 0; // Muro horizontal '-' o pasillo '·'
+    } else if (isEvenX) {
+        glyphType = (h > 0.30) ? 2 : 0; // Muro vertical '|' o pasillo '·'
+    } else {
+        glyphType = (h > 0.68) ? 4 : 0; // Bloque denso '#' o pasillo '·'
     }
 
-    float baseLum = glyphVal * 0.10 * chamber;
-    vec3 finalColor = vec3(0.04, 0.08, 0.15) * baseLum;
+    if (glyphType == 1) {
+        if (abs(cellUv.y - 0.5) < 0.09 && abs(cellUv.x - 0.5) < 0.42) glyphVal = 1.0;
+    } else if (glyphType == 2) {
+        if (abs(cellUv.x - 0.5) < 0.09 && abs(cellUv.y - 0.5) < 0.42) glyphVal = 1.0;
+    } else if (glyphType == 3) {
+        if ((abs(cellUv.y - 0.5) < 0.09 && abs(cellUv.x - 0.5) < 0.42) ||
+            (abs(cellUv.x - 0.5) < 0.09 && abs(cellUv.y - 0.5) < 0.42)) glyphVal = 1.0;
+    } else if (glyphType == 4) {
+        if ((abs(cellUv.x - 0.32) < 0.065 || abs(cellUv.x - 0.68) < 0.065) && abs(cellUv.y - 0.5) < 0.36) glyphVal = 1.0;
+        if ((abs(cellUv.y - 0.32) < 0.065 || abs(cellUv.y - 0.68) < 0.065) && abs(cellUv.x - 0.5) < 0.36) glyphVal = 1.0;
+    } else {
+        if (length(cellUv - vec2(0.5)) < 0.10) glyphVal = 0.70;
+    }
 
-    // 10 Corredores de Luz
+    float baseLum = glyphVal * 0.10;
+    vec3 mazeColor = vec3(0.04, 0.07, 0.14) * baseLum;
+
+    // 2. 10 Corredores de Luz Neón e Iluminación Proyectada
+    vec3 logoDynamicLight = vec3(0.0);
+
     for (int k = 0; k < 10; ++k) {
         float fk = float(k);
-        float speed = 1.0 + mod(fk, 3.0) * 0.35;
-        float tRun = uTime * speed + fk * 2.1;
+        float speed = 0.75 + mod(fk * 1.618, 3.0) * 0.30;
+        float phase = fk * 1.2566;
+        float t = uTime * speed + phase;
 
-        vec2 runnerPos;
-        runnerPos.x = gridDim.x * 0.5 + sin(tRun * 0.65 + fk) * (gridDim.x * 0.40);
-        runnerPos.y = gridDim.y * 0.5 + cos(tRun * 0.85 + fk * 1.4) * (gridDim.y * 0.40);
-
-        vec2 dCell = (cellId + cellUv) - runnerPos;
-        float distCells = length(dCell);
-        float glow = 2.8 / (distCells * distCells * 0.45 + distCells + 1.2);
+        vec2 runnerNorm;
+        runnerNorm.x = 0.50 + 0.42 * sin(t * 0.65 + fk * 0.85) + 0.07 * sin(t * 1.9 + fk);
+        runnerNorm.y = 0.50 + 0.38 * cos(t * 0.55 + fk * 1.25) + 0.06 * cos(t * 1.7 + fk * 2.0);
 
         vec3 runnerCol;
         float m = mod(fk, 3.0);
-        if (m < 1.0) runnerCol = vec3(0.05, 0.95, 1.00);
-        else if (m < 2.0) runnerCol = vec3(0.95, 0.18, 0.90);
-        else runnerCol = vec3(1.00, 0.78, 0.18);
+        if (m < 1.0) runnerCol = vec3(0.05, 0.95, 1.00);      // Cian eléctrico
+        else if (m < 2.0) runnerCol = vec3(0.98, 0.18, 0.90); // Magenta neón Tesla
+        else runnerCol = vec3(1.00, 0.76, 0.16);              // Fuego ámbar solar
+
+        // Iluminación sobre los caracteres del laberinto
+        vec2 runnerCell = runnerNorm * gridDim;
+        vec2 dCell = (cellId + cellUv) - runnerCell;
+        float distCells = length(dCell);
+        float glow = 2.6 / (distCells * distCells * 0.40 + distCells + 1.2);
 
         if (glyphVal > 0.0) {
-            vec3 litChar = runnerCol * glow * glyphVal * 0.85 * chamber;
-            float whiteCore = max(0.0, 1.0 - distCells / 2.5) * glyphVal * 0.40;
-            finalColor += litChar + vec3(whiteCore);
+            vec3 litChar = runnerCol * (glow * glyphVal * 0.85);
+            float whiteCore = max(0.0, 1.0 - distCells / 2.2) * glyphVal * 0.40;
+            mazeColor += litChar + vec3(whiteCore);
         } else {
-            finalColor += runnerCol * (glow * 0.07 * chamber);
+            mazeColor += runnerCol * (glow * 0.07);
+        }
+
+        // Proyección de luz sobre el logotipo SVG
+        vec2 diffLogo = (qt_TexCoord0 - runnerNorm) * aspectCorr;
+        float distLogo = length(diffLogo);
+        float atten = 1.0 / (1.0 + 16.0 * distLogo + 70.0 * distLogo * distLogo);
+        logoDynamicLight += runnerCol * (atten * 0.90);
+    }
+
+    // 3. Renderizado y Mezcla del Logotipo SVG con Transparencia
+    vec2 logoHalfSize = 0.5 * uLogoSize;
+    vec2 logoMin = uLogoCenter - logoHalfSize;
+    vec2 logoMax = uLogoCenter + logoHalfSize;
+
+    vec4 logoTex = vec4(0.0);
+    if (qt_TexCoord0.x >= logoMin.x && qt_TexCoord0.x <= logoMax.x &&
+        qt_TexCoord0.y >= logoMin.y && qt_TexCoord0.y <= logoMax.y) {
+        vec2 logoUv = (qt_TexCoord0 - logoMin) / uLogoSize;
+        logoTex = texture(sourceLogo, logoUv);
+    }
+
+    vec3 finalColor = mazeColor;
+
+    // Halo suave proyectado en el espacio vacío alrededor del logo
+    float distToLogoCenter = length((qt_TexCoord0 - uLogoCenter) * aspectCorr);
+    float logoRadius = length(logoHalfSize * aspectCorr);
+    if (distToLogoCenter < logoRadius * 1.5) {
+        float haloFade = smoothstep(logoRadius * 1.5, logoRadius * 0.35, distToLogoCenter);
+        finalColor += logoDynamicLight * (haloFade * 0.22 * (1.0 - logoTex.a));
+    }
+
+    // Iluminación reactiva en las barras del logo
+    if (logoTex.a > 0.01) {
+        vec3 baseLogoCol = logoTex.rgb;
+        vec3 litLogoCol = baseLogoCol * 0.85
+                        + logoDynamicLight * baseLogoCol * 1.10
+                        + logoDynamicLight * 0.45;
+
+        float peak = max(logoDynamicLight.r, max(logoDynamicLight.g, logoDynamicLight.b));
+        if (peak > 1.2) {
+            litLogoCol += vec3((peak - 1.2) * 0.30);
+        }
+
+        finalColor = mix(mazeColor, litLogoCol, logoTex.a);
+    }
+
+    finalColor = pow(max(finalColor, vec3(0.0)), vec3(0.92));
+    fragColor = vec4(finalColor, 1.0) * qt_Opacity;
+}
+```
+
+### 5.3. Código Fuente QML: `Splash.qml` (`org.groove.labyrinth.desktop`)
+
+```qml
+/*
+    Linux Groove - Groove Labyrinth Screensaver Splash Screen (Cyberpunk ASCII Matrix Edition)
+    Dynamic Light Projection on SVG Soundwave + Seamless Matrix Maze
+    SPDX-License-Identifier: GPL-2.0-or-later
+*/
+
+import QtQuick
+import org.kde.kirigami as Kirigami
+
+Rectangle {
+    id: root
+    width: 1280
+    height: 800
+    color: "#000000" // CAPA 0: Fondo 100% negro puro absoluto
+
+    property int stage: 0
+
+    onStageChanged: {
+        if (stage === 1 || stage === 2) {
+            introAnim.running = true;
+        } else if (stage >= 5) {
+            fadeOutAnim.running = true;
         }
     }
 
-    if (dCenter < 0.28) {
-        float chamberAura = pow(max(0.0, 1.0 - dCenter / 0.28), 2.2) * 0.40;
-        finalColor += vec3(0.20, 0.65, 1.00) * chamberAura;
+    Component.onCompleted: {
+        introAnim.running = true;
     }
 
-    finalColor = pow(max(finalColor, vec3(0.0)), vec3(0.88));
-    fragColor = vec4(finalColor, 1.0) * qt_Opacity;
+    // Temporizador continuo para el Shader de laberinto ASCII y corredores de luz
+    property real screensaverTime: 0.0
+    NumberAnimation on screensaverTime {
+        from: 0.0
+        to: 10000.0
+        duration: 10000000
+        loops: Animation.Infinite
+        running: true
+    }
+
+    // Temporizador de movimiento continuo de cámara flotante (14 segundos)
+    property real screensaverPhase: 0.0
+    NumberAnimation on screensaverPhase {
+        from: 0.0
+        to: Math.PI * 2
+        duration: 14000
+        loops: Animation.Infinite
+        running: true
+    }
+
+    // Respiración de escala cinematográfica (zoom de 7 segundos)
+    property real logoScale: 1.0
+    SequentialAnimation on logoScale {
+        loops: Animation.Infinite
+        running: true
+        NumberAnimation {
+            from: 1.00
+            to: 1.035
+            duration: 7000
+            easing.type: Easing.InOutSine
+        }
+        NumberAnimation {
+            from: 1.035
+            to: 1.00
+            duration: 7000
+            easing.type: Easing.InOutSine
+        }
+    }
+
+    // CAPA 1: Textura Fuente del Emblema Soundwave en VRAM
+    Image {
+        id: logoSource
+        source: "images/groove-soundwave-clean.png"
+        visible: false
+        smooth: true
+        asynchronous: false
+    }
+
+    // CAPA 2: Laberinto ASCII + Corredores Neón + Iluminación Dinámica en GPU
+    ShaderEffect {
+        id: labyrinthShader
+        z: 1
+        anchors.fill: parent
+        opacity: 0.0
+
+        property real uTime: root.screensaverTime
+        property vector2d uResolution: Qt.vector2d(Math.max(1.0, width), Math.max(1.0, height))
+
+        property vector2d uLogoCenter: Qt.vector2d(
+            0.50 + (Math.sin(root.screensaverPhase) * 12.0) / Math.max(1.0, width),
+            0.50 + (Math.cos(root.screensaverPhase * 0.8) * 8.0) / Math.max(1.0, height)
+        )
+
+        property real baseLogoWidth: Math.min(width * 0.32, height * 0.50, 400.0) * root.logoScale
+        property vector2d uLogoSize: Qt.vector2d(
+            baseLogoWidth / Math.max(1.0, width),
+            baseLogoWidth / Math.max(1.0, height)
+        )
+
+        property var sourceLogo: logoSource
+
+        fragmentShader: "shaders/labyrinth.frag.qsb"
+    }
+
+    // CAPA 3: Tipografía Minimalista
+    Text {
+        z: 10
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: Kirigami.Units.gridUnit * 2.2
+        text: "L I N U X   G R O O V E"
+        color: "#ffffff"
+        font.pixelSize: Kirigami.Units.gridUnit * 0.70
+        font.letterSpacing: 6
+        font.weight: Font.DemiBold
+        opacity: 0.75
+    }
+
+    // CAPA 4: Transiciones Suaves
+    ParallelAnimation {
+        id: introAnim
+        NumberAnimation {
+            target: labyrinthShader
+            property: "opacity"
+            from: 0.0
+            to: 1.0
+            duration: 1200
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    NumberAnimation {
+        id: fadeOutAnim
+        target: root
+        property: "opacity"
+        from: 1.0
+        to: 0.0
+        duration: 600
+        easing.type: Easing.InOutQuad
+    }
 }
 ```
 

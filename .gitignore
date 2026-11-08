@@ -14,7 +14,7 @@ target/
 *.squashfs
 sources/
 iso/
-images/
+/images/
 *.ensemble
 
 # Kernel build artifacts
