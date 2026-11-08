@@ -5,6 +5,7 @@
 **Componentes:**  
 1. `org.groove.desktop` (**"Groove"** - Edición Cinemática Maestra)  
 2. `org.groove.ribbons.desktop` (**"Groove Stroke"** - Edición Rayos Eléctricos Libres en GPU Shader)  
+3. `org.groove.labyrinth.desktop` (**"Groove Labyrinth"** - Edición Laberinto ASCII Art Neón en GPU Shader)  
 **Fecha:** Noviembre 2026  
 **Autor:** Antigravity & Equipo de Ingeniería de Linux Groove  
 
@@ -12,12 +13,13 @@
 
 ## 1. Visión General del Subsistema de Bienvenida
 
-Linux Groove reemplaza por completo la pantalla de arranque genérica de KDE Plasma ("Brisa") mediante dos experiencias visuales premium diseñadas bajo la identidad acústico-visual de la distribución:
+Linux Groove reemplaza por completo la pantalla de arranque genérica de KDE Plasma ("Brisa") mediante tres experiencias visuales premium diseñadas bajo la identidad acústico-visual de la distribución:
 
 | Paquete Look-and-Feel | Nombre en Preferencias | Motor de Renderizado | Concepto Visual |
 | :--- | :--- | :--- | :--- |
 | **`org.groove.desktop`** | **Groove** | QML Escena Vectorial / Multi-Capa | Arte cinemático maestro con ondas de luz envolventes, deriva de cámara flotante de 14s, zoom continuo de 7s y barridos de brillo de neón. |
 | **`org.groove.ribbons.desktop`** | **Groove Stroke** | Shader GLSL Fragment + `qsb` (GPU nativa) | 16 rayos voltaicos de plasma que emanan libres del logotipo central hacia las orillas de la pantalla, con turbulencia eléctrica fractal y brillo tricolor. |
+| **`org.groove.labyrinth.desktop`** | **Groove Labyrinth** | Shader GLSL Fragment + `qsb` (GPU nativa) | Laberinto procedural de terminal estilo ASCII Art ($80 \times 50$ celdas) con pulsos de luz neón viajando por los pasillos y revelación del logotipo en la cámara central. |
 
 Ambas pantallas comparten los principios clave de diseño de Groove:
 1. **Fondo 100% Negro Puro (`#000000`):** Conexión perfecta y continua desde el DRM framebuffer / Plymouth sin saltos de brillo ni bordes visibles.
@@ -464,41 +466,135 @@ El archivo resultante `.qsb` encapsula:
 
 ---
 
-## 5. Nueva Propuesta Conceptual: "Groove Labyrinth" (Laberinto ASCII Art Neón)
+## 5. Tema 3: "Groove Labyrinth" (Laberinto ASCII Art Neón en GPU Shader)
 
 ### 5.1. Concepto y Filosofía
-La propuesta solicitada consiste en una pantalla de bienvenida inspirada en la cultura *demoscene*, la estética terminal *cyberpunk* y los clásicos laberintos procedurales de ASCII Art de los años 80-90, pero impulsada con shaders de GPU modernos:
+Ubicado en: `/usr/share/plasma/look-and-feel/org.groove.labyrinth.desktop/`
 
-1. **La Cuadrícula de Terminal ASCII:**
-   - La pantalla se subdivide en una cuadrícula de caracteres monoespaciados (ej. $120 \times 75$ celdas de matriz).
-   - Los muros del laberinto se construyen proceduralmente utilizando glifos ASCII: `+`, `-`, `|`, `#`, `░`, `▒`, `▓`, `/`, `\`.
-2. **Haces de Luz Neón en los Pasillos (*Light Runners*):**
-   - Paquetes de luz brillantes (cian, violeta y naranja) recorren los pasillos del laberinto como si fueran señales eléctricas o datos a alta velocidad.
-   - Dejan una estela luminosa (*phosphor persistence*) con efecto bloom/glow retro de fósforo verde o neón moderno.
-3. **Resolución del Laberinto y Revelación del SVG:**
-   - Durante las etapas iniciales de arranque (`stage 1-3`), el laberinto se genera, muta y los pulsos de luz buscan el centro.
-   - En `stage 4`, las rutas convergen hacia la cámara central: las paredes de ASCII se abren en abanico o se desintegran en partículas de caracteres disueltos.
-   - En el corazón del laberinto iluminado, se revela en toda su gloria el emblema de teclas de piano de **Linux Groove** con su retroiluminación cinematográfica.
+Inspirado en la cultura *demoscene*, la estética terminal *cyberpunk* y los clásicos laberintos de caracteres ASCII de los años 80 y 90, pero impulsado por shaders de GPU modernos:
 
-### 5.2. Arquitectura Técnica Propuesta
+1. **La Cuadrícula de Terminal ASCII ($80 \times 50$ celdas):**
+   - La pantalla se subdivide matemáticamente en celdas regulares monoespaciadas.
+   - Cada celda evalúa proceduralmente su tipo de muro o pasillo mediante funciones de distancia firmada (SDF) en GLSL:
+     - Cruce / intersección: `+`
+     - Muro horizontal: `-`
+     - Muro vertical: `|`
+     - Bloque denso: `#`
+     - Guía de pasillo: `·`
+2. **10 Pulsos de Luz Neón (*Data Runners*):**
+   - Corredores de luz tricolor (cian eléctrico, magenta neón Tesla y fuego ámbar) viajan a alta velocidad a través de los pasillos del laberinto.
+   - Al iluminar un carácter ASCII, este arde con su color vibrante y un núcleo blanco incandescente.
+   - Al atravesar zonas vacías, proyectan un halo volumétrico sutil en el pasillo.
+3. **Cámara Central y Revelación del SVG:**
+   - En el centro de la pantalla ($r < 0.26$), los muros del laberinto se disuelven en un portal luminoso suave.
+   - En el corazón del laberinto, el emblema de teclas de piano de **Linux Groove** flota con cámara flotante y respiración continua de escala.
 
-```mermaid
-flowchart TD
-    A[Grid de Celdas ASCII] --> B[Generador de Laberinto Procedural: Truchet Tiles]
-    B --> C[Shaders GLSL: Renderizado de Caracteres por Bitmask]
-    C --> D[Pulsos de Luz Neón: Dijkstra / Flow Field]
-    D --> E[Fase de Convergencia Central]
-    E --> F[Apertura de Muros ASCII y Revelación del SVG de Groove]
+### 5.2. Código Fuente GLSL: `labyrinth.frag`
+
+```glsl
+#version 440
+
+layout(location = 0) in vec2 qt_TexCoord0;
+layout(location = 0) out vec4 fragColor;
+
+layout(std140, binding = 0) uniform buf {
+    mat4 qt_Matrix;
+    float qt_Opacity;
+    float uTime;
+    vec2 uResolution;
+};
+
+float hash21(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+}
+
+void main() {
+    vec2 p = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
+    float dCenter = length(p * vec2(1.0, 1.35));
+
+    vec2 gridDim = vec2(80.0, 50.0);
+    vec2 cellSize = uResolution / gridDim;
+    vec2 cellId = floor(gl_FragCoord.xy / cellSize);
+    vec2 cellUv = fract(gl_FragCoord.xy / cellSize);
+
+    float h = hash21(cellId);
+    float glyphVal = 0.0;
+    int glyphType = 0;
+
+    float chamber = smoothstep(0.20, 0.26, dCenter);
+
+    if (chamber > 0.01) {
+        bool isEvenX = mod(cellId.x, 2.0) < 1.0;
+        bool isEvenY = mod(cellId.y, 2.0) < 1.0;
+
+        if (isEvenX && isEvenY) {
+            glyphType = 3; // '+'
+        } else if (isEvenY) {
+            glyphType = (h > 0.32) ? 1 : 0; // '-' o '.'
+        } else if (isEvenX) {
+            glyphType = (h > 0.32) ? 2 : 0; // '|' o '.'
+        } else {
+            glyphType = (h > 0.70) ? 4 : 0; // '#' o '.'
+        }
+
+        if (glyphType == 1) {
+            if (abs(cellUv.y - 0.5) < 0.10 && abs(cellUv.x - 0.5) < 0.42) glyphVal = 1.0;
+        } else if (glyphType == 2) {
+            if (abs(cellUv.x - 0.5) < 0.10 && abs(cellUv.y - 0.5) < 0.42) glyphVal = 1.0;
+        } else if (glyphType == 3) {
+            if ((abs(cellUv.y - 0.5) < 0.10 && abs(cellUv.x - 0.5) < 0.42) ||
+                (abs(cellUv.x - 0.5) < 0.10 && abs(cellUv.y - 0.5) < 0.42)) glyphVal = 1.0;
+        } else if (glyphType == 4) {
+            if ((abs(cellUv.x - 0.32) < 0.07 || abs(cellUv.x - 0.68) < 0.07) && abs(cellUv.y - 0.5) < 0.36) glyphVal = 1.0;
+            if ((abs(cellUv.y - 0.32) < 0.07 || abs(cellUv.y - 0.68) < 0.07) && abs(cellUv.x - 0.5) < 0.36) glyphVal = 1.0;
+        } else {
+            if (length(cellUv - vec2(0.5)) < 0.11) glyphVal = 0.75;
+        }
+    }
+
+    float baseLum = glyphVal * 0.10 * chamber;
+    vec3 finalColor = vec3(0.04, 0.08, 0.15) * baseLum;
+
+    // 10 Corredores de Luz
+    for (int k = 0; k < 10; ++k) {
+        float fk = float(k);
+        float speed = 1.0 + mod(fk, 3.0) * 0.35;
+        float tRun = uTime * speed + fk * 2.1;
+
+        vec2 runnerPos;
+        runnerPos.x = gridDim.x * 0.5 + sin(tRun * 0.65 + fk) * (gridDim.x * 0.40);
+        runnerPos.y = gridDim.y * 0.5 + cos(tRun * 0.85 + fk * 1.4) * (gridDim.y * 0.40);
+
+        vec2 dCell = (cellId + cellUv) - runnerPos;
+        float distCells = length(dCell);
+        float glow = 2.8 / (distCells * distCells * 0.45 + distCells + 1.2);
+
+        vec3 runnerCol;
+        float m = mod(fk, 3.0);
+        if (m < 1.0) runnerCol = vec3(0.05, 0.95, 1.00);
+        else if (m < 2.0) runnerCol = vec3(0.95, 0.18, 0.90);
+        else runnerCol = vec3(1.00, 0.78, 0.18);
+
+        if (glyphVal > 0.0) {
+            vec3 litChar = runnerCol * glow * glyphVal * 0.85 * chamber;
+            float whiteCore = max(0.0, 1.0 - distCells / 2.5) * glyphVal * 0.40;
+            finalColor += litChar + vec3(whiteCore);
+        } else {
+            finalColor += runnerCol * (glow * 0.07 * chamber);
+        }
+    }
+
+    if (dCenter < 0.28) {
+        float chamberAura = pow(max(0.0, 1.0 - dCenter / 0.28), 2.2) * 0.40;
+        finalColor += vec3(0.20, 0.65, 1.00) * chamberAura;
+    }
+
+    finalColor = pow(max(finalColor, vec3(0.0)), vec3(0.88));
+    fragColor = vec4(finalColor, 1.0) * qt_Opacity;
+}
 ```
-
-#### Opciones de Implementación:
-- **Opción A (100% GPU Fragment Shader con QSB):**
-  - Se codifica una fuente de caracteres 8x8 en una pequeña textura o bitmask entero en GLSL.
-  - La lógica de laberinto (ej. algoritmo de Truchet con cuadrícula aleatoria animada por tiempo) se evalúa en el fragment shader.
-  - Cero consumo de CPU, 60 FPS garantizados, efecto de tubo CRT / Bloom integrado.
-- **Opción B (Híbrido QML Matrix + Shader Bloom):**
-  - QML maneja la cuadrícula de texto ASCII mediante un `Item` repetidor optimizado o `TableView` liviano, y un `ShaderEffect` aplica el barrido lumínico y resplandor sobre los glifos.
-  - Facilita transiciones fluidas de opacidad del texto hacia el SVG central.
 
 ---
 

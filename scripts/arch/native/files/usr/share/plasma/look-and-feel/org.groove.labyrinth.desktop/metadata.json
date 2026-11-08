@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Groove Contributors"
+            }
+        ],
+        "Description": "Linux Groove Cyberpunk ASCII Labyrinth Splash",
+        "Id": "org.groove.labyrinth.desktop",
+        "Name": "Groove Labyrinth",
+        "ServiceTypes": [
+            "Plasma/LookAndFeel"
+        ],
+        "Version": "1.0"
+    },
+    "X-Plasma-APIVersion": "2"
+}
