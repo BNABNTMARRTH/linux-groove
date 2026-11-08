@@ -168,3 +168,4 @@ rayon = "1.10"
 
 ## 6. Conclusión
 Con esta optimización, el **Laberinto 3D** corre de manera instantánea, continua y potente sin pausas perceptibles, garantizando que el scroll-driven del navegador se sienta como una experiencia 3D nativa de videojuego en tiempo real.
+

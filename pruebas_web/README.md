@@ -15,10 +15,13 @@ Este directorio contiene las experiencias web interactivas, servidores de stream
 
 ## 📚 Documentación Técnica y Arquitectura
 
-1. ⚡ **[`OPTIMIZACION_MULTIHILO_RAYON_60FPS.md`](./OPTIMIZACION_MULTIHILO_RAYON_60FPS.md)**  
+1. 🎞️ **[`ARQUITECTURA_SCROLL_DRIVEN_FILMSTRIP_ZERO_JS.md`](./ARQUITECTURA_SCROLL_DRIVEN_FILMSTRIP_ZERO_JS.md)**  
+   *La técnica definitiva de Apple Scrollytelling para computadoras de hace 10 años: Filmstrip 3D pre-renderizado en Rust, 0% CPU en cliente, reversible y controlado con CSS `steps()` sin JavaScript.*
+
+2. ⚡ **[`OPTIMIZACION_MULTIHILO_RAYON_60FPS.md`](./OPTIMIZACION_MULTIHILO_RAYON_60FPS.md)**  
    *Diagnóstico del cuello de botella mononúcleo, solución multihilo con Rayon a 10 núcleos, temporizador fixed-timestep a 60 FPS, normales por tetraedro y métricas comparativas.*
 
-2. 🌌 **[`ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md`](./ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md)**  
+3. 🌌 **[`ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md`](./ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md)**  
    *Fundamentos matemáticos de Raymarching (Sphere Tracing), funciones de distancia signada (SDF), cámara paramétrica 3D, niebla volumétrica y orquestación con CSS Scroll-Driven.*
 
 3. 📋 **[`PLAN_LABERINTO_3D_SCROLL_DRIVEN.md`](./PLAN_LABERINTO_3D_SCROLL_DRIVEN.md)**  
