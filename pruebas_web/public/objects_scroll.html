@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Objetos 3D // Transmutacion Scroll-Driven (Rust Wasm)</title>
+    <link rel="stylesheet" href="styles_objects_scroll.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (SIN EMOJIS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">3D SCROLL // WASM ENGINE</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Rayos: Ondas ]</a>
+            <a href="rays_tesla.html" class="nav-btn">[ Rayos: Tesla ]</a>
+            <a href="rays_storm.html" class="nav-btn">[ Rayos: Tormenta ]</a>
+            <a href="rays_synapse.html" class="nav-btn">[ Rayos: Sinapsis ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto 3D ]</a>
+            <a href="city.html" class="nav-btn">[ Ciudad Lluviosa ]</a>
+            <a href="objects_scroll.html" class="nav-btn active">[ 3D: Scroll ]</a>
+            <a href="objects_mouse.html" class="nav-btn">[ 3D: Mouse ]</a>
+            <a href="objects_deconstruct.html" class="nav-btn">[ 3D: Deconstruccion ]</a>
+        </nav>
+    </header>
+
+    <!-- LIENZO 3D FIJO DE ALTO RENDIMIENTO (RUST WASM) -->
+    <div class="viewport-fixed">
+        <canvas id="canvas3d" class="canvas-3d"></canvas>
+        <div class="screen-grid"></div>
+        <div class="screen-vignette"></div>
+
+        <!-- HUD HOLOGRAFICO Y METRICAS DE NAVEGACION (SIN EMOJIS) -->
+        <div class="hud-layer" aria-hidden="true">
+            <div class="hud-reticle"></div>
+            <div class="hud-corner top-left">
+                <span class="hud-label">// MOTOR MATEMATICO</span>
+                <span class="hud-val">RUST + WEBASSEMBLY // 18 KB</span>
+            </div>
+            <div class="hud-corner top-right">
+                <span class="hud-label">// DENSIDAD ATOMICA</span>
+                <span class="hud-val">3,584 PARTICULAS // 60 FPS</span>
+            </div>
+            <div class="hud-corner bottom-left">
+                <span class="hud-label">// TRANSMUTACION</span>
+                <span class="hud-val" id="hud-phase-label">FASE 1: ESFERA UV</span>
+            </div>
+            <div class="hud-corner bottom-right">
+                <span class="hud-label">// HARDWARE TARGET</span>
+                <span class="hud-val">0% LAG // MEMORIA DIRECTA</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PISTA NARRATIVA SCROLL-DRIVEN -->
+    <main class="scroll-track">
+
+        <!-- ETAPA 1: ESFERA GEODESICA -->
+        <section class="story-section" id="stage-sphere">
+            <div class="glass-panel">
+                <span class="badge">[ FASE 01 // ESFERA GEODESICA ]</span>
+                <h1>Esfera de Fibonacci</h1>
+                <p>Nube de particulas distribuidas uniformemente segun la proporcion aurea y enlazadas por anillos de latitud y meridianos ortogonales. Desplaza verticalmente para iniciar la transmutacion topologica en el espacio 3D.</p>
+                <div class="scroll-cue">
+                    <span class="cue-bullet">[v]</span> Desplaza para transformar a Cubo
+                </div>
+            </div>
+        </section>
+
+        <!-- ETAPA 2: CUBO HIPERBOLICO -->
+        <section class="story-section" id="stage-cube">
+            <div class="glass-panel">
+                <span class="badge">[ FASE 02 // CUBO HIPERBOLICO ]</span>
+                <h2>Frames Concentricos</h2>
+                <p>Las coordenadas esfericas colapsan hacia 8 vertices primarios y 12 aristas estructurales. El motor en Rust proyecta sub-frames concentricos a diferentes escalas para generar profundidad optica holografica.</p>
+                <div class="scroll-cue">
+                    <span class="cue-bullet">[v]</span> Desplaza para transformar a Toroide
+                </div>
+            </div>
+        </section>
+
+        <!-- ETAPA 3: DONA / TOROIDE PARAMETRICO -->
+        <section class="story-section" id="stage-torus">
+            <div class="glass-panel">
+                <span class="badge">[ FASE 03 // DONA PARAMETRICA ]</span>
+                <h2>Toroide Cuantico</h2>
+                <p>Topologia toroidal continua definida por radio mayor y menor con espirales poloidales doradas. El bucle se mantiene en ciclo perpetuo sin consumo de memoria extra.</p>
+                <div class="action-row">
+                    <a href="objects_mouse.html" class="action-btn">[ Probar con Mouse ]</a>
+                    <a href="objects_deconstruct.html" class="action-btn secondary">[ Probar Deconstruccion ]</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- INICIALIZACION DEL MOTOR WASM -->
+    <script type="module">
+        import { createGroove3DEngine } from './wasm_loader.js';
+
+        const hudLabel = document.getElementById('hud-phase-label');
+
+        createGroove3DEngine('canvas3d', {
+            particleCount: 3584,
+            morphOnScroll: true,
+            initialGeometry: 0,
+        }).then(controller => {
+            window.addEventListener('scroll', () => {
+                const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+                const prog = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+                if (prog < 0.33) {
+                    hudLabel.textContent = "FASE 1: ESFERA UV";
+                } else if (prog < 0.66) {
+                    hudLabel.textContent = "FASE 2: CUBO HIPERBOLICO";
+                } else {
+                    hudLabel.textContent = "FASE 3: DONA (TORUS)";
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

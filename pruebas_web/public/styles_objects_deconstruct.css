@@ -1,0 +1,435 @@
+/* ==========================================================================
+   LINUX GROOVE - OBJETOS 3D DECONSTRUCCION (STYLESHEET)
+   Motor Rust Wasm | Cero Emojis | Fisica Verlet | Dispersion Atomica
+   ========================================================================== */
+
+:root {
+    --bg-dark: #030504;
+    --neon-amber: #ffaa00;
+    --neon-gold: #ffe680;
+    --neon-cyan: #00f3ff;
+    --neon-red: #ff3366;
+    --panel-bg: rgba(6, 12, 8, 0.78);
+    --panel-border: rgba(255, 170, 0, 0.3);
+    --text-primary: #f2fcf6;
+    --text-muted: #8caea0;
+    --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACION
+   ========================================================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background: rgba(3, 7, 5, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 170, 0, 0.2);
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
+.brand-bullet {
+    color: var(--neon-amber);
+    font-weight: 700;
+}
+
+.brand-title {
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+}
+
+.brand-tag {
+    color: var(--neon-amber);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(255, 170, 0, 0.12);
+    border: 1px solid rgba(255, 170, 0, 0.3);
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    padding: 0.4rem 0.75rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.nav-btn:hover {
+    color: var(--neon-amber);
+    border-color: rgba(255, 170, 0, 0.3);
+    background: rgba(255, 170, 0, 0.05);
+}
+
+.nav-btn.active {
+    color: #ffffff;
+    background: rgba(255, 170, 0, 0.16);
+    border-color: var(--neon-amber);
+    box-shadow: 0 0 12px rgba(255, 170, 0, 0.35);
+}
+
+/* ==========================================================================
+   ESCENARIO DE DECONSTRUCCION
+   ========================================================================== */
+
+.deconstruct-stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.canvas-3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.screen-grid {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(255, 170, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 170, 0, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+}
+
+.screen-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(2, 5, 3, 0.92) 100%);
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   HUD HOLOGRAFICO Y METRICAS
+   ========================================================================== */
+
+.hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    font-family: var(--font-mono);
+}
+
+.hud-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 240px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(255, 170, 0, 0.2);
+    border-radius: 50%;
+}
+
+.hud-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(4, 10, 6, 0.7);
+    border: 1px solid rgba(255, 170, 0, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.hud-corner.top-left {
+    top: 80px;
+    left: 2rem;
+    border-left: 3px solid var(--neon-amber);
+}
+
+.hud-corner.top-right {
+    top: 80px;
+    right: 2rem;
+    border-right: 3px solid var(--neon-gold);
+    text-align: right;
+}
+
+.hud-corner.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+    border-left: 3px solid var(--neon-cyan);
+}
+
+.hud-corner.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+    border-right: 3px solid var(--neon-amber);
+    text-align: right;
+}
+
+.hud-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.hud-val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--neon-amber);
+}
+
+/* ==========================================================================
+   PANEL DE CONTROL FLOTANTE Y CONTROLES DE ENTROPIA
+   ========================================================================== */
+
+.control-overlay {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: auto;
+    width: calc(100% - 4rem);
+    max-width: 720px;
+}
+
+.control-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 1.8rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(255, 170, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+}
+
+.control-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-amber), var(--neon-cyan), transparent);
+}
+
+.badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: var(--neon-amber);
+    margin-bottom: 0.6rem;
+}
+
+.control-card h1 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+    background: linear-gradient(135deg, #ffffff 40%, var(--neon-amber) 80%, var(--neon-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.control-card p {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin-bottom: 1.2rem;
+}
+
+/* SLIDER DE ENTROPIA */
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.6rem 1rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 170, 0, 0.2);
+}
+
+.slider-label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    min-width: 90px;
+}
+
+.custom-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 3px;
+    outline: none;
+}
+
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--neon-amber);
+    box-shadow: 0 0 10px rgba(255, 170, 0, 0.8);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.slider-readout {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--neon-amber);
+    min-width: 45px;
+    text-align: right;
+}
+
+/* ACCIONES DE REENSAMBLAJE */
+.action-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.selector-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.geom-btn {
+    background: rgba(255, 170, 0, 0.06);
+    color: var(--text-muted);
+    border: 1px solid rgba(255, 170, 0, 0.25);
+    padding: 0.45rem 0.85rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.geom-btn:hover {
+    color: var(--neon-amber);
+    border-color: var(--neon-amber);
+    background: rgba(255, 170, 0, 0.12);
+}
+
+.geom-btn.active {
+    background: var(--neon-amber);
+    color: #030504;
+    font-weight: 700;
+    border-color: var(--neon-amber);
+    box-shadow: 0 0 12px rgba(255, 170, 0, 0.45);
+}
+
+.burst-btn {
+    margin-left: auto;
+    background: rgba(255, 51, 102, 0.12);
+    color: var(--neon-red);
+    border: 1px solid var(--neon-red);
+    padding: 0.45rem 0.9rem;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.burst-btn:hover {
+    background: var(--neon-red);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(255, 51, 102, 0.6);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+
+@media (max-width: 900px) {
+    .top-nav {
+        flex-direction: column;
+        height: auto;
+        padding: 0.8rem 1rem;
+        gap: 0.6rem;
+    }
+
+    .hud-corner {
+        display: none;
+    }
+
+    .control-overlay {
+        bottom: 1rem;
+        width: calc(100% - 2rem);
+    }
+
+    .control-card {
+        padding: 1.2rem;
+    }
+
+    .control-card h1 {
+        font-size: 1.3rem;
+    }
+
+    .burst-btn {
+        margin-left: 0;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}

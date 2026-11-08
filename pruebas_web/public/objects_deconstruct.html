@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Objetos 3D // Deconstruccion Atomica (Rust Wasm)</title>
+    <link rel="stylesheet" href="styles_objects_deconstruct.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (SIN EMOJIS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">3D DECONSTRUCT // ATOMIC DISPERSION</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Rayos: Ondas ]</a>
+            <a href="rays_tesla.html" class="nav-btn">[ Rayos: Tesla ]</a>
+            <a href="rays_storm.html" class="nav-btn">[ Rayos: Tormenta ]</a>
+            <a href="rays_synapse.html" class="nav-btn">[ Rayos: Sinapsis ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto 3D ]</a>
+            <a href="city.html" class="nav-btn">[ Ciudad Lluviosa ]</a>
+            <a href="objects_scroll.html" class="nav-btn">[ 3D: Scroll ]</a>
+            <a href="objects_mouse.html" class="nav-btn">[ 3D: Mouse ]</a>
+            <a href="objects_deconstruct.html" class="nav-btn active">[ 3D: Deconstruccion ]</a>
+        </nav>
+    </header>
+
+    <!-- ESCENARIO DE DECONSTRUCCION 3D -->
+    <main class="deconstruct-stage">
+        <canvas id="canvas3d" class="canvas-3d"></canvas>
+        <div class="screen-grid"></div>
+        <div class="screen-vignette"></div>
+
+        <!-- HUD DE TELEMETRIA ATOMICA -->
+        <div class="hud-layer" aria-hidden="true">
+            <div class="hud-reticle"></div>
+            <div class="hud-corner top-left">
+                <span class="hud-label">// GRADO DE ENTROPIA</span>
+                <span class="hud-val" id="hud-entropy-val">00.0% // ORDEN COHESIVO</span>
+            </div>
+            <div class="hud-corner top-right">
+                <span class="hud-label">// INTEGRACION FISICA</span>
+                <span class="hud-val">VERLET SEMI-IMPLICITO // RUST</span>
+            </div>
+            <div class="hud-corner bottom-left">
+                <span class="hud-label">// ESTADO CUANTICO</span>
+                <span class="hud-val" id="hud-quantum-state">SOLIDO ESTRUCTURAL</span>
+            </div>
+            <div class="hud-corner bottom-right">
+                <span class="hud-label">// NUCLEO ATOMICO</span>
+                <span class="hud-val">3,840 VERTICES ACTIVOS</span>
+            </div>
+        </div>
+
+        <!-- PANEL DE CONTROL DE ENTROPIA Y REENSAMBLAJE -->
+        <div class="control-overlay">
+            <div class="control-card">
+                <span class="badge">[ FISICA DE PARTICULAS // FRACTURA PROCEDURAL ]</span>
+                <h1>Deconstruccion y Reensamblaje</h1>
+                <p>Aumenta la entropia para romper las aristas estructurales y dispersar miles de particulas atomicas en un vortice turbulento calculado en Rust. Cambia de figura para atraer los fragmentos y reensamblarlos gravitatoriamente.</p>
+
+                <!-- SLIDER DE ENTROPIA -->
+                <div class="slider-row">
+                    <span class="slider-label">// ENTROPIA:</span>
+                    <input type="range" id="entropy-slider" min="0" max="100" value="0" class="custom-slider">
+                    <span class="slider-readout" id="slider-readout">00%</span>
+                </div>
+
+                <!-- SELECTOR DE GEOMETRIA OBJETIVO -->
+                <div class="action-bar">
+                    <span class="selector-label">// REENSAMBLAR EN:</span>
+                    <button class="geom-btn" data-geom="0">[ Esfera ]</button>
+                    <button class="geom-btn" data-geom="1">[ Cubo ]</button>
+                    <button class="geom-btn active" data-geom="2">[ Dona (Torus) ]</button>
+                    <button class="burst-btn" id="burst-trigger">[ Pulso de Explosion ]</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- INICIALIZACION DEL MOTOR WASM -->
+    <script type="module">
+        import { createGroove3DEngine } from './wasm_loader.js';
+
+        const slider = document.getElementById('entropy-slider');
+        const readout = document.getElementById('slider-readout');
+        const hudEntropy = document.getElementById('hud-entropy-val');
+        const hudState = document.getElementById('hud-quantum-state');
+        const geomBtns = document.querySelectorAll('.geom-btn');
+        const burstBtn = document.getElementById('burst-trigger');
+
+        createGroove3DEngine('canvas3d', {
+            particleCount: 3840,
+            initialGeometry: 2, // Dona
+            morphOnScroll: false,
+        }).then(controller => {
+
+            function updateEntropy(val) {
+                const norm = val / 100.0;
+                controller.setDeconstruct(norm);
+                readout.textContent = `${val.toString().padStart(2, '0')}%`;
+
+                if (val === 0) {
+                    hudEntropy.textContent = `00.0% // ORDEN COHESIVO`;
+                    hudState.textContent = "SOLIDO ESTRUCTURAL";
+                } else if (val < 40) {
+                    hudEntropy.textContent = `${val.toFixed(1)}% // FRACTURA DE ARISTAS`;
+                    hudState.textContent = "ALAMBRES EN TENSION";
+                } else if (val < 80) {
+                    hudEntropy.textContent = `${val.toFixed(1)}% // DISPERSION ATOMICA`;
+                    hudState.textContent = "VORTICE DE PARTICULAS";
+                } else {
+                    hudEntropy.textContent = `${val.toFixed(1)}% // ENTROPIA MAXIMA`;
+                    hudState.textContent = "POLVO CUANTICO EXPANSIVO";
+                }
+            }
+
+            slider.addEventListener('input', (e) => {
+                updateEntropy(parseInt(e.target.value, 10));
+            });
+
+            geomBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    geomBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const geomId = parseInt(btn.getAttribute('data-geom'), 10);
+                    controller.setGeometry(geomId);
+                });
+            });
+
+            // Pulso de explosion dinamico
+            burstBtn.addEventListener('click', () => {
+                let start = performance.now();
+                const initialVal = parseInt(slider.value, 10);
+                function animateBurst(t) {
+                    const elapsed = (t - start) / 1000;
+                    if (elapsed < 0.35) {
+                        // Subida violenta
+                        const burstVal = Math.min(100, Math.round(initialVal + (100 - initialVal) * (elapsed / 0.35)));
+                        slider.value = burstVal;
+                        updateEntropy(burstVal);
+                        requestAnimationFrame(animateBurst);
+                    } else if (elapsed < 1.4) {
+                        // Caida inercial suave hacia el valor inicial
+                        const decayProg = (elapsed - 0.35) / 1.05;
+                        const returnVal = Math.round(100 - (100 - initialVal) * decayProg);
+                        slider.value = returnVal;
+                        updateEntropy(returnVal);
+                        requestAnimationFrame(animateBurst);
+                    } else {
+                        slider.value = initialVal;
+                        updateEntropy(initialVal);
+                    }
+                }
+                requestAnimationFrame(animateBurst);
+            });
+        });
+    </script>
+
+</body>
+</html>
