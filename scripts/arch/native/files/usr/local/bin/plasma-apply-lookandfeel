@@ -31,3 +31,4 @@ elif [ "$is_light" -eq 1 ]; then
 fi
 
 exit $ret
+
