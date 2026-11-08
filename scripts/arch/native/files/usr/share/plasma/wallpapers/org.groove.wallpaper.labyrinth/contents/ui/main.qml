@@ -51,31 +51,52 @@ WallpaperItem {
     }
 
     // -------------------------------------------------------------------------
-    // SEGUIMIENTO INTERACTIVO DEL CURSOR (Sin bloquear clicks del escritorio)
+    // SEGUIMIENTO INTERACTIVO DEL CURSOR
     // -------------------------------------------------------------------------
     property point targetMouse: Qt.point(0.5, 0.5)
     property point smoothMouse: Qt.point(0.5, 0.5)
-    property real mouseHovered: 0.0
+    property real mouseHovered: 1.0 // Activo por defecto
 
-    // HoverHandler moderno de Qt 6
-    HoverHandler {
-        id: hoverHandler
-        onPointChanged: {
-            if (root.width > 0 && root.height > 0) {
-                root.targetMouse = Qt.point(
-                    point.position.x / root.width,
-                    point.position.y / root.height
-                );
-                root.mouseHovered = 1.0;
-            }
+    // Función receptora invocada directamente por el Desktop Containment (FolderView)
+    function setMousePosition(px, py) {
+        if (root.width > 0 && root.height > 0) {
+            root.targetMouse = Qt.point(px / root.width, py / root.height);
+            root.mouseHovered = 1.0;
         }
     }
 
-    // MouseArea de respaldo sin captura de clicks (acceptedButtons: Qt.NoButton)
+    // Puente de rastreo reactivo a nivel de ventana DesktopView
+    Item {
+        id: globalCursorBridge
+
+        HoverHandler {
+            id: globalHover
+            onPointChanged: {
+                if (root.width > 0 && root.height > 0) {
+                    root.targetMouse = Qt.point(
+                        point.position.x / root.width,
+                        point.position.y / root.height
+                    );
+                    root.mouseHovered = 1.0;
+                }
+            }
+        }
+
+        function attachBridge() {
+            if (Window.window && Window.window.contentItem) {
+                globalHover.parent = Window.window.contentItem;
+                console.warn("GROOVE_CURSOR_BRIDGE_ATTACHED to contentItem:", Window.window.contentItem);
+            }
+        }
+
+        Component.onCompleted: attachBridge()
+    }
+
+    // MouseArea pasivo de respaldo sobre el WallpaperItem
     MouseArea {
         anchors.fill: parent
         hoverEnabled: true
-        acceptedButtons: Qt.NoButton // Permite que los clicks pasen al escritorio
+        acceptedButtons: Qt.NoButton
         onPositionChanged: (mouse) => {
             if (root.width > 0 && root.height > 0) {
                 root.targetMouse = Qt.point(
@@ -84,9 +105,6 @@ WallpaperItem {
                 );
                 root.mouseHovered = 1.0;
             }
-        }
-        onExited: {
-            root.mouseHovered = 0.0;
         }
     }
 
@@ -101,8 +119,8 @@ WallpaperItem {
             var sx = root.smoothMouse.x;
             var sy = root.smoothMouse.y;
             root.smoothMouse = Qt.point(
-                sx + (tx - sx) * 0.16,
-                sy + (ty - sy) * 0.16
+                sx + (tx - sx) * 0.20,
+                sy + (ty - sy) * 0.20
             );
         }
     }
@@ -129,20 +147,17 @@ WallpaperItem {
         property real uTime: root.wallpaperTime
         property vector2d uResolution: Qt.vector2d(Math.max(1.0, width), Math.max(1.0, height))
 
-        // Centro flotante del logotipo
         property vector2d uLogoCenter: Qt.vector2d(
             0.50 + (Math.sin(root.cameraPhase) * 10.0) / Math.max(1.0, width),
             0.50 + (Math.cos(root.cameraPhase * 0.8) * 6.0) / Math.max(1.0, height)
         )
 
-        // Dimensión normalizada manteniendo proporción 1:1
         property real baseLogoWidth: Math.min(width * 0.30, height * 0.48, 420.0) * root.logoScale
         property vector2d uLogoSize: Qt.vector2d(
             baseLogoWidth / Math.max(1.0, width),
             baseLogoWidth / Math.max(1.0, height)
         )
 
-        // Posición y estado interactivo del cursor del ratón
         property vector2d uMouse: Qt.vector2d(root.smoothMouse.x, root.smoothMouse.y)
         property real uMouseHover: root.mouseHovered
         property real uPadding: 0.0

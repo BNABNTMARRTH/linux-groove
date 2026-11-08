@@ -500,4 +500,28 @@ En el archivo de configuración de Plasma (`~/.config/plasma-org.kde.plasma.desk
 
 ---
 
+## 8. Arquitectura de Despacho de Eventos del Cursor en KDE Plasma 6
+
+### 8.1. Diagnóstico del Comportamiento en Plasma 6
+En KDE Plasma 6 (Wayland), la vista de iconos del escritorio (`org.kde.plasma.folder` / `FolderView.qml`) se monta en un orden Z superior (`z-order`) con respecto a la superficie de fondo `WallpaperItem`. El componente `MouseEventListener` del contenedor absorbe de forma voraz todos los eventos de puntero (`hover`) para gestionar el rectángulo de selección elástica (*rubber-band*) y las pistas de selección de archivos.
+
+Como consecuencia directa, cualquier `HoverHandler` o `MouseArea` convencional situado en el fondo de pantalla queda completamente eclipsado y nunca recibe las coordenadas del cursor.
+
+### 8.2. Solución de Doble Puente Sin Bloqueo (Dual-Bridge Architecture)
+Para solventar esto de forma limpia y transparente, se implementó una arquitectura en tándem:
+
+1. **Puente Global Dinámico (`globalCursorBridge`):**
+   Dentro del propio `main.qml` del plugin de fondo de pantalla, un elemento auxiliar enlaza un `HoverHandler` directamente al `Window.window.contentItem` (la raíz de la ventana `DesktopView`). Dado que `HoverHandler` es no intrusivo (`passive handler`), monitorea el flujo de eventos de la ventana completa sin interceptar ni bloquear los clicks destinados a iconos, lanzadores o menús contextuales.
+
+2. **Despacho Directo desde Containment (`FolderView.qml`):**
+   En la capa de escritorio (`FolderView.qml`), el manejador `onPositionChanged` envía las coordenadas directamente al objeto gráfico del fondo (`Plasmoid.containment.wallpaperGraphicsObject.setMousePosition(mouse.x, mouse.y)`).
+
+3. **Interpolación Física Lerp a 60 FPS:**
+   Las coordenadas recibidas se procesan con amortiguación suave:
+   $$\vec{P}_{\text{smooth}} \leftarrow \vec{P}_{\text{smooth}} + (\vec{P}_{\text{target}} - \vec{P}_{\text{smooth}}) \times 0.20$$
+   Esto confiere al haz de luz y a la gravedad cuántica del cursor una inercia orgánica y fluida, evitando saltos bruscos.
+
+---
+
 *Fin del documento técnico.*
+
