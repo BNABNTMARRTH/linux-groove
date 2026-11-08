@@ -75,9 +75,9 @@ pub struct Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            distance: 4.5,
-            focal_length: 500.0,
-            rot_x: 0.25,
+            distance: 2.7,
+            focal_length: 750.0,
+            rot_x: 0.20,
             rot_y: 0.0,
             rot_z: 0.0,
         }

@@ -16,7 +16,7 @@ use geometry_anatomy::AnatomyModel;
 use particles::ParticleSystem;
 
 pub const MAX_PARTICLES: usize = 8192;
-pub const MAX_LINES: usize = 1024;
+pub const MAX_LINES: usize = 4096;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -342,43 +342,58 @@ pub extern "C" fn update_scene(
         }
         engine.active_points = pt_idx;
 
-        // 2. Proyectar aristas vectoriales (Wireframes & Frames)
-        // REGLA FUNDAMENTAL: En modo anatomia, CERO lineas wireframe (100% volumen de particulas)
+        // 2. Proyectar aristas vectoriales (Wireframes & Frames estructurados de la malla 3D)
         let mut ln_idx = 0;
-        if !engine.is_anatomy_mode {
-            let line_alpha_mod = (1.0 - deconstruct * 1.4).max(0.0);
-            if line_alpha_mod > 0.02 {
-                let edges = match engine.selected_geom {
+        let line_alpha_mod = (1.0 - deconstruct * 1.2).max(0.0);
+        if line_alpha_mod > 0.02 {
+            let edges: &[geometry::Edge] = if engine.is_anatomy_mode {
+                match engine.selected_anatomy {
+                    0 => &engine.anatomy.hand_edges,
+                    1 => &engine.anatomy.head_edges,
+                    _ => &engine.anatomy.heart_edges,
+                }
+            } else {
+                match engine.selected_geom {
                     0 => &engine.geometry.edges_sphere,
                     1 => &engine.geometry.edges_cube,
                     _ => &engine.geometry.edges_torus,
-                };
+                }
+            };
 
-                for e in edges {
-                    if ln_idx >= MAX_LINES { break; }
-                    let idx_a = (e.idx_a as usize) % target_positions.len();
-                    let idx_b = (e.idx_b as usize) % target_positions.len();
+            for e in edges {
+                if ln_idx >= MAX_LINES { break; }
+                let idx_a = (e.idx_a as usize) % target_positions.len();
+                let idx_b = (e.idx_b as usize) % target_positions.len();
 
-                    let p1 = &engine.particles.particles[idx_a].pos;
-                    let p2 = &engine.particles.particles[idx_b].pos;
+                let p1 = &engine.particles.particles[idx_a].pos;
+                let p2 = &engine.particles.particles[idx_b].pos;
 
-                    let (x1, y1, d1, _, v1) = engine.camera.project(p1, width, height);
-                    let (x2, y2, d2, _, v2) = engine.camera.project(p2, width, height);
+                let (x1, y1, d1, _, v1) = engine.camera.project(p1, width, height);
+                let (x2, y2, d2, _, v2) = engine.camera.project(p2, width, height);
 
-                    if v1 && v2 {
-                        let avg_depth = (d1 + d2) * 0.5;
-                        let alpha = (1.2 - avg_depth * 0.16).clamp(0.1, 0.9) * line_alpha_mod;
-                        let (r, g, b) = if e.is_frame { (255, 170, 0) } else { (0, 243, 255) };
+                if v1 && v2 {
+                    let avg_depth = (d1 + d2) * 0.5;
+                    let alpha = (1.35 - avg_depth * 0.20).clamp(0.06, 0.65) * line_alpha_mod;
+                    let (r, g, b) = if engine.is_anatomy_mode {
+                        match engine.selected_anatomy {
+                            0 => (0, 255, 170), // Esmeralda biomecanico para la mano
+                            1 => (0, 243, 255), // Cian para craneo
+                            _ => (255, 38, 85),  // Rubi para corazon
+                        }
+                    } else if e.is_frame {
+                        (255, 170, 0)
+                    } else {
+                        (0, 243, 255)
+                    };
 
-                        BUFFER_LINES[ln_idx] = ProjectedLine {
-                            x1, y1, x2, y2,
-                            depth: avg_depth,
-                            alpha,
-                            r, g, b,
-                            is_frame: if e.is_frame { 1 } else { 0 },
-                        };
-                        ln_idx += 1;
-                    }
+                    BUFFER_LINES[ln_idx] = ProjectedLine {
+                        x1, y1, x2, y2,
+                        depth: avg_depth,
+                        alpha,
+                        r, g, b,
+                        is_frame: if e.is_frame { 1 } else { 0 },
+                    };
+                    ln_idx += 1;
                 }
             }
         }

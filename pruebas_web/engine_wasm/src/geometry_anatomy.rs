@@ -1,8 +1,8 @@
 // ==========================================================================
 // LINUX GROOVE - MOTOR 3D EN RUST (WASM)
-// geometry_anatomy.rs: Anatomia 100% Particulas Volumetricas 3D
-// Modelos: Mano Humana Articulada, Craneo Tomografico y Corazon en Latido
-// Mapeados directamente desde los moldes GLB originales del usuario
+// geometry_anatomy.rs: Anatomia 100% Particulas Volumetricas y Malla 3D
+// Modelos: Mano Humana Articulada con Malla Estructural de 3,652 Aristas
+// Mapeados directamente desde hand_animation.glb, craneo.glb y anim_heart.glb
 // ==========================================================================
 
 use crate::math3d::Vec3;
@@ -27,12 +27,17 @@ pub struct AnatomyModel {
 
 impl AnatomyModel {
     pub fn new(count: usize) -> Self {
-        // Carga de puntos desde el buffer binario horneado de los GLB del usuario
-        let target_count = count.min(8192);
+        let target_count = count.min(4096);
 
-        // Header: 16 bytes ("GROOVE3D" + version + count)
-        let offset_hand = 16;
-        let pose_bytes = 8192 * 12; // 98,304 bytes por pose
+        // Header: 20 bytes ("GROOVE3D" 8B + version 4B + count 4B + num_edges 4B)
+        let num_hand_edges = if BAKED_ANATOMY.len() >= 20 {
+            u32::from_le_bytes([BAKED_ANATOMY[16], BAKED_ANATOMY[17], BAKED_ANATOMY[18], BAKED_ANATOMY[19]]) as usize
+        } else {
+            0
+        };
+
+        let offset_hand = 20;
+        let pose_bytes = 4096 * 12; // 49,152 bytes por pose
 
         let mut hand_poses: [Vec<Vec3>; 4] = [
             Vec::with_capacity(target_count),
@@ -47,10 +52,29 @@ impl AnatomyModel {
             hand_poses[p_idx] = Self::read_vec3_slice(&BAKED_ANATOMY[start..end], target_count);
         }
 
-        let offset_heart = offset_hand + 4 * pose_bytes;
+        // Cargar aristas estructurales de la mano (malla poligonal original)
+        let offset_edges = offset_hand + 4 * pose_bytes;
+        let edges_bytes = num_hand_edges * 4;
+        let mut hand_edges = Vec::with_capacity(num_hand_edges);
+
+        if BAKED_ANATOMY.len() >= offset_edges + edges_bytes {
+            for chunk in BAKED_ANATOMY[offset_edges..offset_edges + edges_bytes].chunks_exact(4) {
+                let u = u16::from_le_bytes([chunk[0], chunk[1]]);
+                let v = u16::from_le_bytes([chunk[2], chunk[3]]);
+                hand_edges.push(Edge {
+                    idx_a: u,
+                    idx_b: v,
+                    is_frame: false,
+                });
+            }
+        }
+
+        // Corazon
+        let offset_heart = offset_edges + edges_bytes;
         let heart_targets = Self::read_vec3_slice(&BAKED_ANATOMY[offset_heart..offset_heart + pose_bytes], target_count);
         let heart_deltas = Self::read_vec3_slice(&BAKED_ANATOMY[offset_heart + pose_bytes..offset_heart + 2 * pose_bytes], target_count);
 
+        // Craneo
         let offset_skull = offset_heart + 2 * pose_bytes;
         let head_targets = Self::read_vec3_slice(&BAKED_ANATOMY[offset_skull..offset_skull + pose_bytes], target_count);
         let head_deltas = Self::read_vec3_slice(&BAKED_ANATOMY[offset_skull + pose_bytes..offset_skull + 2 * pose_bytes], target_count);
@@ -64,7 +88,7 @@ impl AnatomyModel {
             hand_poses,
             heart_deltas,
             head_deltas,
-            hand_edges: Vec::new(),
+            hand_edges,
             head_edges: Vec::new(),
             heart_edges: Vec::new(),
         }
@@ -85,8 +109,8 @@ impl AnatomyModel {
     // Mano articulada viva: interpola suavemente entre las 4 poses cinematicas
     // correspondientes al ciclo completo de hand_animation.glb
     pub fn get_animated_hand(&self, idx: usize, time: f32) -> Vec3 {
-        let cycle = 4.62; // Duracion real del clip Anim01
-        let t = (time.rem_euclid(cycle)) / cycle; // [0.0, 1.0)
+        let cycle = 4.62; // Duracion del clip Anim01
+        let t = (time.rem_euclid(cycle)) / cycle;
         let scaled_t = t * 4.0;
         let pose_a = (scaled_t as usize) % 4;
         let pose_b = (pose_a + 1) % 4;
@@ -105,11 +129,9 @@ impl AnatomyModel {
         let base = self.heart_targets[idx % self.heart_targets.len()];
         let delta = self.heart_deltas[idx % self.heart_deltas.len()];
 
-        // Ritmo cardiaco: 72 BPM
         let omega = 7.54;
         let phase = (time * omega).rem_euclid(TAU);
 
-        // Curva de eyeccion sistolica rapida y relajacion diastolica
         let morph_factor = if phase < 1.35 {
             (phase / 1.35 * PI).sin().powi(2) * 1.35
         } else {
@@ -139,18 +161,15 @@ impl AnatomyModel {
     pub fn get_morph_target(&self, idx: usize, morph_t: f32, time: f32) -> Vec3 {
         let t = morph_t.rem_euclid(3.0);
         if t < 1.0 {
-            // Mano -> Craneo
             let p_a = self.get_animated_hand(idx, time);
             let p_b = self.head_targets[idx % self.head_targets.len()];
             Vec3::lerp(p_a, p_b, t)
         } else if t < 2.0 {
-            // Craneo -> Corazon
             let local_t = t - 1.0;
             let p_a = self.head_targets[idx % self.head_targets.len()];
             let p_b = self.get_pulsing_heart(idx, time);
             Vec3::lerp(p_a, p_b, local_t)
         } else {
-            // Corazon -> Mano
             let local_t = t - 2.0;
             let p_a = self.get_pulsing_heart(idx, time);
             let p_b = self.get_animated_hand(idx, time);

@@ -103,30 +103,32 @@ export async function createGroove3DEngine(canvasId, options = {}) {
             const lineFloats = new Float32Array(memoryBuffer, linesPtr, linesCount * 7);
             const lineBytes = new Uint8Array(memoryBuffer, linesPtr, linesCount * 28);
 
+            ctx.lineWidth = 1.0;
+            let lastR = -1, lastG = -1, lastB = -1;
+            ctx.beginPath();
+
             for (let i = 0; i < linesCount; i++) {
                 const fBase = i * 7;
                 const bBase = i * 28;
 
-                const x1 = lineFloats[fBase];
-                const y1 = lineFloats[fBase + 1];
-                const x2 = lineFloats[fBase + 2];
-                const y2 = lineFloats[fBase + 3];
                 const alpha = lineFloats[fBase + 5];
-
-                if (alpha <= 0.01) continue;
+                if (alpha <= 0.02) continue;
 
                 const r = lineBytes[bBase + 24];
                 const g = lineBytes[bBase + 25];
                 const b = lineBytes[bBase + 26];
-                const isFrame = lineBytes[bBase + 27];
 
-                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-                ctx.lineWidth = isFrame ? 1.6 : 1.0;
-                ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
+                if (lastR !== r || lastG !== g || lastB !== b) {
+                    ctx.stroke();
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                    ctx.beginPath();
+                    lastR = r; lastG = g; lastB = b;
+                }
+
+                ctx.moveTo(lineFloats[fBase], lineFloats[fBase + 1]);
+                ctx.lineTo(lineFloats[fBase + 2], lineFloats[fBase + 3]);
             }
+            ctx.stroke();
         }
 
         // 4. Renderizado de Nube de Particulas (Point Cloud)
