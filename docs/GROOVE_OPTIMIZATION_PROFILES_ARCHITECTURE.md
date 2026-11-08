@@ -364,3 +364,4 @@ Keywords=optimización;latencia;efectos;rendimiento;kwin;pipewire;gpu;
 1. **Flexibilidad Total:** El usuario no está forzado a un único comportamiento gráfico; puede elegir máxima respuesta (0 ms) en una máquina virtual o disfrutar de los efectos visuales 3D cuando instale Groove en su máquina física.
 2. **Conmutación Instantánea sin Reiniciar:** Todos los cambios se inyectan en caliente a KWin Wayland y PipeWire a través del bus de sesión D-Bus.
 3. **Persistencia Garantizada:** Cada cambio se almacena en los archivos estándar `~/.config/kwinrc` y `~/.config/kdeglobals`, manteniéndose intacto tras apagar o reiniciar el equipo.
+
