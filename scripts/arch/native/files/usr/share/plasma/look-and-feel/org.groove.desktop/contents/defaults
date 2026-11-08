@@ -10,3 +10,6 @@ name=breeze-dark
 library=org.kde.breeze
 ButtonsOnLeft=XIA
 ButtonsOnRight=
+[ksplashrc][KSplash]
+Engine=KSplashQML
+Theme=org.groove.desktop
