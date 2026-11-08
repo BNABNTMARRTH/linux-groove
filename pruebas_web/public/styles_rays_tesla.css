@@ -1,0 +1,482 @@
+/* ==========================================================================
+   LINUX GROOVE - RAYOS TESLA // BOBINA RADIAL (STYLESHEET)
+   Estilo Minimalista | Cero Emojis | CSS Scroll-Driven | 0 JS
+   ========================================================================== */
+
+:root {
+    --bg-dark: #020409;
+    --tesla-blue: #1a66ff;
+    --tesla-cyan: #00f3ff;
+    --tesla-violet: #aa22ff;
+    --panel-bg: rgba(4, 8, 20, 0.74);
+    --panel-border: rgba(0, 243, 255, 0.28);
+    --text-primary: #e6f2fc;
+    --text-muted: #889eb8;
+    --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #060b1a 0%, #010206 100%);
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACION
+   ========================================================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background: rgba(2, 4, 10, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+}
+
+.brand-bullet {
+    color: var(--tesla-cyan);
+    font-weight: 700;
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.15em;
+    background: linear-gradient(90deg, #ffffff, var(--tesla-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-tag {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: rgba(0, 243, 255, 0.12);
+    border: 1px solid var(--tesla-cyan);
+    border-radius: 4px;
+    color: var(--tesla-cyan);
+    letter-spacing: 0.1em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+}
+
+.nav-btn:hover {
+    color: var(--tesla-cyan);
+    border-color: rgba(0, 243, 255, 0.3);
+    background: rgba(0, 243, 255, 0.06);
+}
+
+.nav-btn.active {
+    color: #ffffff;
+    border-color: var(--tesla-cyan);
+    background: rgba(0, 243, 255, 0.18);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+}
+
+/* ==========================================================================
+   VIEWPORT FIJO DE LA BOBINA TESLA
+   ========================================================================== */
+
+.stream-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.stream-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tesla-stream {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: center center;
+    will-change: transform, filter;
+    filter: contrast(1.15) brightness(1.05);
+}
+
+.stream-scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.14) 0px,
+        rgba(0, 0, 0, 0.14) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+}
+
+.stream-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at 50% 50%,
+        transparent 35%,
+        rgba(2, 4, 10, 0.75) 80%,
+        #020409 100%
+    );
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   HUD HOLOGRAFICO (SIN EMOJIS)
+   ========================================================================== */
+
+.hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    color: var(--tesla-cyan);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+}
+
+.hud-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 240px;
+    height: 240px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(0, 243, 255, 0.25);
+    border-radius: 50%;
+}
+
+.hud-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 12px;
+    background: rgba(2, 4, 12, 0.65);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    backdrop-filter: blur(6px);
+}
+
+.hud-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.hud-val {
+    font-weight: 700;
+    color: var(--tesla-cyan);
+}
+
+.hud-corner.top-left {
+    top: 75px;
+    left: 2rem;
+    border-left: 3px solid var(--tesla-cyan);
+}
+
+.hud-corner.top-right {
+    top: 75px;
+    right: 2rem;
+    text-align: right;
+    border-right: 3px solid var(--tesla-blue);
+}
+
+.hud-corner.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+    border-left: 3px solid var(--tesla-violet);
+}
+
+.hud-corner.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+    text-align: right;
+    border-right: 3px solid var(--tesla-cyan);
+}
+
+/* ==========================================================================
+   PISTA DE NARRATIVA SCROLL-DRIVEN
+   ========================================================================== */
+
+.scroll-track {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+.story-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+}
+
+.glass-panel {
+    width: 100%;
+    max-width: 620px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 2.6rem 2.8rem;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 32px rgba(0, 243, 255, 0.1);
+    position: relative;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25px;
+    right: 25px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--tesla-cyan), transparent);
+}
+
+.badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--tesla-cyan);
+    letter-spacing: 0.12em;
+    margin-bottom: 0.9rem;
+}
+
+h1, h2 {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 50%, var(--tesla-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+p {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+strong {
+    color: #ffffff;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 2px 6px;
+    background: rgba(0, 243, 255, 0.12);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 4px;
+    color: var(--tesla-cyan);
+}
+
+.scroll-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--tesla-cyan);
+    padding: 8px 14px;
+    background: rgba(0, 243, 255, 0.08);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 4px;
+}
+
+.cue-bullet {
+    display: inline-block;
+    animation: cueBounce 1.5s infinite;
+}
+
+@keyframes cueBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
+}
+
+.meter-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--tesla-blue), var(--tesla-cyan));
+    border-radius: 3px;
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.action-row {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #020409;
+    background: var(--tesla-cyan);
+    padding: 10px 18px;
+    border-radius: 4px;
+    border: 1px solid var(--tesla-cyan);
+    transition: all 0.25s ease;
+    box-shadow: 0 0 14px rgba(0, 243, 255, 0.35);
+}
+
+.action-btn:hover {
+    background: #ffffff;
+    box-shadow: 0 0 22px rgba(0, 243, 255, 0.65);
+    transform: translateY(-2px);
+}
+
+.action-btn.secondary {
+    color: var(--text-primary);
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+}
+
+.action-btn.secondary:hover {
+    border-color: var(--tesla-cyan);
+    color: var(--tesla-cyan);
+    background: rgba(0, 243, 255, 0.06);
+}
+
+/* ==========================================================================
+   CSS SCROLL-DRIVEN ANIMATIONS
+   ========================================================================== */
+
+@supports (animation-timeline: scroll(root block)) {
+    /* Rotacion axial y zoom del campo de plasma por scroll */
+    .tesla-stream {
+        animation-name: teslaScrollSpin;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root block);
+        animation-range: 0% 100%;
+    }
+
+    @keyframes teslaScrollSpin {
+        0% {
+            transform: scale(1.0) rotate(0deg);
+            filter: contrast(1.15) brightness(1.0) hue-rotate(0deg);
+        }
+        50% {
+            transform: scale(1.3) rotate(90deg);
+            filter: contrast(1.25) brightness(1.1) hue-rotate(25deg);
+        }
+        100% {
+            transform: scale(1.6) rotate(180deg);
+            filter: contrast(1.35) brightness(1.2) hue-rotate(60deg);
+        }
+    }
+
+    .glass-panel {
+        view-timeline-name: --panelView;
+        view-timeline-axis: block;
+        animation-timeline: --panelView;
+        animation-name: panelSlideUp;
+        animation-range: entry 15% cover 50%;
+        animation-fill-mode: both;
+    }
+
+    @keyframes panelSlideUp {
+        0% {
+            opacity: 0;
+            transform: translateY(45px) scale(0.96);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1.0);
+        }
+    }
+}
+
+/* ==========================================================================
+   ACCESIBILIDAD Y RESPONSIVE
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .tesla-stream, .glass-panel, .cue-bullet {
+        animation: none !important;
+        transform: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .top-nav { padding: 0 1rem; }
+    .brand-title { font-size: 0.85rem; }
+    .brand-tag { display: none; }
+    .hud-corner.bottom-left, .hud-corner.bottom-right { display: none; }
+    .glass-panel { padding: 2rem 1.6rem; }
+    h1, h2 { font-size: 1.7rem; }
+}

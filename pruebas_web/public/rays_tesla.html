@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Rayos Tesla // Bobina de Plasma Radial</title>
+    <link rel="stylesheet" href="styles_rays_tesla.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (SIN EMOJIS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">TESLA COIL // PLASMA</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Rayos: Ondas ]</a>
+            <a href="rays_tesla.html" class="nav-btn active">[ Rayos: Tesla ]</a>
+            <a href="rays_storm.html" class="nav-btn">[ Rayos: Tormenta ]</a>
+            <a href="rays_synapse.html" class="nav-btn">[ Rayos: Sinapsis ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto 3D ]</a>
+            <a href="city.html" class="nav-btn">[ Ciudad Lluviosa ]</a>
+        </nav>
+    </header>
+
+    <!-- ESCENARIO DE STREAMING: BOBINA TESLA RADIAL (60 FPS, CERO JS) -->
+    <div class="stream-viewport">
+        <div class="stream-container">
+            <img class="tesla-stream" src="/stream_tesla" alt="Linux Groove Tesla Plasma Stream">
+            <div class="stream-scanlines"></div>
+            <div class="stream-vignette"></div>
+        </div>
+
+        <!-- HUD HOLOGRAFICO CON TELEMETRIA (SIN EMOJIS) -->
+        <div class="hud-layer" aria-hidden="true">
+            <div class="hud-reticle"></div>
+            <div class="hud-corner top-left">
+                <span class="hud-label">// DESCARGA</span>
+                <span class="hud-val">8 ARCOS RADIALES // POLAR</span>
+            </div>
+            <div class="hud-corner top-right">
+                <span class="hud-label">// FRECUENCIA</span>
+                <span class="hud-val">2.4 MHZ // RESONANCIA</span>
+            </div>
+            <div class="hud-corner bottom-left">
+                <span class="hud-label">// NUCLEO</span>
+                <span class="hud-val">PLASMA COBALTO + CIAN</span>
+            </div>
+            <div class="hud-corner bottom-right">
+                <span class="hud-label">// MOTOR</span>
+                <span class="hud-val">RUST 60 FPS // 0% JS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PISTA DE NARRATIVA SCROLL-DRIVEN -->
+    <main class="scroll-track">
+
+        <!-- SECCION 1: HERO TESLA -->
+        <section class="story-section" id="hero">
+            <div class="glass-panel">
+                <span class="badge">[ ALTA TENSION // DESCARGA RADIAL ]</span>
+                <h1>Bobina de Plasma Tesla</h1>
+                <p>Arcos de plasma voltaico que emanan de un núcleo resonante central en coordenadas polares. Al hacer scroll, la velocidad angular de los filamentos y la concentración de chispas periféricas se amplifican en tiempo real.</p>
+                <div class="scroll-cue">
+                    <span class="cue-bullet">[v]</span> Desplaza hacia abajo para intensificar la resonancia
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCION 2: DISPERSION POLAR -->
+        <section class="story-section" id="resonance">
+            <div class="glass-panel">
+                <span class="badge">[ CAMPO ELECTROMAGNETICO // POLAR COORD ]</span>
+                <h2>Geometria Armonica Radial</h2>
+                <p>Las ecuaciones polares <code>r = sqrt(x^2 + y^2)</code> y <code>theta = atan2(y, x)</code> generan 8 arcos voltaicos caóticos que giran en direcciones opuestas, simulando la rotación de un campo magnético trifásico.</p>
+                <div class="meter-bar">
+                    <div class="bar-fill" style="width: 78%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCION 3: ROTACION AXIAL SCROLL-DRIVEN -->
+        <section class="story-section" id="dynamics">
+            <div class="glass-panel">
+                <span class="badge">[ ORQUESTACION CSS // SIN JAVASCRIPT ]</span>
+                <h2>Rotacion por Scroll-Driven</h2>
+                <p>El compositor CSS acelera la rotación óptica del stream con <code>animation-timeline: scroll(root block)</code>, creando una sensación de túnel magnético en aceleración sin una sola línea de JavaScript.</p>
+                <div class="action-row">
+                    <a href="rays_storm.html" class="action-btn">[ Ver Tormenta ]</a>
+                    <a href="rays_synapse.html" class="action-btn secondary">[ Ver Sinapsis ]</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

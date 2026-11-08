@@ -19,6 +19,9 @@ struct AppState {
     electric_stream: broadcast::Sender<Bytes>,
     labyrinth_stream: broadcast::Sender<Bytes>,
     city_stream: broadcast::Sender<Bytes>,
+    tesla_stream: broadcast::Sender<Bytes>,
+    storm_stream: broadcast::Sender<Bytes>,
+    synapse_stream: broadcast::Sender<Bytes>,
     filmstrip_bytes: Bytes,
 }
 
@@ -46,11 +49,17 @@ async fn main() {
     let (tx_electric, _rx_elec) = broadcast::channel::<Bytes>(16);
     let (tx_labyrinth, _rx_maze) = broadcast::channel::<Bytes>(16);
     let (tx_city, _rx_city) = broadcast::channel::<Bytes>(16);
+    let (tx_tesla, _rx_tesla) = broadcast::channel::<Bytes>(16);
+    let (tx_storm, _rx_storm) = broadcast::channel::<Bytes>(16);
+    let (tx_synapse, _rx_synapse) = broadcast::channel::<Bytes>(16);
 
     let state = Arc::new(AppState {
         electric_stream: tx_electric.clone(),
         labyrinth_stream: tx_labyrinth.clone(),
         city_stream: tx_city.clone(),
+        tesla_stream: tx_tesla.clone(),
+        storm_stream: tx_storm.clone(),
+        synapse_stream: tx_synapse.clone(),
         filmstrip_bytes,
     });
 
@@ -138,6 +147,90 @@ async fn main() {
         })
         .expect("Error al iniciar subproceso de ciudad");
 
+    // Subproceso dedicado 4: Rayos Tesla / Bobina de Plasma Radial (60 FPS)
+    let tx_tesla_render = tx_tesla.clone();
+    std::thread::Builder::new()
+        .name("tesla-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.025;
+
+                let jpeg_bytes = render_tesla_coil_parallel(time, width, height);
+                let _ = tx_tesla_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de tesla");
+
+    // Subproceso dedicado 5: Tormenta de Relampagos Bifurcados (60 FPS)
+    let tx_storm_render = tx_storm.clone();
+    std::thread::Builder::new()
+        .name("storm-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.028;
+
+                let jpeg_bytes = render_lightning_storm_parallel(time, width, height);
+                let _ = tx_storm_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de tormenta");
+
+    // Subproceso dedicado 6: Red Neuronal Sinaptica Cuantica (60 FPS)
+    let tx_synapse_render = tx_synapse.clone();
+    std::thread::Builder::new()
+        .name("synapse-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.024;
+
+                let jpeg_bytes = render_synaptic_lattice_parallel(time, width, height);
+                let _ = tx_synapse_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de sinapsis");
+
     // Servidor HTTP Axum para servir páginas, filmstrip y flujos MJPEG
     let public_dir = std::env::var("GROOVE_PUBLIC_DIR").unwrap_or_else(|_| "../public".to_string());
     println!(">> Sirviendo contenido estatico desde: {}", public_dir);
@@ -146,6 +239,9 @@ async fn main() {
         .route("/stream", get(stream_electric_handler))
         .route("/stream_labyrinth", get(stream_labyrinth_handler))
         .route("/stream_city", get(stream_city_handler))
+        .route("/stream_tesla", get(stream_tesla_handler))
+        .route("/stream_storm", get(stream_storm_handler))
+        .route("/stream_synapse", get(stream_synapse_handler))
         .route("/labyrinth_filmstrip.jpg", get(filmstrip_handler))
         .fallback_service(ServeDir::new(public_dir))
         .layer(CorsLayer::permissive())
@@ -158,10 +254,12 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
     println!(">> Servidor activo en http://localhost:{}", port);
-    println!("   [1] Rayos Electricos:     http://localhost:{}/index.html", port);
-    println!("   [2] Laberinto 3D Scroll:  http://localhost:{}/labyrinth.html", port);
-    println!("   [3] Ciudad Lluviosa:      http://localhost:{}/city.html", port);
-    println!("   [4] Filmstrip 3D (64 fr): http://localhost:{}/labyrinth_filmstrip.jpg", port);
+    println!("   [1] Rayos 1 (Ondas):       http://localhost:{}/index.html", port);
+    println!("   [2] Rayos 2 (Tesla):       http://localhost:{}/rays_tesla.html", port);
+    println!("   [3] Rayos 3 (Tormenta):    http://localhost:{}/rays_storm.html", port);
+    println!("   [4] Rayos 4 (Sinapsis):    http://localhost:{}/rays_synapse.html", port);
+    println!("   [5] Laberinto 3D Scroll:   http://localhost:{}/labyrinth.html", port);
+    println!("   [6] Ciudad Lluviosa:       http://localhost:{}/city.html", port);
 
     let listener = tokio::net::TcpListener::bind(addr).await.expect("Error al enlazar socket");
     axum::serve(listener, app).await.expect("Error en el servidor");
@@ -196,6 +294,21 @@ async fn stream_labyrinth_handler(State(state): State<Arc<AppState>>) -> impl In
 /// Handler HTTP para streaming continuo de la Ciudad Lluviosa
 async fn stream_city_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     build_mjpeg_response(state.city_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Rayos Tesla / Bobina Radial
+async fn stream_tesla_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.tesla_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Tormenta de Relampagos
+async fn stream_storm_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.storm_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Red Sinaptica Cuantica
+async fn stream_synapse_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.synapse_stream.subscribe())
 }
 
 /// Construye una respuesta HTTP multipart/x-mixed-replace para reproducción MJPEG sin JavaScript
@@ -787,6 +900,261 @@ pub fn render_rainy_city_parallel(time: f32, width: usize, height: usize) -> Byt
                 row[px_idx] = (r.min(1.0) * 255.0) as u8;
                 row[px_idx + 1] = (g.min(1.0) * 255.0) as u8;
                 row[px_idx + 2] = (b.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 4: Rayos Tesla / Bobina de Plasma Radial en Coordenadas Polares
+// =========================================================================
+
+pub fn render_tesla_coil_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let col_blue = [0.12f32, 0.40, 1.0];
+    let col_cyan = [0.0f32, 0.95, 1.0];
+    let col_violet = [0.75f32, 0.20, 1.0];
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
+
+                let r = (uv_x * uv_x + uv_y * uv_y).sqrt();
+                let theta = uv_y.atan2(uv_x);
+
+                // Núcleo central de plasma incandescente
+                let core_glow = 0.025 / (r * r * 16.0 + 0.012);
+                let core_disc = (1.0 - r / 0.15).max(0.0).powi(2) * 1.8;
+
+                let mut arc_glow = 0.0f32;
+                let mut arc_core = 0.0f32;
+
+                // 8 arcos voltaicos radiales caóticos
+                for i in 0..8 {
+                    let fi = i as f32;
+                    let dir = if i % 2 == 0 { 1.0 } else { -1.0 };
+                    let base_angle = fi * (std::f32::consts::PI * 2.0 / 8.0) + time * 0.45 * dir;
+
+                    let angle_offset = 0.32 * (r * 12.0 - time * 9.0 + fi * 1.8).sin()
+                        + 0.14 * (r * 26.0 + time * 15.0 - fi).cos();
+
+                    let mut d_theta = (theta - (base_angle + angle_offset)).abs();
+                    if d_theta > std::f32::consts::PI {
+                        d_theta = 2.0 * std::f32::consts::PI - d_theta;
+                    }
+
+                    let dist = d_theta * r;
+                    let intensity = (0.0035 / (dist * dist * 80.0 + dist * 4.0 + 0.002)) * (1.0 - r * 0.4).max(0.0);
+                    let filament = (1.0 - dist / 0.018).max(0.0).powi(2) * (1.0 - r * 0.5).max(0.0);
+
+                    arc_glow += intensity;
+                    arc_core += filament;
+                }
+
+                // Chispas periféricas de alta frecuencia
+                let spark_noise = ((theta * 16.0 + time * 28.0).sin() * (r * 32.0 - time * 14.0).cos()).max(0.0).powi(7);
+                let sparks = spark_noise * (r > 0.35 && r < 1.1) as u32 as f32 * 0.8;
+
+                let red = col_blue[0] * arc_glow + col_cyan[0] * arc_core + core_disc + core_glow * col_violet[0] + sparks * 0.8;
+                let green = col_blue[1] * arc_glow + col_cyan[1] * arc_core + core_disc + core_glow * col_violet[1] + sparks * 0.95;
+                let blue = col_blue[2] * arc_glow + col_cyan[2] * arc_core + core_disc + core_glow * 1.2 + sparks * 1.2;
+
+                let px_idx = x * 3;
+                row[px_idx] = (red.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (green.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (blue.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 5: Tormenta de Relámpagos Bifurcados (Forked Lightning)
+// =========================================================================
+
+pub fn render_lightning_storm_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let t_cycle = time % 1.7;
+    let flash = (-t_cycle * 9.0).exp() * 0.42;
+    let strike = if t_cycle < 0.32 {
+        (1.0 - t_cycle / 0.32).powi(2)
+    } else {
+        0.0
+    };
+
+    let storm_seed = (time / 1.7).floor() * 17.31;
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
+
+                let bolt_x = 0.35 * (uv_y * 4.5 + storm_seed).sin()
+                    + 0.16 * (uv_y * 14.0 - storm_seed * 1.3).cos()
+                    + 0.05 * (uv_y * 38.0 + storm_seed * 2.1).sin();
+
+                let dist_main = (uv_x - bolt_x).abs();
+
+                let branch1_x = bolt_x - (uv_y + 0.25) * 0.75 + 0.1 * (uv_y * 18.0).sin();
+                let dist_br1 = if uv_y > -0.25 { (uv_x - branch1_x).abs() } else { 10.0 };
+
+                let branch2_x = bolt_x + (uv_y - 0.1) * 0.85 + 0.08 * (uv_y * 22.0).cos();
+                let dist_br2 = if uv_y > 0.1 { (uv_x - branch2_x).abs() } else { 10.0 };
+
+                let branch3_x = bolt_x - (uv_y - 0.4) * 0.9 + 0.06 * (uv_y * 26.0).sin();
+                let dist_br3 = if uv_y > 0.4 { (uv_x - branch3_x).abs() } else { 10.0 };
+
+                let glow_main = 0.009 / (dist_main * dist_main * 70.0 + dist_main * 4.5 + 0.003);
+                let glow_branches = 0.004 / (dist_br1 * 40.0 + 0.008)
+                    + 0.004 / (dist_br2 * 40.0 + 0.008)
+                    + 0.003 / (dist_br3 * 45.0 + 0.008);
+
+                let core_main = (1.0 - dist_main / 0.022).max(0.0).powi(2) * 1.5;
+                let core_branches = (1.0 - dist_br1 / 0.016).max(0.0).powi(2)
+                    + (1.0 - dist_br2 / 0.016).max(0.0).powi(2);
+
+                let cloud_noise = ((uv_x * 3.0).sin() * (uv_y * 2.5 + time * 0.5).cos() * 0.5 + 0.5) * 0.08;
+                let sky_r = 0.03 + flash * 0.45 + cloud_noise;
+                let sky_g = 0.02 + flash * 0.35 + cloud_noise;
+                let sky_b = 0.07 + flash * 0.65 + cloud_noise;
+
+                let total_glow = (glow_main + glow_branches) * strike;
+                let total_core = (core_main + core_branches) * strike;
+
+                let red = sky_r + total_glow * 0.3 + total_core;
+                let green = sky_g + total_glow * 0.85 + total_core;
+                let blue = sky_b + total_glow * 1.1 + total_core;
+
+                let px_idx = x * 3;
+                row[px_idx] = (red.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (green.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (blue.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 6: Red Neuronal Sináptica y Malla Cuántica
+// =========================================================================
+
+pub fn render_synaptic_lattice_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let mut nodes = [[0.0f32; 2]; 12];
+    for i in 0..12 {
+        let fi = i as f32;
+        let speed = 0.4 + fi * 0.08;
+        let phase = fi * 1.047;
+        nodes[i] = [
+            (time * speed + phase).sin() * 0.75 * aspect,
+            (time * (speed * 1.3) + phase * 1.7).cos() * 0.65,
+        ];
+    }
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
+
+                let mut node_glow = 0.0f32;
+                let mut arc_glow = 0.0f32;
+                let mut pulse_glow = 0.0f32;
+
+                for i in 0..12 {
+                    let dx = uv_x - nodes[i][0];
+                    let dy = uv_y - nodes[i][1];
+                    let dist = (dx * dx + dy * dy).sqrt();
+                    node_glow += 0.003 / (dist * dist * 45.0 + dist * 3.0 + 0.005);
+                }
+
+                for i in 0..12 {
+                    let next = (i + 1) % 12;
+                    let p1 = nodes[i];
+                    let p2 = nodes[next];
+
+                    let seg_x = p2[0] - p1[0];
+                    let seg_y = p2[1] - p1[1];
+                    let seg_len_sq = seg_x * seg_x + seg_y * seg_y;
+
+                    if seg_len_sq > 1e-4 {
+                        let t = (((uv_x - p1[0]) * seg_x + (uv_y - p1[1]) * seg_y) / seg_len_sq).clamp(0.0, 1.0);
+                        let proj_x = p1[0] + t * seg_x;
+                        let proj_y = p1[1] + t * seg_y;
+
+                        let dist_seg = ((uv_x - proj_x).powi(2) + (uv_y - proj_y).powi(2)).sqrt();
+                        arc_glow += 0.0018 / (dist_seg * dist_seg * 120.0 + dist_seg * 6.0 + 0.003);
+
+                        let pulse_t = (time * 1.8 + (i as f32) * 0.7) % 1.0;
+                        let pulse_x = p1[0] + pulse_t * seg_x;
+                        let pulse_y = p1[1] + pulse_t * seg_y;
+                        let dist_pulse = ((uv_x - pulse_x).powi(2) + (uv_y - pulse_y).powi(2)).sqrt();
+                        pulse_glow += 0.004 / (dist_pulse * dist_pulse * 60.0 + dist_pulse * 3.5 + 0.004);
+                    }
+                }
+
+                let red = arc_glow * 1.0 + node_glow * 0.9 + pulse_glow * 1.0;
+                let green = arc_glow * 0.65 + node_glow * 1.0 + pulse_glow * 0.95;
+                let blue = arc_glow * 0.15 + node_glow * 0.7 + pulse_glow * 0.4;
+
+                let px_idx = x * 3;
+                row[px_idx] = (red.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (green.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (blue.min(1.0) * 255.0) as u8;
             }
         });
 

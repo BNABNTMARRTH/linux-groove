@@ -91,15 +91,16 @@ body {
 
 .nav-links {
     display: flex;
-    gap: 0.8rem;
+    gap: 0.4rem;
+    flex-wrap: wrap;
 }
 
 .nav-btn {
     text-decoration: none;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     font-family: var(--font-mono);
     color: var(--text-muted);
-    padding: 6px 12px;
+    padding: 4px 10px;
     border-radius: 4px;
     border: 1px solid transparent;
     transition: all 0.25s ease;
@@ -723,3 +724,4 @@ strong {
         gap: 1.5rem;
     }
 }
+
