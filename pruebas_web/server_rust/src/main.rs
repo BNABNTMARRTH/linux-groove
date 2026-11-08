@@ -18,6 +18,7 @@ use tower_http::services::ServeDir;
 struct AppState {
     electric_stream: broadcast::Sender<Bytes>,
     labyrinth_stream: broadcast::Sender<Bytes>,
+    city_stream: broadcast::Sender<Bytes>,
     filmstrip_bytes: Bytes,
 }
 
@@ -44,10 +45,12 @@ async fn main() {
     // Canales de difusión broadcast para clientes de streaming en vivo
     let (tx_electric, _rx_elec) = broadcast::channel::<Bytes>(16);
     let (tx_labyrinth, _rx_maze) = broadcast::channel::<Bytes>(16);
+    let (tx_city, _rx_city) = broadcast::channel::<Bytes>(16);
 
     let state = Arc::new(AppState {
         electric_stream: tx_electric.clone(),
         labyrinth_stream: tx_labyrinth.clone(),
+        city_stream: tx_city.clone(),
         filmstrip_bytes,
     });
 
@@ -107,13 +110,42 @@ async fn main() {
         })
         .expect("Error al iniciar subproceso de laberinto");
 
+    // Subproceso dedicado 3: Ciudad Cyberpunk con Lluvia y Asfalto Mojado (60 FPS fluidos)
+    let tx_city_render = tx_city.clone();
+    std::thread::Builder::new()
+        .name("city-rain-worker".to_string())
+        .spawn(move || {
+            let width = 512;
+            let height = 288;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.022;
+
+                let jpeg_bytes = render_rainy_city_parallel(time, width, height);
+                let _ = tx_city_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de ciudad");
+
     // Servidor HTTP Axum para servir páginas, filmstrip y flujos MJPEG
     let public_dir = std::env::var("GROOVE_PUBLIC_DIR").unwrap_or_else(|_| "../public".to_string());
-    println!("📁 Sirviendo contenido estático desde: {}", public_dir);
+    println!(">> Sirviendo contenido estatico desde: {}", public_dir);
 
     let app = Router::new()
         .route("/stream", get(stream_electric_handler))
         .route("/stream_labyrinth", get(stream_labyrinth_handler))
+        .route("/stream_city", get(stream_city_handler))
         .route("/labyrinth_filmstrip.jpg", get(filmstrip_handler))
         .fallback_service(ServeDir::new(public_dir))
         .layer(CorsLayer::permissive())
@@ -125,10 +157,11 @@ async fn main() {
         .unwrap_or(8088);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
-    println!("📡 Servidor activo en http://localhost:{}", port);
-    println!("🌐 Rayos Eléctricos:     http://localhost:{}/index.html", port);
-    println!("🌌 Laberinto 3D Scroll:  http://localhost:{}/labyrinth.html", port);
-    println!("🎞️  Filmstrip 3D (64 fr): http://localhost:{}/labyrinth_filmstrip.jpg", port);
+    println!(">> Servidor activo en http://localhost:{}", port);
+    println!("   [1] Rayos Electricos:     http://localhost:{}/index.html", port);
+    println!("   [2] Laberinto 3D Scroll:  http://localhost:{}/labyrinth.html", port);
+    println!("   [3] Ciudad Lluviosa:      http://localhost:{}/city.html", port);
+    println!("   [4] Filmstrip 3D (64 fr): http://localhost:{}/labyrinth_filmstrip.jpg", port);
 
     let listener = tokio::net::TcpListener::bind(addr).await.expect("Error al enlazar socket");
     axum::serve(listener, app).await.expect("Error en el servidor");
@@ -158,6 +191,11 @@ async fn stream_electric_handler(State(state): State<Arc<AppState>>) -> impl Int
 /// Handler HTTP para streaming continuo del Laberinto 3D
 async fn stream_labyrinth_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     build_mjpeg_response(state.labyrinth_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de la Ciudad Lluviosa
+async fn stream_city_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.city_stream.subscribe())
 }
 
 /// Construye una respuesta HTTP multipart/x-mixed-replace para reproducción MJPEG sin JavaScript
@@ -587,6 +625,177 @@ pub fn generate_labyrinth_filmstrip(num_frames: usize, frame_w: usize, frame_h: 
         &filmstrip_buf,
         frame_w as u16,
         total_h as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 3: Ciudad Cyberpunk Nocturna con Lluvia y Asfalto Mojado
+// =========================================================================
+
+pub fn render_rainy_city_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let cam_x = (time * 0.18).sin() * 0.45;
+    let cam_y = 1.35 + (time * 0.25).cos() * 0.04;
+    let cam_z = time * 4.2;
+    let ro = [cam_x, cam_y, cam_z];
+
+    let target = [cam_x * 0.7, 1.25, cam_z + 8.0];
+
+    let fwd = norm3([target[0] - ro[0], target[1] - ro[1], target[2] - ro[2]]);
+    let world_up = [0.0f32, 1.0, 0.0];
+    let right = norm3(cross3(fwd, world_up));
+    let up = cross3(right, fwd);
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
+
+                let rd = norm3([
+                    fwd[0] * 1.3 + right[0] * uv_x + up[0] * uv_y,
+                    fwd[1] * 1.3 + right[1] * uv_x + up[1] * uv_y,
+                    fwd[2] * 1.3 + right[2] * uv_x + up[2] * uv_y,
+                ]);
+
+                let fog_color = [0.015f32, 0.022, 0.055];
+                let mut r = fog_color[0];
+                let mut g = fog_color[1];
+                let mut b = fog_color[2];
+
+                if rd[1] < -0.001 {
+                    // Impacto analítico en plano de suelo y = 0.0
+                    let t_ground = ro[1] / -rd[1];
+                    if t_ground < 45.0 {
+                        let hit_p = [ro[0] + rd[0] * t_ground, 0.0, ro[2] + rd[2] * t_ground];
+
+                        let center_line = hit_p[0].abs() < 0.08 && ((hit_p[2] * 0.45) % 2.0).abs() < 1.0;
+                        let curb_line = (hit_p[0].abs() - 2.8).abs() < 0.06;
+
+                        let puddle = ((hit_p[0] * 1.1).sin() * (hit_p[2] * 0.55).cos() + (hit_p[0] * 2.8 + hit_p[2] * 2.1).sin() * 0.3).max(0.0);
+                        let is_puddle = puddle > 0.08 || hit_p[0].abs() < 2.5;
+
+                        let ripple = ((hit_p[0] * 22.0 + time * 7.0).sin() * (hit_p[2] * 22.0 - time * 9.0).cos()) * 0.04 * puddle;
+                        let n = norm3([ripple, 1.0, ripple * 0.7]);
+
+                        let refl_rd = norm3([
+                            rd[0] - 2.0 * dot3(rd, n) * n[0],
+                            rd[1] - 2.0 * dot3(rd, n) * n[1],
+                            rd[2] - 2.0 * dot3(rd, n) * n[2],
+                        ]);
+
+                        let base_col = if center_line {
+                            [1.0f32, 0.75, 0.10]
+                        } else if curb_line {
+                            [0.4f32, 0.85, 1.0]
+                        } else {
+                            [0.05f32, 0.06, 0.09]
+                        };
+
+                        let mut refl_col = [0.015f32, 0.025, 0.06];
+
+                        // Neón cian en edificio izquierdo
+                        if refl_rd[0] < -0.1 && refl_rd[1] > 0.05 {
+                            let sign_y = refl_rd[1] * 10.0;
+                            if sign_y > 2.0 && sign_y < 7.0 {
+                                refl_col[0] += 0.05;
+                                refl_col[1] += 0.85;
+                                refl_col[2] += 1.0;
+                            }
+                        }
+
+                        // Neón magenta en edificio derecho
+                        if refl_rd[0] > 0.1 && refl_rd[1] > 0.05 {
+                            let sign_y = refl_rd[1] * 10.0;
+                            if sign_y > 1.5 && sign_y < 6.5 {
+                                refl_col[0] += 0.95;
+                                refl_col[1] += 0.15;
+                                refl_col[2] += 0.85;
+                            }
+                        }
+
+                        // Farolas ámbar
+                        let lamp_z = ((hit_p[2] % 8.0) + 8.0) % 8.0 - 4.0;
+                        let lamp_glow = 0.04 / (lamp_z.abs() + 0.3);
+                        refl_col[0] += 1.0 * lamp_glow;
+                        refl_col[1] += 0.7 * lamp_glow;
+                        refl_col[2] += 0.15 * lamp_glow;
+
+                        let cos_theta = (-rd[1]).clamp(0.0, 1.0);
+                        let fresnel = 0.25 + 0.75 * (1.0 - cos_theta).powi(3);
+                        let wet_factor = if is_puddle { 0.85 } else { 0.35 };
+                        let fog_factor = (-t_ground * 0.07).exp().clamp(0.0, 1.0);
+
+                        r = (base_col[0] * (1.0 - fresnel * wet_factor) + refl_col[0] * fresnel * wet_factor) * fog_factor + fog_color[0] * (1.0 - fog_factor);
+                        g = (base_col[1] * (1.0 - fresnel * wet_factor) + refl_col[1] * fresnel * wet_factor) * fog_factor + fog_color[1] * (1.0 - fog_factor);
+                        b = (base_col[2] * (1.0 - fresnel * wet_factor) + refl_col[2] * fresnel * wet_factor) * fog_factor + fog_color[2] * (1.0 - fog_factor);
+                    }
+                } else {
+                    let sky_grad = (rd[1] * 0.7).clamp(0.0, 1.0);
+                    r = fog_color[0] + 0.01 * sky_grad;
+                    g = fog_color[1] + 0.02 * sky_grad;
+                    b = fog_color[2] + 0.07 * sky_grad;
+
+                    if rd[0].abs() > 0.15 {
+                        let t_bldg = (3.5 - ro[0].abs()) / rd[0].abs();
+                        if t_bldg > 0.0 && t_bldg < 35.0 {
+                            let bldg_y = ro[1] + rd[1] * t_bldg;
+                            let bldg_z = ro[2] + rd[2] * t_bldg;
+                            if bldg_y > 0.0 {
+                                let win_x = ((bldg_z * 1.5).floor() as i32).abs() % 3 == 0;
+                                let win_y = ((bldg_y * 1.8).floor() as i32).abs() % 4 == 0;
+                                if win_x && win_y {
+                                    let win_amber = (bldg_z * 0.7).sin() > 0.0;
+                                    if win_amber {
+                                        r += 0.85; g += 0.65; b += 0.20;
+                                    } else {
+                                        r += 0.20; g += 0.75; b += 0.95;
+                                    }
+                                }
+
+                                if rd[0] < 0.0 && bldg_y > 3.0 && bldg_y < 6.0 && ((bldg_z * 0.3).sin() > 0.2) {
+                                    r += 0.1; g += 0.85; b += 1.0;
+                                } else if rd[0] > 0.0 && bldg_y > 2.5 && bldg_y < 5.5 && ((bldg_z * 0.35).cos() > 0.2) {
+                                    r += 0.95; g += 0.15; b += 0.8;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Vetas de lluvia diagonal
+                let rain_x = uv_x * 8.0 + uv_y * 1.8 + time * 12.0;
+                let rain_y = uv_y * 14.0 + time * 24.0;
+                let rain_streak = ((rain_x * 4.0).sin() * (rain_y % 1.0).sin()).max(0.0).powi(6);
+                let rain_glow = rain_streak * 0.18;
+
+                r += rain_glow * 0.7;
+                g += rain_glow * 0.9;
+                b += rain_glow * 1.1;
+
+                let px_idx = x * 3;
+                row[px_idx] = (r.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (g.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (b.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
         jpeg_encoder::ColorType::Rgb,
     );
 

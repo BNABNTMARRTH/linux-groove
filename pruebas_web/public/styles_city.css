@@ -1,0 +1,725 @@
+/* ==========================================================================
+   LINUX GROOVE - CIUDAD NOCTURNA Y DASHBOARD (STYLESHEET)
+   Estilo Cyberpunk Moderno | Cero Emojis | CSS Scroll-Driven | 0 JS
+   ========================================================================== */
+
+:root {
+    --bg-dark: #03050a;
+    --cyan-glow: #00f3ff;
+    --magenta-glow: #ff007f;
+    --amber-glow: #ffb300;
+    --panel-bg: rgba(6, 10, 22, 0.74);
+    --panel-border: rgba(0, 243, 255, 0.28);
+    --text-primary: #e6f4fc;
+    --text-muted: #869cb8;
+    --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #060914 0%, #020306 100%);
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACION SUPERIOR (MINIMALISTA, SIN EMOJIS)
+   ========================================================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    background: rgba(3, 5, 10, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+}
+
+.brand-bullet {
+    color: var(--cyan-glow);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    letter-spacing: 0.15em;
+    background: linear-gradient(90deg, #ffffff, var(--cyan-glow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-tag {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: rgba(0, 243, 255, 0.12);
+    border: 1px solid var(--cyan-glow);
+    border-radius: 4px;
+    color: var(--cyan-glow);
+    letter-spacing: 0.1em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 0.8rem;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+}
+
+.nav-btn:hover {
+    color: var(--cyan-glow);
+    border-color: rgba(0, 243, 255, 0.3);
+    background: rgba(0, 243, 255, 0.06);
+}
+
+.nav-btn.active {
+    color: #ffffff;
+    border-color: var(--cyan-glow);
+    background: rgba(0, 243, 255, 0.16);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.25);
+}
+
+/* ==========================================================================
+   VIEWPORT FIJO DE LA CIUDAD LLUVIOSA (60 FPS STREAM)
+   ========================================================================== */
+
+.stream-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.stream-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.city-stream {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: center center;
+    will-change: transform, filter;
+    filter: contrast(1.1) brightness(1.02);
+}
+
+.stream-scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.12) 0px,
+        rgba(0, 0, 0, 0.12) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+}
+
+.stream-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at 50% 50%,
+        transparent 40%,
+        rgba(3, 5, 10, 0.72) 80%,
+        #03050a 100%
+    );
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   HUD HOLOGRAFICO Y CORNERS (SIN EMOJIS)
+   ========================================================================== */
+
+.hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    color: var(--cyan-glow);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+}
+
+.hud-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 220px;
+    height: 220px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(0, 243, 255, 0.2);
+    border-radius: 50%;
+}
+
+.hud-reticle::before,
+.hud-reticle::after {
+    content: "";
+    position: absolute;
+    background: var(--cyan-glow);
+    opacity: 0.5;
+}
+
+.hud-reticle::before {
+    top: 50%;
+    left: -20px;
+    right: -20px;
+    height: 1px;
+}
+
+.hud-reticle::after {
+    left: 50%;
+    top: -20px;
+    bottom: -20px;
+    width: 1px;
+}
+
+.hud-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 12px;
+    background: rgba(3, 5, 12, 0.6);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    backdrop-filter: blur(6px);
+}
+
+.hud-label {
+    font-size: 0.6rem;
+    color: var(--text-muted);
+}
+
+.hud-val {
+    font-weight: 700;
+    color: var(--cyan-glow);
+}
+
+.hud-corner.top-left {
+    top: 75px;
+    left: 2rem;
+    border-left: 3px solid var(--cyan-glow);
+}
+
+.hud-corner.top-right {
+    top: 75px;
+    right: 2rem;
+    text-align: right;
+    border-right: 3px solid var(--magenta-glow);
+}
+
+.hud-corner.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+    border-left: 3px solid var(--amber-glow);
+}
+
+.hud-corner.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+    text-align: right;
+    border-right: 3px solid var(--cyan-glow);
+}
+
+/* ==========================================================================
+   PISTA DE NARRATIVA Y PANELES EN VIDRIO ESMERILADO
+   ========================================================================== */
+
+.scroll-track {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+.story-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1.5rem;
+}
+
+.glass-panel {
+    width: 100%;
+    max-width: 680px;
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 12px;
+    padding: 2.8rem 3rem;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 32px rgba(0, 243, 255, 0.08);
+    position: relative;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.glass-panel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 25px;
+    right: 25px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+}
+
+.badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--cyan-glow);
+    letter-spacing: 0.12em;
+    margin-bottom: 0.9rem;
+}
+
+.hero-card h1,
+.dashboard-card h2,
+.spectrum-card h2,
+.summary-card h2 {
+    font-size: 2.3rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 50%, var(--cyan-glow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+p {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+strong {
+    color: #ffffff;
+}
+
+.section-lead {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 1.8rem;
+}
+
+.scroll-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--amber-glow);
+    padding: 8px 14px;
+    background: rgba(255, 179, 0, 0.08);
+    border: 1px solid rgba(255, 179, 0, 0.25);
+    border-radius: 4px;
+}
+
+.cue-bullet {
+    display: inline-block;
+    animation: cueBounce 1.5s infinite;
+}
+
+@keyframes cueBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(3px); }
+}
+
+/* ==========================================================================
+   GRAFICAS DE TELEMETRIA DEL KERNEL (BARRAS Y ANILLOS)
+   ========================================================================== */
+
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.chart-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.chart-info {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+}
+
+.metric-name {
+    color: var(--text-primary);
+}
+
+.metric-val {
+    color: var(--cyan-glow);
+    font-weight: 700;
+}
+
+.bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    width: var(--target-width, 80%);
+    border-radius: 4px;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bar-cyan {
+    background: linear-gradient(90deg, #0088cc, var(--cyan-glow));
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+.bar-amber {
+    background: linear-gradient(90deg, #ff8800, var(--amber-glow));
+    box-shadow: 0 0 10px rgba(255, 179, 0, 0.5);
+}
+
+.bar-magenta {
+    background: linear-gradient(90deg, #aa00aa, var(--magenta-glow));
+    box-shadow: 0 0 10px rgba(255, 0, 127, 0.5);
+}
+
+/* Anillos circulares de datos SVG */
+.rings-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ring-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    text-align: center;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.ring-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 6;
+}
+
+.ring-fg {
+    fill: none;
+    stroke-width: 6;
+    stroke-linecap: round;
+    stroke-dasharray: 201; /* 2 * PI * 32 */
+    transition: stroke-dashoffset 1s ease;
+}
+
+.ring-cyan {
+    stroke: var(--cyan-glow);
+    filter: drop-shadow(0 0 6px rgba(0, 243, 255, 0.6));
+}
+
+.ring-amber {
+    stroke: var(--amber-glow);
+    filter: drop-shadow(0 0 6px rgba(255, 179, 0, 0.6));
+}
+
+.ring-magenta {
+    stroke: var(--magenta-glow);
+    filter: drop-shadow(0 0 6px rgba(255, 0, 127, 0.6));
+}
+
+.ring-info {
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-mono);
+}
+
+.ring-num {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.ring-lbl {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+/* ==========================================================================
+   ESPECTRO DE AUDIO GROOVE (ECUALIZADOR EN VIVO)
+   ========================================================================== */
+
+.spectrum-visualizer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 120px;
+    padding: 1rem 0.5rem;
+    background: rgba(3, 5, 12, 0.5);
+    border: 1px solid rgba(0, 243, 255, 0.18);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    gap: 6px;
+}
+
+.eq-bar {
+    flex: 1;
+    min-height: 10px;
+    height: 35%;
+    background: linear-gradient(180deg, var(--cyan-glow) 0%, #0055aa 70%, #001133 100%);
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 0 8px rgba(0, 243, 255, 0.35);
+    animation: eqPulse 1.4s ease-in-out infinite alternate;
+    animation-delay: var(--delay, 0s);
+}
+
+@keyframes eqPulse {
+    0% { height: var(--min-h, 15%); }
+    100% { height: var(--max-h, 90%); }
+}
+
+.audio-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.meta-tag {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   BOTONES DE ACCION
+   ========================================================================== */
+
+.action-row {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1.8rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #03050a;
+    background: var(--cyan-glow);
+    padding: 10px 18px;
+    border-radius: 4px;
+    border: 1px solid var(--cyan-glow);
+    transition: all 0.25s ease;
+    box-shadow: 0 0 14px rgba(0, 243, 255, 0.35);
+}
+
+.action-btn:hover {
+    background: #ffffff;
+    box-shadow: 0 0 22px rgba(0, 243, 255, 0.65);
+    transform: translateY(-2px);
+}
+
+.action-btn.secondary {
+    color: var(--text-primary);
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+}
+
+.action-btn.secondary:hover {
+    border-color: var(--cyan-glow);
+    color: var(--cyan-glow);
+    background: rgba(0, 243, 255, 0.06);
+}
+
+.action-btn.tertiary {
+    color: var(--text-muted);
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+.action-btn.tertiary:hover {
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   CSS SCROLL-DRIVEN ANIMATIONS (MODERNO, SIN JAVASCRIPT)
+   ========================================================================== */
+
+@supports (animation-timeline: scroll(root block)) {
+    /* Deformacion y aceleracion de la ciudad lluviosa con el scroll */
+    .city-stream {
+        animation-name: cityScrollTravel;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root block);
+        animation-range: 0% 100%;
+    }
+
+    @keyframes cityScrollTravel {
+        0% {
+            transform: scale(1.0) translateY(0);
+            filter: contrast(1.1) brightness(1.0);
+        }
+        50% {
+            transform: scale(1.15) translateY(-2%);
+            filter: contrast(1.2) brightness(1.08) hue-rotate(8deg);
+        }
+        100% {
+            transform: scale(1.3) translateY(-4%);
+            filter: contrast(1.3) brightness(1.15) hue-rotate(18deg);
+        }
+    }
+
+    /* Revelado de paneles de vidrio mediante view-timeline */
+    .glass-panel {
+        view-timeline-name: --panelView;
+        view-timeline-axis: block;
+        animation-timeline: --panelView;
+        animation-name: panelSlideUp;
+        animation-range: entry 15% cover 50%;
+        animation-fill-mode: both;
+    }
+
+    @keyframes panelSlideUp {
+        0% {
+            opacity: 0;
+            transform: translateY(50px) scale(0.95);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1.0);
+        }
+    }
+}
+
+/* ==========================================================================
+   ACCESIBILIDAD Y MOVIMIENTO REDUCIDO
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .city-stream,
+    .glass-panel,
+    .eq-bar,
+    .cue-bullet {
+        animation: none !important;
+        transform: none !important;
+    }
+}
+
+/* ==========================================================================
+   ADAPTABILIDAD RESPONSIVA
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .top-nav {
+        padding: 0 1rem;
+    }
+
+    .brand-title {
+        font-size: 0.85rem;
+    }
+
+    .brand-tag {
+        display: none;
+    }
+
+    .hud-corner.top-left,
+    .hud-corner.top-right {
+        top: 65px;
+        font-size: 0.65rem;
+        padding: 4px 8px;
+    }
+
+    .hud-corner.bottom-left,
+    .hud-corner.bottom-right {
+        display: none;
+    }
+
+    .glass-panel {
+        padding: 2rem 1.6rem;
+    }
+
+    .hero-card h1,
+    .dashboard-card h2,
+    .spectrum-card h2,
+    .summary-card h2 {
+        font-size: 1.7rem;
+    }
+
+    .rings-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
