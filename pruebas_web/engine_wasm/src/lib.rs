@@ -175,39 +175,52 @@ pub extern "C" fn update_scene(
         );
         let mouse_active = mouse_norm_x.abs() > 0.01 || mouse_norm_y.abs() > 0.01;
 
-        // Determinar coordenadas objetivo de los vertices
-        let target_positions: Vec<Vec3> = if engine.is_anatomy_mode {
-            // MODO ANATOMIA: Mano, Cabeza o Corazon
+        // Determinar coordenadas objetivo de los vertices y normales de pared
+        let (target_positions, target_normals): (Vec<Vec3>, Vec<Vec3>) = if engine.is_anatomy_mode {
+            // MODO ANATOMIA: Mano, Craneo o Corazon con normales reales de pared exterior
             if engine.morph_t > 0.001 {
-                // Morphing continuo con el scroll
-                (0..engine.active_points)
-                    .map(|i| engine.anatomy.get_morph_target(i, engine.morph_t, engine.time))
-                    .collect()
+                let mut pts = Vec::with_capacity(engine.active_points);
+                let mut nrms = Vec::with_capacity(engine.active_points);
+                for i in 0..engine.active_points {
+                    let (p, n) = engine.anatomy.get_morph_target(i, engine.morph_t, engine.time);
+                    pts.push(p);
+                    nrms.push(n);
+                }
+                (pts, nrms)
             } else {
+                let mut pts = Vec::with_capacity(engine.active_points);
+                let mut nrms = Vec::with_capacity(engine.active_points);
                 match engine.selected_anatomy {
                     0 => {
-                        // MANO ANIMADA: cinemática de 30 huesos de hand_animation.glb
-                        (0..engine.active_points)
-                            .map(|i| engine.anatomy.get_animated_hand(i, engine.time))
-                            .collect()
+                        // MANO ANIMADA: cinematica de 30 huesos con normales de piel rotadas
+                        for i in 0..engine.active_points {
+                            let (p, n) = engine.anatomy.get_animated_hand_target(i, engine.time);
+                            pts.push(p);
+                            nrms.push(n);
+                        }
                     },
                     1 => {
-                        // CRANEO: despiece orbital de 25 huesos de craneo.glb
-                        (0..engine.active_points)
-                            .map(|i| engine.anatomy.get_skull_deconstructed(i, deconstruct))
-                            .collect()
+                        // CRANEO: despiece orbital con normales oseas
+                        for i in 0..engine.active_points {
+                            let (p, n) = engine.anatomy.get_skull_target(i, deconstruct);
+                            pts.push(p);
+                            nrms.push(n);
+                        }
                     },
                     _ => {
-                        // CORAZON: sístole y diástole de anim_heart.glb
-                        (0..engine.active_points)
-                            .map(|i| engine.anatomy.get_pulsing_heart(i, engine.time))
-                            .collect()
+                        // CORAZON: sistole y diastole con normales miocardicas
+                        for i in 0..engine.active_points {
+                            let (p, n) = engine.anatomy.get_pulsing_heart_target(i, engine.time);
+                            pts.push(p);
+                            nrms.push(n);
+                        }
                     }
                 }
+                (pts, nrms)
             }
         } else {
             // MODO PRIMITIVAS: Esfera, Cubo o Dona
-            if engine.morph_t > 0.001 {
+            let pts = if engine.morph_t > 0.001 {
                 (0..engine.active_points)
                     .map(|i| engine.geometry.get_morph_target(i, engine.morph_t))
                     .collect()
@@ -217,7 +230,9 @@ pub extern "C" fn update_scene(
                     1 => engine.geometry.cube_targets.clone(),
                     _ => engine.geometry.torus_targets.clone(),
                 }
-            }
+            };
+            let nrms = pts.iter().map(|p| p.normalize()).collect();
+            (pts, nrms)
         };
 
         // Actualizar fisica de particulas con dispersion atomica y magnetismo
@@ -230,97 +245,60 @@ pub extern "C" fn update_scene(
             mouse_active,
         );
 
-        // Vector de iluminacion clave 3D (luz anterolateral superior)
-        let light_dir = Vec3::new(0.35, 0.75, 0.90).normalize();
+        // Vector de iluminacion clave 3D (luz cenital anterolateral)
+        let light_dir = Vec3::new(0.40, 0.75, 0.55).normalize();
+        let view_dir = Vec3::new(0.0, 0.0, 1.0);
+        let half_vec = Vec3::new(light_dir.x + view_dir.x, light_dir.y + view_dir.y, light_dir.z + view_dir.z).normalize();
 
-        // 1. Proyectar particulas 3D -> 2D con iluminacion por normales
+        // 1. Proyectar particulas 3D -> 2D con iluminacion fotometrica por normales
         let mut pt_idx = 0;
         for (i, p) in engine.particles.particles.iter().enumerate() {
             if pt_idx >= MAX_PARTICLES { break; }
             let (sx, sy, depth, scale, visible) = engine.camera.project(&p.pos, width, height);
             if visible {
-                let base_alpha = (1.4 - depth * 0.18).clamp(0.15, 1.0);
+                let base_alpha = (1.4 - depth * 0.16).clamp(0.20, 1.0);
 
                 let (r, g, b, size_mult, alpha_mult) = if engine.is_anatomy_mode {
-                    // Calculo de pseudonormal para claroscuro y volumen anatomico tangible
-                    let normal = match engine.selected_anatomy {
-                        0 => {
-                            // Mano: normal radial de falanges y dorso de palma
-                            let nx = p.pos.x * 1.5;
-                            let ny = if p.pos.y > -0.15 { 0.1 } else { 0.0 };
-                            let nz = p.pos.z * 3.5;
-                            let len_sq = nx * nx + ny * ny + nz * nz;
-                            if len_sq > 0.001 {
-                                let inv = 1.0 / len_sq.sqrt();
-                                Vec3::new(nx * inv, ny * inv, nz * inv)
-                            } else {
-                                Vec3::new(0.0, 0.0, 1.0)
-                            }
-                        },
-                        1 => {
-                            // Cabeza: normal radial desde el centro encefalico (0.0, 0.32, -0.12)
-                            let nx = p.pos.x / 0.82;
-                            let ny = (p.pos.y - 0.32) / 0.95;
-                            let nz = (p.pos.z + 0.12) / 1.05;
-                            let len_sq = nx * nx + ny * ny + nz * nz;
-                            if len_sq > 0.001 {
-                                let inv = 1.0 / len_sq.sqrt();
-                                Vec3::new(nx * inv, ny * inv, nz * inv)
-                            } else {
-                                Vec3::new(0.0, 0.0, 1.0)
-                            }
-                        },
-                        _ => {
-                            // Corazon: normal desde el eje axial
-                            let nx = p.pos.x / 1.15;
-                            let ny = (p.pos.y + 0.25) / 1.0;
-                            let nz = p.pos.z / 0.95;
-                            let len_sq = nx * nx + ny * ny + nz * nz;
-                            if len_sq > 0.001 {
-                                let inv = 1.0 / len_sq.sqrt();
-                                Vec3::new(nx * inv, ny * inv, nz * inv)
-                            } else {
-                                Vec3::new(0.0, 0.0, 1.0)
-                            }
-                        }
-                    };
-
+                    // Normal real orientada hacia afuera calculada para cada particula de la pared
+                    let normal = target_normals[i % target_normals.len()];
                     let dot = (normal.x * light_dir.x + normal.y * light_dir.y + normal.z * light_dir.z).max(0.0);
-                    let intensity = 0.30 + 0.70 * dot;
-                    let sz = 0.85 + 0.70 * dot;
+                    let spec = (normal.x * half_vec.x + normal.y * half_vec.y + normal.z * half_vec.z).max(0.0).powi(8);
+
+                    let intensity = 0.20 + 0.80 * dot + spec * 0.40;
+                    let sz = 0.85 + 0.65 * dot + spec * 0.50;
 
                     match engine.selected_anatomy {
-                        2 => {
-                            // Corazon: carmesi profundo con reflejos dorados y rubi vivo
-                            if dot > 0.75 && i % 3 == 0 {
-                                (255, 230, 130, sz * 1.25, 1.0)
+                        0 => {
+                            // Mano: Esmeralda biomecanico solido con destellos blancos en crestas
+                            if dot > 0.70 && spec > 0.35 {
+                                (240, 255, 245, sz * 1.35, 1.0)
                             } else {
-                                let r = (255.0 * intensity).min(255.0) as u8;
-                                let g = (38.0 * intensity).min(255.0) as u8;
-                                let b = (85.0 * intensity).min(255.0) as u8;
-                                (r, g, b, sz, intensity)
+                                let r = (20.0 * intensity).min(255.0) as u8;
+                                let g = (255.0 * intensity).min(255.0) as u8;
+                                let b = (175.0 * intensity).min(255.0) as u8;
+                                (r, g, b, sz, 0.95)
                             }
                         },
                         1 => {
-                            // Cabeza: cian neural bio-cibernetico con destellos fotonicos en crestas
-                            if dot > 0.80 && i % 4 == 0 {
-                                (220, 250, 255, sz * 1.3, 1.0)
+                            // Craneo: Cian fotonico solido
+                            if dot > 0.70 && spec > 0.35 {
+                                (230, 255, 255, sz * 1.35, 1.0)
                             } else {
                                 let r = 0;
-                                let g = (243.0 * intensity).min(255.0) as u8;
+                                let g = (240.0 * intensity).min(255.0) as u8;
                                 let b = (255.0 * intensity).min(255.0) as u8;
-                                (r, g, b, sz, intensity)
+                                (r, g, b, sz, 0.95)
                             }
                         },
                         _ => {
-                            // Mano: esmeralda digital con realce blanco en nudillos y dedos
-                            if dot > 0.80 && i % 4 == 0 {
-                                (240, 255, 250, sz * 1.3, 1.0)
+                            // Corazon: Rubi miocardico con volumen muscular
+                            if dot > 0.70 && spec > 0.35 {
+                                (255, 225, 160, sz * 1.35, 1.0)
                             } else {
-                                let r = 0;
-                                let g = (255.0 * intensity).min(255.0) as u8;
-                                let b = (170.0 * intensity).min(255.0) as u8;
-                                (r, g, b, sz, intensity)
+                                let r = (255.0 * intensity).min(255.0) as u8;
+                                let g = (42.0 * intensity).min(255.0) as u8;
+                                let b = (92.0 * intensity).min(255.0) as u8;
+                                (r, g, b, sz, 0.95)
                             }
                         }
                     }
@@ -332,68 +310,58 @@ pub extern "C" fn update_scene(
                     x: sx,
                     y: sy,
                     depth,
-                    size: (p.size * scale * 0.0075 * size_mult).clamp(1.0, 5.5),
-                    alpha: (base_alpha * alpha_mult).clamp(0.12, 1.0),
+                    size: (p.size * scale * 0.0075 * size_mult).clamp(1.2, 5.0),
+                    alpha: (base_alpha * alpha_mult).clamp(0.15, 1.0),
                     r, g, b,
                     _pad: 0,
                 };
                 pt_idx += 1;
             }
         }
+
+        // Ordenamiento por profundidad (Painter's algorithm back-to-front)
+        // Las particulas frontales ocluyen a las traseras, creando paredes opacas y solidas
+        BUFFER_POINTS[..pt_idx].sort_by(|a, b| b.depth.partial_cmp(&a.depth).unwrap_or(std::cmp::Ordering::Equal));
         engine.active_points = pt_idx;
 
-        // 2. Proyectar aristas vectoriales (Wireframes & Frames estructurados de la malla 3D)
+        // 2. Proyectar aristas vectoriales:
+        // EN MODO ANATOMIA: CERO lineas wireframe visibles (Malla 100% Transparente/Invisible)
+        // Las lineas solo se proyectan para las primitivas abstractas (Cubo con frames)
         let mut ln_idx = 0;
-        let line_alpha_mod = (1.0 - deconstruct * 1.2).max(0.0);
-        if line_alpha_mod > 0.02 {
-            let edges: &[geometry::Edge] = if engine.is_anatomy_mode {
-                match engine.selected_anatomy {
-                    0 => &engine.anatomy.hand_edges,
-                    1 => &engine.anatomy.head_edges,
-                    _ => &engine.anatomy.heart_edges,
-                }
-            } else {
-                match engine.selected_geom {
+        if !engine.is_anatomy_mode {
+            let line_alpha_mod = (1.0 - deconstruct * 1.2).max(0.0);
+            if line_alpha_mod > 0.02 {
+                let edges: &[geometry::Edge] = match engine.selected_geom {
                     0 => &engine.geometry.edges_sphere,
                     1 => &engine.geometry.edges_cube,
                     _ => &engine.geometry.edges_torus,
-                }
-            };
+                };
 
-            for e in edges {
-                if ln_idx >= MAX_LINES { break; }
-                let idx_a = (e.idx_a as usize) % target_positions.len();
-                let idx_b = (e.idx_b as usize) % target_positions.len();
+                for e in edges {
+                    if ln_idx >= MAX_LINES { break; }
+                    let idx_a = (e.idx_a as usize) % target_positions.len();
+                    let idx_b = (e.idx_b as usize) % target_positions.len();
 
-                let p1 = &engine.particles.particles[idx_a].pos;
-                let p2 = &engine.particles.particles[idx_b].pos;
+                    let p1 = &engine.particles.particles[idx_a].pos;
+                    let p2 = &engine.particles.particles[idx_b].pos;
 
-                let (x1, y1, d1, _, v1) = engine.camera.project(p1, width, height);
-                let (x2, y2, d2, _, v2) = engine.camera.project(p2, width, height);
+                    let (x1, y1, d1, _, v1) = engine.camera.project(p1, width, height);
+                    let (x2, y2, d2, _, v2) = engine.camera.project(p2, width, height);
 
-                if v1 && v2 {
-                    let avg_depth = (d1 + d2) * 0.5;
-                    let alpha = (1.35 - avg_depth * 0.20).clamp(0.06, 0.65) * line_alpha_mod;
-                    let (r, g, b) = if engine.is_anatomy_mode {
-                        match engine.selected_anatomy {
-                            0 => (0, 255, 170), // Esmeralda biomecanico para la mano
-                            1 => (0, 243, 255), // Cian para craneo
-                            _ => (255, 38, 85),  // Rubi para corazon
-                        }
-                    } else if e.is_frame {
-                        (255, 170, 0)
-                    } else {
-                        (0, 243, 255)
-                    };
+                    if v1 && v2 {
+                        let avg_depth = (d1 + d2) * 0.5;
+                        let alpha = (1.35 - avg_depth * 0.20).clamp(0.06, 0.65) * line_alpha_mod;
+                        let (r, g, b) = if e.is_frame { (255, 170, 0) } else { (0, 243, 255) };
 
-                    BUFFER_LINES[ln_idx] = ProjectedLine {
-                        x1, y1, x2, y2,
-                        depth: avg_depth,
-                        alpha,
-                        r, g, b,
-                        is_frame: if e.is_frame { 1 } else { 0 },
-                    };
-                    ln_idx += 1;
+                        BUFFER_LINES[ln_idx] = ProjectedLine {
+                            x1, y1, x2, y2,
+                            depth: avg_depth,
+                            alpha,
+                            r, g, b,
+                            is_frame: if e.is_frame { 1 } else { 0 },
+                        };
+                        ln_idx += 1;
+                    }
                 }
             }
         }
