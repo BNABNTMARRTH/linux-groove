@@ -245,10 +245,11 @@ pub extern "C" fn update_scene(
             mouse_active,
         );
 
-        // Vector de iluminacion clave 3D (luz cenital anterolateral)
-        let light_dir = Vec3::new(0.40, 0.75, 0.55).normalize();
-        let view_dir = Vec3::new(0.0, 0.0, 1.0);
-        let half_vec = Vec3::new(light_dir.x + view_dir.x, light_dir.y + view_dir.y, light_dir.z + view_dir.z).normalize();
+        // Iluminacion en Espacio de Vista (Eye Space Studio Light)
+        // La luz se mantiene constante relativa a la pantalla (cenital anterolateral superior derecha)
+        let light_eye = Vec3::new(0.35, 0.65, 0.65).normalize();
+        let view_eye = Vec3::new(0.0, 0.0, 1.0);
+        let half_eye = Vec3::new(light_eye.x + view_eye.x, light_eye.y + view_eye.y, light_eye.z + view_eye.z).normalize();
 
         // 1. Proyectar particulas 3D -> 2D con iluminacion fotometrica por normales
         let mut pt_idx = 0;
@@ -256,62 +257,99 @@ pub extern "C" fn update_scene(
             if pt_idx >= MAX_PARTICLES { break; }
             let (sx, sy, depth, scale, visible) = engine.camera.project(&p.pos, width, height);
             if visible {
-                let base_alpha = (1.4 - depth * 0.16).clamp(0.20, 1.0);
+                let base_alpha = (1.4 - depth * 0.16).clamp(0.25, 1.0);
 
                 let (r, g, b, size_mult, alpha_mult) = if engine.is_anatomy_mode {
-                    // Normal real orientada hacia afuera calculada para cada particula de la pared
+                    // Normal de pared rotada al espacio de vista para sombreado perfecto
                     let normal = target_normals[i % target_normals.len()];
-                    let dot = (normal.x * light_dir.x + normal.y * light_dir.y + normal.z * light_dir.z).max(0.0);
-                    let spec = (normal.x * half_vec.x + normal.y * half_vec.y + normal.z * half_vec.z).max(0.0).powi(8);
+                    let eye_normal = engine.camera.rotate_vector(&normal);
 
-                    let intensity = 0.20 + 0.80 * dot + spec * 0.40;
-                    let sz = 0.85 + 0.65 * dot + spec * 0.50;
+                    let dot = (eye_normal.x * light_eye.x + eye_normal.y * light_eye.y + eye_normal.z * light_eye.z).max(0.0);
+                    let spec = (eye_normal.x * half_eye.x + eye_normal.y * half_eye.y + eye_normal.z * half_eye.z).max(0.0).powi(8);
+                    let fill = (-eye_normal.x * 0.30 - eye_normal.y * 0.20 + eye_normal.z * 0.40).max(0.0) * 0.25;
 
-                    match engine.selected_anatomy {
-                        0 => {
-                            // Mano: Esmeralda biomecanico solido con destellos blancos en crestas
-                            if dot > 0.70 && spec > 0.35 {
-                                (240, 255, 245, sz * 1.35, 1.0)
-                            } else {
-                                let r = (20.0 * intensity).min(255.0) as u8;
-                                let g = (255.0 * intensity).min(255.0) as u8;
-                                let b = (175.0 * intensity).min(255.0) as u8;
-                                (r, g, b, sz, 0.95)
-                            }
-                        },
-                        1 => {
-                            // Craneo: Cian fotonico solido
-                            if dot > 0.70 && spec > 0.35 {
-                                (230, 255, 255, sz * 1.35, 1.0)
-                            } else {
-                                let r = 0;
-                                let g = (240.0 * intensity).min(255.0) as u8;
-                                let b = (255.0 * intensity).min(255.0) as u8;
-                                (r, g, b, sz, 0.95)
-                            }
-                        },
-                        _ => {
-                            // Corazon: Rubi miocardico con volumen muscular
-                            if dot > 0.70 && spec > 0.35 {
-                                (255, 225, 160, sz * 1.35, 1.0)
-                            } else {
-                                let r = (255.0 * intensity).min(255.0) as u8;
-                                let g = (42.0 * intensity).min(255.0) as u8;
-                                let b = (92.0 * intensity).min(255.0) as u8;
-                                (r, g, b, sz, 0.95)
-                            }
+                    let intensity = (0.22 + 0.78 * dot + fill + spec * 0.40).clamp(0.15, 1.35);
+                    let sz = 0.90 + 0.60 * dot + spec * 0.50;
+
+                    let calc_mano = |int: f32, d: f32, sp: f32, s: f32| -> (u8, u8, u8, f32) {
+                        if d > 0.65 && sp > 0.30 {
+                            (240, 255, 248, s * 1.35)
+                        } else {
+                            let r = (20.0 * int).min(255.0) as u8;
+                            let g = (255.0 * int).min(255.0) as u8;
+                            let b = (175.0 * int).min(255.0) as u8;
+                            (r, g, b, s)
                         }
-                    }
+                    };
+
+                    let calc_craneo = |int: f32, d: f32, sp: f32, s: f32| -> (u8, u8, u8, f32) {
+                        if d > 0.65 && sp > 0.30 {
+                            (0, 243, 255, s * 1.35)
+                        } else {
+                            let r = (235.0 * int).min(255.0) as u8;
+                            let g = (240.0 * int).min(255.0) as u8;
+                            let b = (248.0 * int).min(255.0) as u8;
+                            (r, g, b, s)
+                        }
+                    };
+
+                    let calc_corazon = |int: f32, d: f32, sp: f32, s: f32| -> (u8, u8, u8, f32) {
+                        if d > 0.65 && sp > 0.30 {
+                            (255, 225, 160, s * 1.35)
+                        } else {
+                            let r = (255.0 * int).min(255.0) as u8;
+                            let g = (34.0 * int).min(255.0) as u8;
+                            let b = (85.0 * int).min(255.0) as u8;
+                            (r, g, b, s)
+                        }
+                    };
+
+                    let (r_out, g_out, b_out, s_out) = if engine.morph_t > 0.001 {
+                        let m = engine.morph_t.clamp(0.0, 2.0);
+                        if m < 1.0 {
+                            let (r0, g0, b0, s0) = calc_mano(intensity, dot, spec, sz);
+                            let (r1, g1, b1, s1) = calc_craneo(intensity, dot, spec, sz);
+                            let t = m;
+                            (
+                                (r0 as f32 + (r1 as f32 - r0 as f32) * t) as u8,
+                                (g0 as f32 + (g1 as f32 - g0 as f32) * t) as u8,
+                                (b0 as f32 + (b1 as f32 - b0 as f32) * t) as u8,
+                                s0 + (s1 - s0) * t,
+                            )
+                        } else {
+                            let (r1, g1, b1, s1) = calc_craneo(intensity, dot, spec, sz);
+                            let (r2, g2, b2, s2) = calc_corazon(intensity, dot, spec, sz);
+                            let t = (m - 1.0).clamp(0.0, 1.0);
+                            (
+                                (r1 as f32 + (r2 as f32 - r1 as f32) * t) as u8,
+                                (g1 as f32 + (g2 as f32 - g1 as f32) * t) as u8,
+                                (b1 as f32 + (b2 as f32 - b1 as f32) * t) as u8,
+                                s1 + (s2 - s1) * t,
+                            )
+                        }
+                    } else {
+                        match engine.selected_anatomy {
+                            0 => calc_mano(intensity, dot, spec, sz),
+                            1 => calc_craneo(intensity, dot, spec, sz),
+                            _ => calc_corazon(intensity, dot, spec, sz),
+                        }
+                    };
+
+                    (r_out, g_out, b_out, s_out, 0.98)
                 } else {
                     (p.r, p.g, p.b, 1.0, 1.0)
                 };
+
+                // En modo anatomia, incrementamos la escala base para que los 8,192 puntos formen paredes opacas y continuas sin orificios
+                let anatomy_size_scale = if engine.is_anatomy_mode { 1.55 } else { 1.0 };
+                let final_size = (p.size * scale * 0.0075 * size_mult * anatomy_size_scale).clamp(1.5, 6.2);
 
                 BUFFER_POINTS[pt_idx] = ProjectedPoint {
                     x: sx,
                     y: sy,
                     depth,
-                    size: (p.size * scale * 0.0075 * size_mult).clamp(1.2, 5.0),
-                    alpha: (base_alpha * alpha_mult).clamp(0.15, 1.0),
+                    size: final_size,
+                    alpha: (base_alpha * alpha_mult).clamp(0.25, 1.0),
                     r, g, b,
                     _pad: 0,
                 };

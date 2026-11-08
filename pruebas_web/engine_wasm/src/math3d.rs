@@ -85,6 +85,26 @@ impl Default for Camera {
 }
 
 impl Camera {
+    // Rota un vector al espacio de vista de la camara (Eye Space)
+    pub fn rotate_vector(&self, v: &Vec3) -> Vec3 {
+        let cy = self.rot_y.cos();
+        let sy = self.rot_y.sin();
+        let x1 = v.x * cy - v.z * sy;
+        let z1 = v.x * sy + v.z * cy;
+
+        let cx = self.rot_x.cos();
+        let sx = self.rot_x.sin();
+        let y2 = v.y * cx - z1 * sx;
+        let z2 = v.y * sx + z1 * cx;
+
+        let cz = self.rot_z.cos();
+        let sz = self.rot_z.sin();
+        let x3 = x1 * cz - y2 * sz;
+        let y3 = x1 * sz + y2 * cz;
+
+        Vec3::new(x3, y3, z2)
+    }
+
     // Transforma un punto 3D en el espacio de mundo a pantalla 2D
     // Retorna: (screen_x, screen_y, depth_z, scale, is_visible)
     pub fn project(&self, p: &Vec3, width: f32, height: f32) -> (f32, f32, f32, f32, bool) {

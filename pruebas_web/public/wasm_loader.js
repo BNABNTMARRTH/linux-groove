@@ -62,8 +62,11 @@ export async function createGroove3DEngine(canvasId, options = {}) {
         if (maxScroll > 0) {
             state.scrollProg = window.scrollY / maxScroll;
             if (options.morphOnScroll) {
-                // Modula la transmutacion geométrica de 0 a 3 (Esfera -> Cubo -> Dona -> Esfera)
-                state.morph = state.scrollProg * 3.0;
+                // Modula la transmutacion geometrica:
+                // En modo anatomia hay 3 modelos (Mano = 0.0, Craneo = 1.0, Corazon = 2.0)
+                // En modo primitivas hay 3 figuras ciclicas (Esfera -> Cubo -> Dona -> Esfera)
+                const morphMultiplier = options.anatomyMode ? 2.0 : 3.0;
+                state.morph = state.scrollProg * morphMultiplier;
                 wasm.set_morph(state.morph);
             }
         }

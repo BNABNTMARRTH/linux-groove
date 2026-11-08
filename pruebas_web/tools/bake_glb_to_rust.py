@@ -308,73 +308,104 @@ for i in range(TARGET_COUNT):
 print(f"Corazon procesado: {len(heart_base)} puntos de pared miocardica con normales")
 
 # =========================================================================
-# 3. BAKE CRANEO (craneo.glb)
+# 3. BAKE CRANEO (craneo.glb) CON MUESTREO POR AREA TOTAL Y NORMALES SOLIDEZ
 # =========================================================================
-print("Procesando craneo.glb con normales oseas...")
+print("Procesando craneo.glb con muestreo ponderado por area y normales de pared osea...")
 gltf_craneo, bin_craneo = parse_glb("/Volumes/HDEXTERNO/linux_groove/pruebas_web/glb/craneo.glb")
 craneo_meshes = gltf_craneo["meshes"]
 
-all_craneo_pts = []
-all_craneo_nrms = []
-all_craneo_deltas = []
+# 1. Recolectar todos los triangulos con sus areas para distribucion uniforme
+all_tris_craneo = []
+total_craneo_area = 0.0
 
-all_v = []
-for m in craneo_meshes:
-    pacc = m["primitives"][0]["attributes"]["POSITION"]
-    pos_data = get_acc(gltf_craneo, bin_craneo, pacc)
-    all_v.extend(pos_data[::10])
-
-min_c = [min(p[c] for p in all_v) for c in range(3)]
-max_c = [max(p[c] for p in all_v) for c in range(3)]
-center_c = [(min_c[c] + max_c[c]) * 0.5 for c in range(3)]
-scale_c = 2.4 / max(max_c[c] - min_c[c] for c in range(3))
-
-pts_per_mesh = TARGET_COUNT // len(craneo_meshes)
-extra = TARGET_COUNT - (pts_per_mesh * len(craneo_meshes))
-
-random.seed(999)
 for m_idx, m in enumerate(craneo_meshes):
     prim_c = m["primitives"][0]
     pos_c = get_acc(gltf_craneo, bin_craneo, prim_c["attributes"]["POSITION"])
     norm_c = get_acc(gltf_craneo, bin_craneo, prim_c["attributes"]["NORMAL"])
     idx_c = get_acc(gltf_craneo, bin_craneo, prim_c["indices"])
     t_count = len(idx_c) // 3
-    
+
     m_min = [min(p[c] for p in pos_c) for c in range(3)]
     m_max = [max(p[c] for p in pos_c) for c in range(3)]
     bone_center = [(m_min[c] + m_max[c]) * 0.5 for c in range(3)]
-    
-    dx = (bone_center[0] - center_c[0]) * 1.5
-    dy = (bone_center[1] - center_c[1]) * 1.5
-    dz = (bone_center[2] - center_c[2]) * 1.5
-    len_d = math.sqrt(dx*dx + dy*dy + dz*dz)
-    expl_vec = [dx/len_d * 0.85, dy/len_d * 0.85, dz/len_d * 0.85] if len_d > 0.001 else [0.0, 0.5, 0.0]
-        
-    num_to_sample = pts_per_mesh + (extra if m_idx == len(craneo_meshes) - 1 else 0)
-    for i in range(num_to_sample):
-        tri = random.randint(0, t_count - 1)
-        i0 = idx_c[tri * 3][0]
-        i1 = idx_c[tri * 3 + 1][0]
-        i2 = idx_c[tri * 3 + 2][0]
-        u = random.random(); v = random.random()
-        if u + v > 1.0: u = 1.0 - u; v = 1.0 - v
-        w = 1.0 - u - v
-        px = u*pos_c[i0][0] + v*pos_c[i1][0] + w*pos_c[i2][0]
-        py = u*pos_c[i0][1] + v*pos_c[i1][1] + w*pos_c[i2][1]
-        pz = u*pos_c[i0][2] + v*pos_c[i1][2] + w*pos_c[i2][2]
-        
-        nx = u*norm_c[i0][0] + v*norm_c[i1][0] + w*norm_c[i2][0]
-        ny = u*norm_c[i0][1] + v*norm_c[i1][1] + w*norm_c[i2][1]
-        nz = u*norm_c[i0][2] + v*norm_c[i1][2] + w*norm_c[i2][2]
-        
-        norm_p = [(px - center_c[0]) * scale_c, (py - center_c[1]) * scale_c, (pz - center_c[2]) * scale_c]
-        norm_n = norm_vec3([nx, ny, nz])
-        
-        all_craneo_pts.append(norm_p)
-        all_craneo_nrms.append(norm_n)
-        all_craneo_deltas.append(expl_vec)
 
-print(f"Craneo procesado: {len(all_craneo_pts)} puntos de pared osea con normales")
+    for t in range(t_count):
+        i0 = idx_c[t * 3][0]
+        i1 = idx_c[t * 3 + 1][0]
+        i2 = idx_c[t * 3 + 2][0]
+        p0, p1, p2 = pos_c[i0], pos_c[i1], pos_c[i2]
+        n0, n1, n2 = norm_c[i0], norm_c[i1], norm_c[i2]
+
+        ax, ay, az = p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]
+        bx, by, bz = p2[0]-p0[0], p2[1]-p0[1], p2[2]-p0[2]
+        cx = ay*bz - az*by
+        cy = az*bx - ax*bz
+        cz = ax*by - ay*bx
+        area = 0.5 * math.sqrt(cx*cx + cy*cy + cz*cz)
+        if area > 1e-9:
+            all_tris_craneo.append((area, p0, p1, p2, n0, n1, n2, bone_center))
+            total_craneo_area += area
+
+print(f"  Total triangulos utiles en craneo: {len(all_tris_craneo)}, area acumulada: {total_craneo_area:.2f}")
+
+# Calcular limites globales del craneo para centrado y escala 2.45
+min_c = [min(min(t[1][c], t[2][c], t[3][c]) for t in all_tris_craneo[::50]) for c in range(3)]
+max_c = [max(max(t[1][c], t[2][c], t[3][c]) for t in all_tris_craneo[::50]) for c in range(3)]
+center_c = [(min_c[c] + max_c[c]) * 0.5 for c in range(3)]
+# Altura y tamano igualado al corazon (2.45 unidades de envergadura)
+scale_c = 2.45 / max(max_c[c] - min_c[c] for c in range(3))
+
+cum_areas_c = []
+cum_c = 0.0
+for item in all_tris_craneo:
+    cum_c += item[0] / total_craneo_area
+    cum_areas_c.append(cum_c)
+
+all_craneo_pts = []
+all_craneo_nrms = []
+all_craneo_deltas = []
+
+random.seed(999)
+import bisect
+
+for _ in range(TARGET_COUNT):
+    r = random.random()
+    idx = min(len(cum_areas_c) - 1, bisect.bisect_left(cum_areas_c, r))
+    _, p0, p1, p2, n0, n1, n2, bone_center = all_tris_craneo[idx]
+
+    u = random.random(); v = random.random()
+    if u + v > 1.0: u = 1.0 - u; v = 1.0 - v
+    w = 1.0 - u - v
+
+    px = u*p0[0] + v*p1[0] + w*p2[0]
+    py = u*p0[1] + v*p1[1] + w*p2[1]
+    pz = u*p0[2] + v*p1[2] + w*p2[2]
+
+    nx = u*n0[0] + v*n1[0] + w*n2[0]
+    ny = u*n0[1] + v*n1[1] + w*n2[1]
+    nz = u*n0[2] + v*n2[2] + w*n2[2]
+
+    norm_p = [(px - center_c[0]) * scale_c, (py - center_c[1]) * scale_c, (pz - center_c[2]) * scale_c]
+    
+    # Normal de superficie orientada hacia afuera
+    norm_n = norm_vec3([nx, ny, nz])
+    # Asegurar que apunte hacia el exterior respecto al centro del craneo
+    radial = [norm_p[0], norm_p[1], norm_p[2]]
+    if (norm_n[0]*radial[0] + norm_n[1]*radial[1] + norm_n[2]*radial[2]) < -0.15:
+        norm_n = [-norm_n[0], -norm_n[1], -norm_n[2]]
+
+    # Vector de despiece anatomico
+    dx = (bone_center[0] - center_c[0]) * scale_c
+    dy = (bone_center[1] - center_c[1]) * scale_c
+    dz = (bone_center[2] - center_c[2]) * scale_c
+    len_d = math.sqrt(dx*dx + dy*dy + dz*dz)
+    expl_vec = [dx/len_d * 0.95, dy/len_d * 0.95, dz/len_d * 0.95] if len_d > 0.001 else [0.0, 0.6, 0.0]
+
+    all_craneo_pts.append(norm_p)
+    all_craneo_nrms.append(norm_n)
+    all_craneo_deltas.append(expl_vec)
+
+print(f"Craneo procesado: {len(all_craneo_pts)} puntos de pared osea uniforme con normales outward")
 
 # =========================================================================
 # 4. EXPORTAR BUFFER BINARIO A engine_wasm/assets

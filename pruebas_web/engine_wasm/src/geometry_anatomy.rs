@@ -159,22 +159,17 @@ impl AnatomyModel {
 
     // Morphing continuo entre modelos para la experiencia scroll-driven
     pub fn get_morph_target(&self, idx: usize, morph_t: f32, time: f32) -> (Vec3, Vec3) {
-        let t = morph_t.rem_euclid(3.0);
+        let t = morph_t.clamp(0.0, 2.0);
         if t < 1.0 {
             let (pa, na) = self.get_animated_hand_target(idx, time);
             let pb = self.head_targets[idx % self.head_targets.len()];
             let nb = self.head_normals[idx % self.head_normals.len()];
             (Vec3::lerp(pa, pb, t), Vec3::lerp(na, nb, t).normalize())
-        } else if t < 2.0 {
-            let local_t = t - 1.0;
+        } else {
+            let local_t = (t - 1.0).clamp(0.0, 1.0);
             let pa = self.head_targets[idx % self.head_targets.len()];
             let na = self.head_normals[idx % self.head_normals.len()];
             let (pb, nb) = self.get_pulsing_heart_target(idx, time);
-            (Vec3::lerp(pa, pb, local_t), Vec3::lerp(na, nb, local_t).normalize())
-        } else {
-            let local_t = t - 2.0;
-            let (pa, na) = self.get_pulsing_heart_target(idx, time);
-            let (pb, nb) = self.get_animated_hand_target(idx, time);
             (Vec3::lerp(pa, pb, local_t), Vec3::lerp(na, nb, local_t).normalize())
         }
     }
