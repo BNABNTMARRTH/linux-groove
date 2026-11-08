@@ -1,497 +1,447 @@
 // ==========================================================================
-// LINUX GROOVE - CIUDAD ISOMETRICA 3D (SKILL ANATOMY + SHADER WEBGL)
-// build_city.mjs: Generador Tecnico de Arquitectura Isometria Vectorial
-// Sombreado de 4 tonos, viaducto de transito, farola cenital y lluvia WebGL
+// LINUX GROOVE - DIORAMA URBANO EN MINIATURA ISOMETRICO (SKILL ANATOMY)
+// build_city.mjs: Maqueta 3D con nubes flotantes, lluvia con ondas de impacto
+// individuales por gota y formato apaisado que cabe 100% en el viewport
 // ==========================================================================
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 const ROOT = resolve(".agents/skills/anatomy");
 const k = await import(join(ROOT, "kit/iso-kit.mjs"));
 const G = await import(join(ROOT, "kit/lathe.mjs"));
-const { glCamera, GLSL_ISO } = await import(join(ROOT, "kit/gl.mjs"));
+const { glCamera } = await import(join(ROOT, "kit/gl.mjs"));
 const { kitScript, glScript } = await import(join(ROOT, "scripts/inline-kit.mjs"));
 
-const W = 760;
-const H = 760;
+// 1. PROPORCIONES HORIZONTALES (WIDESCREEN 16:9 / 16:10)
+const W = 1000;
+const H = 560;
 const AZIMUTH = 35;
-const ELEVATION = 44;
+const ELEVATION = 40;
 
-// 1. DIMENSIONES DE LA PLACA BASE Y ELEMENTOS
-const BASE_H = 16;
-const FOOT_H = 6;
-const BASE = { x: -180, y: -150, w: 360, d: 300, r: 10 };
-const STREET_Y = 30;
-const STREET_W = 75;
+// 2. DIMENSIONES DEL DIORAMA EN MINIATURA
+const BASE = { x: -185, y: -110, w: 370, d: 220, r: 8 };
+const BASE_H = 14;
+const FOOT_H = 5;
 
-// Farola Cenital Cenit (Spotlight Mast)
-const LAMP = [0, -10, 540];
-const POST = [165, BASE.y + 16];
-const POST_R = 4.5;
-const ARM_Z = LAMP[2] + 25;
-const POST_TOP = ARM_Z + 18;
+// Alturas y cotas de la maqueta
+const Z_GROUND = 0;
+const Z_CURB = 2.5;
+const CLOUD_Z = 240;
 
-// Rascacielos Alfa (Torre de Telecomunicaciones)
-const TOWER_A_PODIUM = { x: -110, y: -120, w: 85, d: 85, r: 2 };
-const TOWER_A_MID = { x: -100, y: -110, w: 65, d: 65, r: 1.5 };
-const TOWER_A_TOP = { x: -88, y: -98, w: 42, d: 42, r: 1 };
-const TOWER_A_Z0 = 0;
-const TOWER_A_Z1 = 70;
-const TOWER_A_Z2 = 190;
-const TOWER_A_Z3 = 290;
-const ANTENNA_TOP = 360;
-
-// Spire Cuantico (Centro de Datos)
-const TOWER_B = { x: 35, y: -125, w: 60, d: 68, r: 1.2 };
-const TOWER_B_Z = 220;
-
-// Subestacion Industrial
-const SUBSTATION = { x: -150, y: 35, w: 75, d: 60, r: 1 };
-const SUB_Z = 65;
-
-// Viaducto de Monorrail Elevado
-const VIADUCT_Z = 85;
-const VIADUCT_Y = 100;
-const VIADUCT_BEAM = { x: BASE.x - 10, y: VIADUCT_Y - 5, w: BASE.w + 20, d: 10, r: 1 };
-
-// Caja de Control Analogo (Instrument Box)
-const BOX = { x: BASE.x + 8, y: 45, w: 42, d: 75, r: 3.5 };
-const BOX_Z = 2;
-const BOX_TOP = BOX_Z + 22;
-
-// 2. CONFIGURACION DE PROYECCION ISOMETRICA
+// Configuración de la proyección isométrica
 const P = k.fitProjection(
   [
     ...k.boxCorners(BASE, -BASE_H - FOOT_H, 0),
-    [0, 0, ARM_Z + 15],
-    [POST[0] - 6, POST[1] - 6, POST_TOP + 4],
-    [POST[0] + 6, POST[1] + 6, POST_TOP + 4],
-    [-70, -75, ANTENNA_TOP + 10],
-    ...k.boxCorners(VIADUCT_BEAM, VIADUCT_Z - 10, VIADUCT_Z + 12),
+    [-120, -60, CLOUD_Z + 45],
+    [120, 60, CLOUD_Z + 45],
+    [0, 0, 180],
   ],
   W,
   H,
-  { pad: 55, azimuth: AZIMUTH, elevation: ELEVATION }
+  { pad: 40, azimuth: AZIMUTH, elevation: ELEVATION }
 );
 
 const at = (point) => k.iso(point, P);
 const S = (paths, style) => k.solidSvg(paths, style);
 const Ln = (d, style) => k.lineSvg(d, style);
 const Dots = (points, style) => k.dotsSvg(points, style);
-const slab = (plan, z, h, steps = 3, bevel = 0.5) => k.slabOf(plan, z, h, P, steps, bevel);
+const slab = (plan, z, h, steps = 3, bevel = 0.4) => k.slabOf(plan, z, h, P, steps, bevel);
 const UP = (o) => G.frameOf(o, [0, 0, 1], [1, 0, 0], [0, 1, 0]);
 
-console.log("Proyeccion calculada con exito. Escala:", P.scale.toFixed(3));
+function sphere(centre, r, style) {
+  const profile = [];
+  for (let index = 0; index <= 12; index++) {
+    const a = -Math.PI / 2 + (index / 12) * Math.PI;
+    profile.push([r * Math.sin(a), r * Math.cos(a), 1]);
+  }
+  return S(G.lathe(profile, UP(centre), P, { steps: 24 }), style);
+}
 
-// 3. CAPAS DE DIBUJO (PAINTER'S ORDER)
+console.log("Proyeccion horizontal generada. Escala:", P.scale.toFixed(3));
+
+// 3. CAPAS DE DIBUJO VECTORIAL
 const back = [];
 const mid = [];
 const front = [];
 
-// A. PLACA BASE INFERIOR (Capa Back)
-// Patas y zócalo de la base
+// A. PEDESTAL FLOTANTE DE LA MAQUETA (Capa Back)
+// Patas de montaje inferiores
 for (const [fx, fy] of [
-  [BASE.x + 18, BASE.y + 18],
-  [BASE.x + BASE.w - 18, BASE.y + 18],
-  [BASE.x + 18, BASE.y + BASE.d - 18],
-  [BASE.x + BASE.w - 18, BASE.y + BASE.d - 18],
+  [BASE.x + 16, BASE.y + 16],
+  [BASE.x + BASE.w - 16, BASE.y + 16],
+  [BASE.x + 16, BASE.y + BASE.d - 16],
+  [BASE.x + BASE.w - 16, BASE.y + BASE.d - 16],
 ]) {
-  back.push(S(k.cylinder(fx, fy, 10, -BASE_H - FOOT_H, FOOT_H, P, 18), { tone: "lo" }));
+  back.push(S(k.cylinder(fx, fy, 8, -BASE_H - FOOT_H, FOOT_H, P, 16), { tone: "lo" }));
 }
 
-// Bloque macizo de la placa base
-back.push(S(slab(BASE, -BASE_H, BASE_H, 4, 1.2), { tone: "mid" }));
+// Bloque macizo del pedestal
+back.push(S(slab(BASE, -BASE_H, BASE_H, 3, 1.0), { tone: "mid" }));
 
-// Reglas milimetricas e inscripciones en los bordes de la placa base
-const tickLineX = k.topTicks(BASE.x + 16, BASE.x + BASE.w - 16, 4, 10, BASE.y + 2.5, 0, [1.0, 2.0], P, "x");
-const tickLineY = k.topTicks(BASE.y + 16, BASE.y + BASE.d - 16, 4, 10, BASE.x + 2.5, 0, [1.0, 2.0], P, "y");
-back.push(Ln(tickLineX.minor + tickLineY.minor, { tone: "lo" }));
-back.push(Ln(tickLineX.major + tickLineY.major, { tone: "mid" }));
+// Reglas milimetricas e inscripciones en el bisel
+const tickX = k.topTicks(BASE.x + 14, BASE.x + BASE.w - 14, 4, 10, BASE.y + 2, 0, [0.8, 1.6], P, "x");
+const tickY = k.topTicks(BASE.y + 14, BASE.y + BASE.d - 14, 4, 10, BASE.x + 2, 0, [0.8, 1.6], P, "y");
+back.push(Ln(tickX.minor + tickY.minor, { tone: "lo" }));
+back.push(Ln(tickX.major + tickY.major, { tone: "mid" }));
 
-// Tornillos de anclaje en las esquinas
+// Tornillos esquineros
 for (const [cx, cy] of [
-  [BASE.x + 8, BASE.y + 8],
-  [BASE.x + BASE.w - 8, BASE.y + 8],
-  [BASE.x + 8, BASE.y + BASE.d - 8],
-  [BASE.x + BASE.w - 8, BASE.y + BASE.d - 8],
+  [BASE.x + 7, BASE.y + 7],
+  [BASE.x + BASE.w - 7, BASE.y + 7],
+  [BASE.x + 7, BASE.y + BASE.d - 7],
+  [BASE.x + BASE.w - 7, BASE.y + BASE.d - 7],
 ]) {
   back.push(
-    S(k.cylinder(cx, cy, 3.2, -0.4, 0.4, P, 6), { tone: "hi" }) +
-    Dots([at([cx, cy, 0.2])], { size: 0.45, tone: "hi" })
+    S(k.cylinder(cx, cy, 2.5, -0.2, 0.4, P, 6), { tone: "hi" }) +
+    Dots([at([cx, cy, 0.2])], { size: 0.35, tone: "lit" })
   );
 }
 
-// B. SUELO DE LA CIUDAD (Pistas, Avenidas y Asfalto)
-// Cuadricula del pavimento de la ciudad
-const gridStepsX = 6;
-const gridStepsY = 5;
-for (let i = 1; i < gridStepsX; i++) {
-  const gx = BASE.x + (BASE.w / gridStepsX) * i;
-  back.push(Ln(k.lineOnTop([gx, BASE.y + 10], [gx, BASE.y + BASE.d - 10], 0.1, P), { tone: "faint" }));
-}
-for (let j = 1; j < gridStepsY; j++) {
-  const gy = BASE.y + (BASE.d / gridStepsY) * j;
-  back.push(Ln(k.lineOnTop([BASE.x + 10, gy], [BASE.x + BASE.w - 10, gy], 0.1, P), { tone: "faint" }));
-}
+// B. CALZADAS Y ACERAS DEL DIORAMA
+// Aceras elevadas del perimetro
+const SIDEWALK_INSET = 12;
+const innerBlock = k.insetPlan(BASE, SIDEWALK_INSET);
+back.push(S(slab(innerBlock, 0, Z_CURB, 1, 0.2), { tone: "hi" }));
 
-// Líneas de demarcación vial en la avenida principal
-const laneStep = 24;
-for (let lx = BASE.x + 20; lx < BASE.x + BASE.w - 20; lx += laneStep) {
-  back.push(Ln(k.lineOnTop([lx, STREET_Y], [lx + 12, STREET_Y], 0.2, P), { tone: "hi", dashed: true }));
-}
+// Trazado de calles interiores (Calzada asfaltada)
+const streetWidth = 32;
+// Calle horizontal central
+const roadH = { x: innerBlock.x + 2, y: -streetWidth / 2, w: innerBlock.w - 4, d: streetWidth, r: 0 };
+back.push(S(slab(roadH, Z_CURB, 0.1, 1, 0), { tone: "lo" }));
 
-// C. CAPA MID: ARQUITECTURA DE RASCACIELOS Y ESTRUCTURAS
+// Calle vertical secundaria
+const roadV = { x: 30, y: innerBlock.y + 2, w: 26, d: innerBlock.d - 4, r: 0 };
+back.push(S(slab(roadV, Z_CURB, 0.1, 1, 0), { tone: "lo" }));
 
-// 1. TORRE ALFA (Megatorre de Telecomunicaciones con Helipuerto)
-// Nivel 1: Podio comercial
-mid.push(S(slab(TOWER_A_PODIUM, TOWER_A_Z0, TOWER_A_Z1, 3, 0.8), { tone: "mid" }));
-// Ventilación de planta baja y pórtico
-const portalPlan = { x: TOWER_A_PODIUM.x + 20, y: TOWER_A_PODIUM.y + TOWER_A_PODIUM.d - 2, w: 45, d: 2, r: 0 };
-mid.push(S(slab(portalPlan, 0, 18, 1, 0), { tone: "lo" }));
-mid.push(Ln(k.lineOnTop([portalPlan.x, portalPlan.y + 1], [portalPlan.x + portalPlan.w, portalPlan.y + 1], 18, P), { tone: "lit" }));
-
-// Nivel 2: Fuste principal con celosías verticales
-mid.push(S(slab(TOWER_A_MID, TOWER_A_Z1, TOWER_A_Z2 - TOWER_A_Z1, 3, 0.6), { tone: "hi" }));
-// Ranuras de ventanas en la fachada frontal
-for (let wz = TOWER_A_Z1 + 15; wz < TOWER_A_Z2 - 10; wz += 22) {
-  const windowStrip = { x: TOWER_A_MID.x + 6, y: TOWER_A_MID.y + TOWER_A_MID.d - 1, w: TOWER_A_MID.w - 12, d: 1, r: 0 };
-  mid.push(S(slab(windowStrip, wz, 7, 1, 0), { tone: "lo" }));
-  mid.push(Ln(k.lineOnTop([windowStrip.x, windowStrip.y + 0.5], [windowStrip.x + windowStrip.w, windowStrip.y + 0.5], wz + 7, P), { tone: "lit" }));
+// Líneas discontinuas de carril
+for (let lx = roadH.x + 10; lx < roadH.x + roadH.w - 10; lx += 20) {
+  back.push(Ln(k.lineOnTop([lx, 0], [lx + 10, 0], Z_CURB + 0.15, P), { tone: "hi", dashed: true }));
 }
 
-// Nivel 3: Ático y plataforma de helipuerto
-mid.push(S(slab(TOWER_A_TOP, TOWER_A_Z2, TOWER_A_Z3 - TOWER_A_Z2, 3, 0.5), { tone: "mid" }));
-
-// Helipuerto en la azotea (Círculo y letra H)
-const heliCenter = [TOWER_A_TOP.x + TOWER_A_TOP.w / 2, TOWER_A_TOP.y + TOWER_A_TOP.d / 2, TOWER_A_Z3];
-mid.push(S(k.cylinder(heliCenter[0], heliCenter[1], 16, TOWER_A_Z3, 1.2, P, 24), { tone: "hi" }));
-mid.push(Ln(k.ring(heliCenter[0], heliCenter[1], 12, TOWER_A_Z3 + 1.2, P, 24), { tone: "lit" }));
-// Letra H del helipuerto
-const hHalf = 5;
-const hZ = TOWER_A_Z3 + 1.4;
-mid.push(Ln(k.lineOnTop([heliCenter[0] - hHalf, heliCenter[1] - hHalf], [heliCenter[0] - hHalf, heliCenter[1] + hHalf], hZ, P), { tone: "lit" }));
-mid.push(Ln(k.lineOnTop([heliCenter[0] + hHalf, heliCenter[1] - hHalf], [heliCenter[0] + hHalf, heliCenter[1] + hHalf], hZ, P), { tone: "lit" }));
-mid.push(Ln(k.lineOnTop([heliCenter[0] - hHalf, heliCenter[1]], [heliCenter[0] + hHalf, heliCenter[1]], hZ, P), { tone: "lit" }));
-
-// Mástil de Antena de Telecomunicaciones
-const mastCenter = [heliCenter[0] + 10, heliCenter[1] - 10];
-mid.push(S(k.cylinder(mastCenter[0], mastCenter[1], 2.2, TOWER_A_Z3, ANTENNA_TOP - TOWER_A_Z3, P, 16), { tone: "hi", crease: "none" }));
-mid.push(S(k.cylinder(mastCenter[0], mastCenter[1], 4.2, ANTENNA_TOP - 15, 3.0, P, 16), { tone: "mid" }));
-mid.push(Dots([at([mastCenter[0], mastCenter[1], ANTENNA_TOP])], { size: 0.65, tone: "lit" }));
-
-// 2. SPIRE CUANTICO (Data Center con Disipadores Verticales)
-mid.push(S(slab(TOWER_B, 0, TOWER_B_Z, 3, 0.8), { tone: "mid" }));
-// Aletas de refrigeración vertical en la cara visible
-for (let fx = TOWER_B.x + 8; fx < TOWER_B.x + TOWER_B.w - 6; fx += 10) {
-  const fin = { x: fx, y: TOWER_B.y + TOWER_B.d - 1.5, w: 2.2, d: 2.5, r: 0.2 };
-  mid.push(S(slab(fin, 20, TOWER_B_Z - 40, 2, 0.2), { tone: "hi" }));
-}
-// Antena Parabólica de Azotea
-const dishFrame = G.frameAlong([TOWER_B.x + 22, TOWER_B.y + 22, TOWER_B_Z + 12], [0.4, 0.3, 0.85]);
-mid.push(S(G.lathe([[0, 0], [1.5, 3], [3, 8], [4, 12], [4.5, 12.5], [3.8, 12]], dishFrame, P, { steps: 24 }), { tone: "hi" }));
-mid.push(S(k.cylinder(TOWER_B.x + 22, TOWER_B.y + 22, 1.8, TOWER_B_Z, 12, P, 12), { tone: "mid" }));
-
-// 3. SUBESTACION ELECTRICA Y MODULOS INDUSTRIALES
-mid.push(S(slab(SUBSTATION, 0, SUB_Z, 2, 0.6), { tone: "mid" }));
-// Aisladores de alta tensión (Bobinas cerámicas)
-for (let ix = SUBSTATION.x + 14; ix < SUBSTATION.x + SUBSTATION.w - 10; ix += 20) {
-  const by = SUBSTATION.y + SUBSTATION.d / 2;
-  mid.push(S(k.cylinder(ix, by, 4.5, SUB_Z, 16, P, 16, 0.4), { tone: "hi" }));
-  mid.push(S(k.cylinder(ix, by, 2.0, SUB_Z + 16, 6, P, 12), { tone: "lit" }));
-  mid.push(Dots([at([ix, by, SUB_Z + 22])], { size: 0.45, tone: "lit" }));
+// Pasos de cebra peatonales
+for (let zx = roadH.x + 35; zx <= roadH.x + 48; zx += 3.5) {
+  back.push(Ln(k.lineOnTop([zx, roadH.y + 4], [zx, roadH.y + roadH.d - 4], Z_CURB + 0.15, P), { tone: "lit" }));
 }
 
-// 4. VIADUCTO ELEVADO DEL MONORRAIL
-// Pilares de sustentación estructural
-for (const px of [BASE.x + 40, 0, BASE.x + BASE.w - 40]) {
-  const pylonPlan = { x: px - 6, y: VIADUCT_Y - 4, w: 12, d: 8, r: 0.8 };
-  mid.push(S(slab(pylonPlan, 0, VIADUCT_Z, 2, 0.4), { tone: "mid" }));
-  mid.push(S(slab({ x: px - 8, y: VIADUCT_Y - 6, w: 16, d: 12, r: 0.8 }, VIADUCT_Z - 6, 6, 2), { tone: "hi" }));
+// C. ARQUITECTURA EN MINIATURA (EDIFICIOS, CASITAS Y ARBOLES)
+
+// 1. TORRE CENTRAL EN MINIATURA (Central Skyscraper)
+const TOWER = { x: -38, y: -75, w: 52, d: 48, r: 1.5 };
+const TOWER_Z1 = 75;
+const TOWER_Z2 = 125;
+// Planta baja y fuste medio
+mid.push(S(slab(TOWER, Z_CURB, TOWER_Z1, 2, 0.6), { tone: "mid" }));
+// Ranuras de ventanas iluminadas
+for (let wz = Z_CURB + 10; wz < TOWER_Z1 - 8; wz += 12) {
+  const win = { x: TOWER.x + 4, y: TOWER.y + TOWER.d - 0.8, w: TOWER.w - 8, d: 0.8, r: 0 };
+  mid.push(S(slab(win, wz, 5, 1, 0), { tone: "lit" }));
 }
-// Viga cajón longitudinal del viaducto
-mid.push(S(slab(VIADUCT_BEAM, VIADUCT_Z, 8, 2, 0.4), { tone: "hi" }));
-// Vías guía tubulares
-mid.push(Ln(k.lineOnTop([VIADUCT_BEAM.x, VIADUCT_Y - 2], [VIADUCT_BEAM.x + VIADUCT_BEAM.w, VIADUCT_Y - 2], VIADUCT_Z + 8, P), { tone: "lit" }));
-mid.push(Ln(k.lineOnTop([VIADUCT_BEAM.x, VIADUCT_Y + 2], [VIADUCT_BEAM.x + VIADUCT_BEAM.w, VIADUCT_Y + 2], VIADUCT_Z + 8, P), { tone: "lit" }));
 
-// Cápsula Aerodinámica de Tránsito (Animada con JS en el cliente)
-const POD_W = 34;
-const POD_D = 7;
-const POD_H = 6;
-const podPlan = { x: -POD_W / 2, y: VIADUCT_Y - POD_D / 2, w: POD_W, d: POD_D, r: 2 };
-mid.push(
-  `<g data-part="monorail-pod">` +
-  S(slab(podPlan, VIADUCT_Z + 8, POD_H, 2, 0.6), { tone: "lit" }) +
-  Ln(k.lineOnTop([podPlan.x + 2, VIADUCT_Y], [podPlan.x + POD_W - 2, VIADUCT_Y], VIADUCT_Z + 8 + POD_H, P), { tone: "hi" }) +
-  Dots([at([podPlan.x + POD_W - 2, VIADUCT_Y, VIADUCT_Z + 8 + POD_H / 2])], { size: 0.5, tone: "lit" }) +
-  `</g>`
-);
+// Remate superior con retranqueo
+const towerTop = { x: TOWER.x + 6, y: TOWER.y + 6, w: TOWER.w - 12, d: TOWER.d - 12, r: 1 };
+mid.push(S(slab(towerTop, Z_CURB + TOWER_Z1, TOWER_Z2 - TOWER_Z1, 2, 0.5), { tone: "hi" }));
 
-// D. FAROLA CENITAL MASTIL (Idéntica a la del Ripple Tank)
-// Poste vertical cilíndrico
-front.push(S(k.cylinder(POST[0], POST[1], POST_R + 1.8, 0, 16, P, 18, 0.4), { tone: "mid" }));
-front.push(S(k.cylinder(POST[0], POST[1], POST_R, 16, POST_TOP - 16, P, 18), { tone: "mid", crease: "none" }));
-front.push(S(k.cylinder(POST[0], POST[1], POST_R + 0.8, ARM_Z - 6, 12, P, 18, 0.3), { tone: "hi" }));
+// Helipuerto miniatura en azotea con circulo y H
+const heliC = [towerTop.x + towerTop.w / 2, towerTop.y + towerTop.d / 2, Z_CURB + TOWER_Z2];
+mid.push(S(k.cylinder(heliC[0], heliC[1], 11, heliC[2], 0.8, P, 20), { tone: "hi" }));
+mid.push(Ln(k.ring(heliC[0], heliC[1], 8, heliC[2] + 0.8, P, 20), { tone: "lit" }));
+// Letra H
+const hR = 3.5;
+const hz = heliC[2] + 0.9;
+mid.push(Ln(k.lineOnTop([heliC[0] - hR, heliC[1] - hR], [heliC[0] - hR, heliC[1] + hR], hz, P), { tone: "lit" }));
+mid.push(Ln(k.lineOnTop([heliC[0] + hR, heliC[1] - hR], [heliC[0] + hR, heliC[1] + hR], hz, P), { tone: "lit" }));
+mid.push(Ln(k.lineOnTop([heliC[0] - hR, heliC[1]], [heliC[0] + hR, heliC[1]], hz, P), { tone: "lit" }));
 
-// Brazo horizontal articulado que se proyecta sobre la ciudad
-const armStart = at([POST[0], POST[1], ARM_Z]);
-const armEnd = at([LAMP[0], LAMP[1], ARM_Z]);
-const strutStart = at([POST[0] - 25, POST[1], ARM_Z]);
-const strutEnd = at([POST[0], POST[1], ARM_Z + 14]);
+// Antena con baliza
+const antC = [towerTop.x + 6, towerTop.y + 6];
+mid.push(S(k.cylinder(antC[0], antC[1], 1.2, heliC[2], 30, P, 10), { tone: "hi", crease: "none" }));
+mid.push(Dots([at([antC[0], antC[1], heliC[2] + 30])], { size: 0.5, tone: "red" }));
 
-front.push(Ln(k.pathOf([armStart, armEnd]), { tone: "hi", className: "arm-tube" }));
-front.push(Ln(k.pathOf([strutStart, strutEnd]), { tone: "mid" }));
+// 2. CASITAS Y MODULOS RESIDENCIALES DEL OESTE (Townhouses)
+const house1 = { x: -145, y: -75, w: 38, d: 34, r: 1 };
+mid.push(S(slab(house1, Z_CURB, 38, 2, 0.4), { tone: "hi" }));
+// Tejadillo inclinado o terraza
+const house1Roof = { x: house1.x + 3, y: house1.y + 3, w: house1.w - 6, d: house1.d - 6, r: 0.5 };
+mid.push(S(slab(house1Roof, Z_CURB + 38, 5, 1, 0.2), { tone: "mid" }));
+// Ventanitas
+for (const wy of [house1.y + 8, house1.y + 20]) {
+  const win = { x: house1.x + house1.w - 0.8, y: wy, w: 0.8, d: 6, r: 0 };
+  mid.push(S(slab(win, Z_CURB + 12, 10, 1, 0), { tone: "lit" }));
+}
 
-// Cabezal de la lámpara cenital
-const lampHeadCenter = [LAMP[0], LAMP[1], LAMP[2]];
-front.push(S(k.cylinder(lampHeadCenter[0], lampHeadCenter[1], 10, LAMP[2], 14, P, 24, 0.4), { tone: "hi" }));
-front.push(S(k.cylinder(lampHeadCenter[0], lampHeadCenter[1], 12, LAMP[2] - 3, 3, P, 24), { tone: "lit" }));
-front.push(Dots([at(lampHeadCenter)], { size: 0.8, tone: "lit" }));
+const house2 = { x: -95, y: -80, w: 42, d: 38, r: 1 };
+mid.push(S(slab(house2, Z_CURB, 54, 2, 0.5), { tone: "mid" }));
+// Claraboyas y chimeneas miniatura
+mid.push(S(k.cylinder(house2.x + 12, house2.y + 12, 3.2, Z_CURB + 54, 7, P, 12), { tone: "hi" }));
+mid.push(S(k.cylinder(house2.x + 28, house2.y + 22, 2.5, Z_CURB + 54, 5, P, 12), { tone: "hi" }));
 
-// E. CONSOLA DE CONTROL INSTRUMENTAL (En la placa base)
-front.push(S(slab(BOX, BOX_Z, BOX_TOP - BOX_Z, 3, 0.8), { tone: "mid" }));
-// Interruptores analógicos y diales de la consola
-const knobPos = [BOX.x + 21, BOX.y + 48, BOX_TOP];
-const switchPos = [BOX.x + 32, BOX.y + 20, BOX_TOP];
-const ledPos = [BOX.x + 10, BOX.y + 20, BOX_TOP];
+// 3. CENTRO COMERCIAL Y ESTACION ESTE
+const station = { x: 70, y: -75, w: 75, d: 42, r: 1.5 };
+mid.push(S(slab(station, Z_CURB, 32, 2, 0.4), { tone: "mid" }));
+// Marquesina volada de vidrio
+const canopy = { x: station.x - 6, y: station.y + station.d - 2, w: 48, d: 10, r: 0.8 };
+mid.push(S(slab(canopy, Z_CURB + 14, 2.5, 1, 0.2), { tone: "lit" }));
+// Luces de rotulo comercial
+mid.push(Ln(k.lineOnTop([station.x + 8, station.y + station.d + 0.5], [station.x + station.w - 8, station.y + station.d + 0.5], Z_CURB + 24, P), { tone: "lit" }));
 
-front.push(S(k.cylinder(knobPos[0], knobPos[1], 7.5, BOX_TOP, 5.0, P, 18, 0.4), { tone: "hi" }));
-front.push(Ln(k.knurl(knobPos[0], knobPos[1], 7.5, BOX_TOP + 0.8, BOX_TOP + 4.2, 18, P), { tone: "lo" }));
-front.push(S(k.cylinder(switchPos[0], switchPos[1], 2.2, BOX_TOP, 6.0, P, 12), { tone: "lit" }));
-front.push(Dots([at(ledPos)], { size: 0.55, tone: "lit" }));
+// 4. ALMACEN Y SUBESTACION SUR
+const warehouse = { x: -130, y: 35, w: 55, d: 44, r: 1 };
+mid.push(S(slab(warehouse, Z_CURB, 28, 2, 0.4), { tone: "mid" }));
+// Transformadores exteriores con bobinas
+for (const bx of [warehouse.x + 12, warehouse.x + 28, warehouse.x + 42]) {
+  mid.push(S(k.cylinder(bx, warehouse.y - 4, 3.0, Z_CURB, 8, P, 12), { tone: "hi" }));
+  mid.push(Dots([at([bx, warehouse.y - 4, Z_CURB + 9])], { size: 0.4, tone: "lit" }));
+}
 
-// 4. CONFIGURACION DE DATOS Y METADATOS PARA EL CLIENTE
+// 5. ARBOLES CUBICOS EN MINIATURA (Tree Planters)
+for (const [tx, ty] of [
+  [-160, 0],
+  [-110, 20],
+  [-10, 24],
+  [80, 22],
+  [135, 20],
+  [-50, -22],
+  [15, -22],
+  [110, -22],
+]) {
+  // Tronco
+  mid.push(S(k.cylinder(tx, ty, 1.2, Z_CURB, 6, P, 8), { tone: "lo", crease: "none" }));
+  // Copa de follaje esférica estilizada
+  mid.push(sphere([tx, ty, Z_CURB + 10], 4.2, { tone: "hi" }));
+}
+
+// 6. MINI-COCHECITOS CON FAROS ILUMINADOS (Vehículos Autónomos)
+// 4 cochecitos circulando en bucle alrededor de la calzada
+mid.push(`
+<g data-part="mini-cars">
+  <!-- Coche 1: En calzada horizontal norte -->
+  <g class="mini-car car-1">
+    ${S(slab({ x: -10, y: -6, w: 14, d: 8, r: 1.5 }, Z_CURB + 0.2, 5, 2, 0.3), { tone: "hi" })}
+    ${Dots([at([-10, -4, Z_CURB + 2.5]), at([-10, 0, Z_CURB + 2.5])], { size: 0.45, tone: "lit" })}
+    ${Dots([at([4, -4, Z_CURB + 2.5]), at([4, 0, Z_CURB + 2.5])], { size: 0.4, tone: "red" })}
+  </g>
+  <!-- Coche 2: En calzada este -->
+  <g class="mini-car car-2">
+    ${S(slab({ x: 38, y: 15, w: 8, d: 13, r: 1.5 }, Z_CURB + 0.2, 5, 2, 0.3), { tone: "lit" })}
+    ${Dots([at([40, 28, Z_CURB + 2.5]), at([44, 28, Z_CURB + 2.5])], { size: 0.45, tone: "lit" })}
+  </g>
+</g>
+`);
+
+// D. NUBES ISOMETRICAS FLOTANTES EN ALTURA ("colocas nubes arriba")
+// 2 Racimos de nubes hinchadas volumétricas suspendidas sobre la maqueta
+const cloudCluster1 = [
+  [-120, -45, CLOUD_Z + 10, 22],
+  [-100, -55, CLOUD_Z + 18, 28],
+  [-75,  -48, CLOUD_Z + 12, 24],
+  [-130, -60, CLOUD_Z + 5,  18],
+  [-90,  -35, CLOUD_Z + 15, 20],
+];
+
+const cloudCluster2 = [
+  [65,   -35, CLOUD_Z + 12, 24],
+  [90,   -45, CLOUD_Z + 20, 30],
+  [120,  -38, CLOUD_Z + 14, 25],
+  [140,  -50, CLOUD_Z + 6,  18],
+  [80,   -20, CLOUD_Z + 10, 21],
+];
+
+let cloudsSvg = '<g class="iso-clouds" data-part="clouds">';
+for (const [cx, cy, cz, cr] of [...cloudCluster1, ...cloudCluster2]) {
+  cloudsSvg += sphere([cx, cy, cz], cr, { tone: "hi", lit: true });
+}
+cloudsSvg += '</g>';
+front.push(cloudsSvg);
+
+// 4. METADATOS Y GEOMETRIA PARA EL CLIENTE
 const DATA = {
   W,
   H,
   P,
   camera: glCamera(P),
   base: [BASE.x, BASE.y, BASE.x + BASE.w, BASE.y + BASE.d],
-  lamp: LAMP,
-  lampActive: true,
-  rainDensity: 0.65,
-  neonMode: 1.0,
-  monorailZ: VIADUCT_Z + 8,
-  monorailX0: VIADUCT_BEAM.x + 20,
-  monorailX1: VIADUCT_BEAM.x + VIADUCT_BEAM.w - 20,
-  monorailY: VIADUCT_Y,
+  cloudZ: CLOUD_Z,
+  buildings: [
+    { x0: TOWER.x, y0: TOWER.y, x1: TOWER.x + TOWER.w, y1: TOWER.y + TOWER.d, z: Z_CURB + TOWER_Z2 },
+    { x0: house1.x, y0: house1.y, x1: house1.x + house1.w, y1: house1.y + house1.d, z: Z_CURB + 38 },
+    { x0: house2.x, y0: house2.y, x1: house2.x + house2.w, y1: house2.y + house2.d, z: Z_CURB + 54 },
+    { x0: station.x, y0: station.y, x1: station.x + station.w, y1: station.y + station.d, z: Z_CURB + 32 },
+    { x0: warehouse.x, y0: warehouse.y, x1: warehouse.x + warehouse.w, y1: warehouse.y + warehouse.d, z: Z_CURB + 28 },
+  ],
 };
 
-// 5. FRAGMENT SHADER GLSL ISOMETRICO (Lluvia, Charcos y Reflejos en Asfalto)
-const FRAGMENT_SHADER = `
-${GLSL_ISO}
-
-uniform float uRain;
-uniform float uLamp;
-uniform float uNeon;
-uniform vec2 uBaseMin;
-uniform vec2 uBaseMax;
-uniform vec3 uLampPos;
-uniform float uFlash;
-
-// Generador de lluvia 3D con paralaje isométrico
-float getRain(vec2 uv, float t) {
-  vec2 st = uv * vec2(1.8, 0.4);
-  st.y -= t * 8.5;
-  st.x += st.y * 0.12; // Inclinacion de viento
-  float f = fract(st.x * 35.0);
-  float id = floor(st.x * 35.0);
-  float drop = hash12(vec2(id, floor(st.y * 12.0)));
-  float streak = smoothstep(0.92, 0.99, drop) * smoothstep(0.0, 0.2, f) * smoothstep(1.0, 0.8, f);
-  return streak * uRain;
-}
-
-// Ondas concentricas de charcos de agua en el suelo
-float getPuddleRipples(vec2 p, float t) {
-  float ripple = 0.0;
-  for (int i = 0; i < 4; i++) {
-    vec2 c = vec2(
-      mix(uBaseMin.x + 30.0, uBaseMax.x - 30.0, hash12(vec2(float(i) * 13.1, 7.3))),
-      mix(uBaseMin.y + 30.0, uBaseMax.y - 30.0, hash12(vec2(float(i) * 29.7, 19.1)))
-    );
-    float t_drop = fract(t * 0.85 + float(i) * 0.25);
-    float d = length(p - c);
-    float radius = t_drop * 38.0;
-    float wave = sin((d - radius) * 0.8) * exp(-abs(d - radius) * 0.25) * exp(-t_drop * 2.5);
-    ripple += wave * step(d, radius + 4.0);
-  }
-  return ripple * uRain;
-}
-
-void main() {
-  vec2 vb = viewOf(gl_FragCoord.xy);
-  vec3 ground = onFloor(vb, 0.0);
-
-  // Mascara de la placa base en coordenadas isométrica de mundo
-  bool inBase = ground.x >= uBaseMin.x && ground.x <= uBaseMax.x &&
-                ground.y >= uBaseMin.y && ground.y <= uBaseMax.y;
-
-  if (!inBase) {
-    discard;
-  }
-
-  // Textura base de asfalto y hormigon
-  float noiseFloor = fbm2(ground.xy * 0.04);
-  vec3 asphaltColor = vec3(0.05, 0.05, 0.06) + noiseFloor * 0.02;
-
-  // Mascara de charcos de agua reflectante
-  float puddleMask = smoothstep(0.48, 0.58, noise2(ground.xy * 0.025 + vec2(1.5, 4.2)));
-
-  // Ondas de causticas de lluvia en los charcos
-  float waves = getPuddleRipples(ground.xy, uTime);
-
-  // Cono de iluminacion cenital desde la farola
-  float lampDist = length(ground.xy - uLampPos.xy);
-  float spotLight = smoothstep(130.0, 15.0, lampDist) * uLamp;
-  vec3 spotColor = vec3(1.0, 0.95, 0.82) * spotLight * 0.45;
-
-  // Reflejo de luces neon de la ciudad en los charcos mojados
-  vec3 neonReflection = vec3(0.0);
-  if (uNeon > 0.5) {
-    // Neon cian para Torre Alfa y ambar para Centro de Datos
-    float cyanGlow = smoothstep(140.0, 20.0, length(ground.xy - vec2(-70.0, -75.0)));
-    float amberGlow = smoothstep(120.0, 15.0, length(ground.xy - vec2(60.0, -80.0)));
-    neonReflection = vec3(0.0, 0.95, 1.0) * cyanGlow * 0.35 +
-                     vec3(1.0, 0.65, 0.05) * amberGlow * 0.30;
-  }
-
-  // Composicion del suelo humedo
-  vec3 waterColor = mix(asphaltColor, vec3(0.08, 0.12, 0.15) + neonReflection + spotColor, puddleMask * 0.85);
-  waterColor += waves * 0.08 * puddleMask;
-
-  // Rayos de lluvia verticales cayendo en la escena
-  float rain = getRain(vb, uTime);
-  vec3 finalColor = waterColor + vec3(0.65, 0.85, 1.0) * rain * 0.45;
-
-  // Destello de relampago de tormenta
-  if (uFlash > 0.05) {
-    finalColor += vec3(0.35, 0.45, 0.6) * uFlash;
-  }
-
-  gl_FragColor = vec4(finalColor, 0.92);
-}
-`;
-
-// 6. CODIGO JS DE CONTROL INTERACTIVO DEL CLIENTE (live.js)
+// 5. CLIENT SCRIPT: SIMULADOR DE GOTAS INDIVIDUALES Y ONDAS DE IMPACTO
 const CLIENT_JS = `
 const DATA = __DATA__;
 const canvas = document.querySelector(".city-gl");
 const readout = document.querySelector("[data-readout]");
-const pod = document.querySelector('[data-part="monorail-pod"]');
-const said = document.querySelector(".city-said");
+const cloudsGroup = document.querySelector('[data-part="clouds"]');
+const car1 = document.querySelector(".car-1");
+const car2 = document.querySelector(".car-2");
 
-let rainLevel = DATA.rainDensity;
-let lampOn = DATA.lampActive ? 1.0 : 0.0;
-let neonMode = DATA.neonMode;
+let rainLevel = 0.65;
+let lampOn = 1.0;
+let dayMode = 0.0; // 0.0: Noche cyberpunk neon, 1.0: Dia diáfano de maqueta
 let flashTime = 0.0;
-let podPos = 0.0;
-let lastTime = 0;
+let carT = 0.0;
+let cloudDrift = 0.0;
 
-// Inicializacion del Shader WebGL Isométrico
-const gl = canvas.getContext("webgl", { alpha: true, antialias: false });
-if (!gl) {
-  console.warn("WebGL no disponible");
-} else {
-  const vs = gl.createShader(gl.VERTEX_SHADER);
-  gl.shaderSource(vs, "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}");
-  gl.compileShader(vs);
+// SISTEMA DE GOTAS Y ONDAS DE IMPACTO
+// Cada gota cae desde las nubes; al impactar el suelo o tejado, genera en ese punto exacto una onda
+const MAX_DROPS = 48;
+const MAX_RIPPLES = 48;
+const drops = [];
+const ripples = [];
 
-  const fs = gl.createShader(gl.FRAGMENT_SHADER);
-  gl.shaderSource(fs, DATA.fragmentShader);
-  gl.compileShader(fs);
-
-  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-    console.error("FS Error:", gl.getShaderInfoLog(fs));
-  }
-
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
-
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
-
-  const pLoc = gl.getAttribLocation(prog, "p");
-  gl.enableVertexAttribArray(pLoc);
-  gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
-
-  const uTimeLoc = gl.getUniformLocation(prog, "uTime");
-  const uCanvasLoc = gl.getUniformLocation(prog, "uCanvas");
-  const uViewLoc = gl.getUniformLocation(prog, "uView");
-  const uOriginLoc = gl.getUniformLocation(prog, "uOrigin");
-  const uKLoc = gl.getUniformLocation(prog, "uK");
-  const uCamLoc = gl.getUniformLocation(prog, "uCam");
-  const uRainLoc = gl.getUniformLocation(prog, "uRain");
-  const uLampLoc = gl.getUniformLocation(prog, "uLamp");
-  const uNeonLoc = gl.getUniformLocation(prog, "uNeon");
-  const uFlashLoc = gl.getUniformLocation(prog, "uFlash");
-  const uBaseMinLoc = gl.getUniformLocation(prog, "uBaseMin");
-  const uBaseMaxLoc = gl.getUniformLocation(prog, "uBaseMax");
-  const uLampPosLoc = gl.getUniformLocation(prog, "uLampPos");
-
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
-    gl.viewport(0, 0, canvas.width, canvas.height);
-  }
-  window.addEventListener("resize", resize);
-  resize();
-
-  function render(now) {
-    const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 0.016;
-    lastTime = now;
-    const timeSec = now * 0.001;
-
-    // Actualizacion de capsula de monorrail
-    podPos = (podPos + dt * 0.22) % 1.0;
-    if (pod) {
-      const curX = DATA.monorailX0 + (DATA.monorailX1 - DATA.monorailX0) * podPos;
-      pod.setAttribute("transform", translateAlong(DATA.P, [curX, 0, 0]));
-    }
-
-    // Gestion de relampago aleatorio
-    if (flashTime > 0) {
-      flashTime -= dt * 3.5;
-    } else if (rainLevel > 0.7 && Math.random() < 0.003) {
-      flashTime = 1.0;
-    }
-
-    gl.useProgram(prog);
-    gl.uniform1f(uTimeLoc, timeSec);
-    gl.uniform2f(uCanvasLoc, canvas.width, canvas.height);
-    gl.uniform2f(uViewLoc, DATA.W, DATA.H);
-    gl.uniform2f(uOriginLoc, DATA.camera.origin[0], DATA.camera.origin[1]);
-    gl.uniform1f(uKLoc, DATA.camera.k);
-    gl.uniform4f(uCamLoc, DATA.camera.cam[0], DATA.camera.cam[1], DATA.camera.cam[2], DATA.camera.cam[3]);
-    gl.uniform1f(uRainLoc, rainLevel);
-    gl.uniform1f(uLampLoc, lampOn);
-    gl.uniform1f(uNeonLoc, neonMode);
-    gl.uniform1f(uFlashLoc, Math.max(0.0, flashTime));
-    gl.uniform2f(uBaseMinLoc, DATA.base[0], DATA.base[1]);
-    gl.uniform2f(uBaseMaxLoc, DATA.base[2], DATA.base[3]);
-    gl.uniform3f(uLampPosLoc, DATA.lamp[0], DATA.lamp[1], DATA.lamp[2]);
-
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
-    requestAnimationFrame(render);
-  }
-  requestAnimationFrame(render);
+for (let i = 0; i < MAX_DROPS; i++) {
+  drops.push({
+    x: DATA.base[0] + Math.random() * (DATA.base[2] - DATA.base[0]),
+    y: DATA.base[1] + Math.random() * (DATA.base[3] - DATA.base[1]),
+    z: DATA.cloudZ + Math.random() * 40,
+    speed: 480 + Math.random() * 180,
+    active: true
+  });
 }
 
-// Interaccion mediante Slider de Lluvia y Switches en la Placa
-const stage = document.querySelector(".city-stage");
+function spawnRipple(x, y, z) {
+  for (let i = 0; i < MAX_RIPPLES; i++) {
+    const r = ripples[i];
+    if (!r || r.age >= r.maxAge) {
+      ripples[i] = { x, y, z, age: 0, maxAge: 0.65 + Math.random() * 0.25, maxRadius: 12 + Math.random() * 8 };
+      break;
+    }
+  }
+}
+
+// Inicializar Canvas 2D de alta resolución para gotas y ondas proyectadas
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.scale(dpr * (rect.width / DATA.W), dpr * (rect.height / DATA.H));
+}
+window.addEventListener("resize", resize);
+resize();
+
+// Proyección matemática 3D -> 2D con la matriz P
+function project(x, y, z) {
+  return iso([x, y, z], DATA.P);
+}
+
+let last = performance.now();
+
+function loop(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+
+  // 1. Animación suave de nubes flotantes
+  cloudDrift = Math.sin(now * 0.0008) * 12;
+  if (cloudsGroup) {
+    cloudsGroup.setAttribute("transform", \`translate(\${cloudDrift.toFixed(1)} 0)\`);
+  }
+
+  // 2. Animación de cochecitos circulando en bucle
+  carT = (carT + dt * 0.22) % 1.0;
+  if (car1) {
+    const cx = DATA.base[0] + 40 + (DATA.base[2] - DATA.base[0] - 80) * ((carT * 2) % 1.0);
+    car1.setAttribute("transform", translateAlong(DATA.P, [cx, 0, 0]));
+  }
+
+  // 3. Destello de relámpago
+  if (flashTime > 0) {
+    flashTime -= dt * 3.5;
+  } else if (rainLevel > 0.75 && Math.random() < 0.004) {
+    flashTime = 1.0;
+  }
+
+  // 4. Renderizado de lluvia y ondas en el lienzo
+  ctx.clearRect(0, 0, DATA.W, DATA.H);
+
+  // A. Actualizar y dibujar ondas concéntricas de impacto
+  for (let i = 0; i < ripples.length; i++) {
+    const r = ripples[i];
+    if (!r || r.age >= r.maxAge) continue;
+    r.age += dt;
+    const progress = r.age / r.maxAge;
+    const currentRadius = r.maxRadius * Math.sqrt(progress);
+    const alpha = (1.0 - progress) * (rainLevel * 0.95);
+
+    if (alpha <= 0.01) continue;
+
+    const center2D = project(r.x, r.y, r.z);
+    ctx.save();
+    ctx.strokeStyle = dayMode > 0.5 ? \`rgba(40, 120, 200, \${alpha})\` : \`rgba(0, 240, 255, \${alpha})\`;
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    // Elipse isométrica orientada según los ejes
+    ctx.ellipse(center2D[0], center2D[1], currentRadius, currentRadius * 0.58, -0.42, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // B. Actualizar y dibujar gotas descendentes desde las nubes
+  const activeCount = Math.round(MAX_DROPS * rainLevel);
+  for (let i = 0; i < activeCount; i++) {
+    const d = drops[i];
+    d.z -= d.speed * dt;
+    d.x += dt * 18; // Viento sutil
+
+    // Detección de impacto: altura del tejado o suelo
+    let hitZ = 0;
+    for (let b = 0; b < DATA.buildings.length; b++) {
+      const bg = DATA.buildings[b];
+      if (d.x >= bg.x0 && d.x <= bg.x1 && d.y >= bg.y0 && d.y <= bg.y1) {
+        hitZ = bg.z;
+        break;
+      }
+    }
+
+    if (d.z <= hitZ) {
+      // IMPACTO EXACTO: Detona onda concéntrica en ese punto
+      spawnRipple(d.x, d.y, hitZ);
+
+      // Reiniciar gota debajo de las nubes
+      d.z = DATA.cloudZ + Math.random() * 25;
+      d.x = DATA.base[0] + 15 + Math.random() * (DATA.base[2] - DATA.base[0] - 30);
+      d.y = DATA.base[1] + 15 + Math.random() * (DATA.base[3] - DATA.base[1] - 30);
+    }
+
+    // Dibujar trazo lineal de la gota con paralaje isométrico
+    const p1 = project(d.x, d.y, d.z);
+    const p2 = project(d.x - 1.2, d.y, d.z + 9.0);
+
+    ctx.save();
+    ctx.strokeStyle = dayMode > 0.5 ? "rgba(100, 160, 220, 0.45)" : "rgba(180, 240, 255, 0.65)";
+    ctx.lineWidth = 0.85;
+    ctx.beginPath();
+    ctx.moveTo(p1[0], p1[1]);
+    ctx.lineTo(p2[0], p2[1]);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // C. Destello ambiental de tormenta
+  if (flashTime > 0.05) {
+    ctx.fillStyle = \`rgba(220, 240, 255, \${flashTime * 0.22})\`;
+    ctx.fillRect(0, 0, DATA.W, DATA.H);
+  }
+
+  requestAnimationFrame(loop);
+}
+
+requestAnimationFrame(loop);
+
+// Control interactivo de telemetria
 function updateTelemetry() {
-  const mm = Math.round(rainLevel * 75);
-  const status = rainLevel < 0.25 ? "Llovizna leve" : (rainLevel < 0.7 ? "Lluvia sostenida" : "Tormenta electrica");
-  const lampStr = lampOn > 0.5 ? "Farola: Activa" : "Farola: Off";
-  const neonStr = neonMode > 0.5 ? "Red: Neon" : "Red: Lab";
-  const text = \`\${mm} mm/h // \${status} // \${lampStr} // \${neonStr}\`;
+  const mm = Math.round(rainLevel * 60);
+  const status = rainLevel < 0.2 ? "Llovizna suave" : (rainLevel < 0.7 ? "Lluvia sostenida" : "Tormenta electrica");
+  const modeStr = dayMode > 0.5 ? "Dia Diáfano" : "Noche Cyberpunk";
+  const lampStr = lampOn > 0.5 ? "Farola: On" : "Farola: Off";
+  const text = \`Precipitacion: \${mm} mm/h // \${status} // \${modeStr} // \${lampStr}\`;
   if (readout) readout.textContent = text;
 }
 
@@ -500,13 +450,14 @@ window.setRain = function(val) {
   updateTelemetry();
 };
 
-window.toggleLamp = function() {
-  lampOn = lampOn > 0.5 ? 0.0 : 1.0;
+window.toggleDayNight = function() {
+  dayMode = dayMode > 0.5 ? 0.0 : 1.0;
+  document.body.setAttribute("data-theme", dayMode > 0.5 ? "light" : "dark");
   updateTelemetry();
 };
 
-window.toggleNeon = function() {
-  neonMode = neonMode > 0.5 ? 0.0 : 1.0;
+window.toggleLamp = function() {
+  lampOn = lampOn > 0.5 ? 0.0 : 1.0;
   updateTelemetry();
 };
 
@@ -519,16 +470,14 @@ window.triggerStorm = function() {
 updateTelemetry();
 `;
 
-DATA.fragmentShader = FRAGMENT_SHADER;
-
-// 7. ENSAMBLAJE DE LAS CAPAS SVG Y HTML
-const LABEL_TEXT = "Sector 07 Megacity: una maqueta tecnica isometrica de una ciudad cyberpunk construida con estandares de dibujo de ingenieria, rascacielos con cotas, viaducto de monorrail elevado, farola cenital articulada y shader WebGL de asfalto mojado con causticas de lluvia.";
+// 6. ENSAMBLAJE DE LA PLACA Y ESCENARIO
+const LABEL_TEXT = "Diorama en miniatura de una ciudad cyberpunk: pedestal flotante con calzadas, rascacielos miniatura, casas modulares, arboles en jardineras y dos grupos de nubes volumetricas en altura que generan lluvia con ondas de impacto concentricas individuales.";
 
 const backSvg = k.figureSvg({ width: W, height: H, label: LABEL_TEXT, body: back, className: "city-back" });
 const layerSvg = (name, body) => `<svg xmlns="http://www.w3.org/2000/svg" class="iso-svg city-layer ${name}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${body.join("")}</svg>`;
 
 const stageHtml = `
-<div class="city-stage" tabindex="0" role="group" aria-label="Maqueta isometrica de Sector 07 Megacity">
+<div class="city-stage" tabindex="0" role="group" aria-label="Maqueta en miniatura con nubes y lluvia">
   <span class="city-said" aria-live="polite"></span>
   ${backSvg}
   <canvas class="city-layer city-gl" aria-hidden="true"></canvas>
@@ -537,15 +486,15 @@ const stageHtml = `
 </div>
 `;
 
-const CAPTION_TEXT = `Sector 07 Megacity modelada mediante proyeccion isometrica tecnica a 35 grados de acimut y 44 grados de elevacion. Rascacielos de alta densidad arquitectonica con nucleo estructural, helipuerto y mastil de telecomunicaciones a 360 mm sobre cota cero. Un viaducto de transito suspendido transporta capsulas de levitacion magnetica sobre la avenida central. Un mastil de iluminacion cenital proyecta un cono de luz sobre el cruce vial, mientras que un shader WebGL en perspectiva isometrica calcula en tiempo real la lluvia, los charcos en el asfalto reflectante y las ondas de choque causticas causadas por las gotas.`;
+const CAPTION_TEXT = `Diorama urbano en miniatura construido con proyeccion isometrica apaisada a 35 grados de acimut y 40 grados de elevacion. Rascacielos miniatura a cota Z = 160 mm con helipuerto y baliza luminosa, casas modulares con claraboyas y arboles en jardineras viales. Dos racimos de nubes volumetricas flotan en el cielo a 240 mm sobre la maqueta. Cada gota individual desciende con trayectoria calculada y genera una onda concentrica al colisionar con el suelo o tejados.`;
 
-// Barra de navegacion superior homologada
+// Barra de navegación superior unificada
 const topNavHtml = `
 <header class="groove-nav-header">
     <div class="groove-brand">
         <span class="brand-sym">[+]</span>
         <span class="brand-text">LINUX GROOVE</span>
-        <span class="brand-badge">MAQ: CIUDAD ISOMETRICA</span>
+        <span class="brand-badge">MAQUETA EN MINIATURA // DIORAMA</span>
     </div>
     <nav class="groove-nav">
         <a href="index.html" class="nav-item">[ Rayos ]</a>
@@ -560,88 +509,45 @@ const topNavHtml = `
 </header>
 `;
 
-// Dock Inferior Minimalista (46px) para no obstruir el modelo 3D
+// Dock Inferior Minimalista (42px)
 const bottomDockHtml = `
-<div class="city-dock" aria-label="Controles del entorno urbano">
+<div class="city-dock" aria-label="Controles del diorama en miniatura">
   <div class="dock-control">
     <span class="dock-label">// LLUVIA:</span>
     <input type="range" class="dock-slider" min="0" max="100" value="65" oninput="window.setRain(this.value / 100.0)">
   </div>
   <div class="dock-separator"></div>
+  <button class="dock-btn" onclick="window.toggleDayNight()">[ Dia / Noche ]</button>
   <button class="dock-btn" onclick="window.toggleLamp()">[ Farola Cenital ]</button>
-  <button class="dock-btn" onclick="window.toggleNeon()">[ Modo Neon ]</button>
   <button class="dock-btn pulse" onclick="window.triggerStorm()">[ Pulso Tormenta ]</button>
 </div>
 `;
 
-// Estilos CSS adicionales
+// Estilos CSS que fuerzan el ajuste 100% al viewport sin scroll
 const EXTRA_CSS = `
-.groove-nav-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 50px;
-    z-index: 99999;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 1.5rem;
-    background: rgba(11, 11, 11, 0.92);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-    box-sizing: border-box;
-    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+html, body {
+  overflow: hidden;
+  height: 100vh;
 }
-.groove-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.80rem;
+.iso-page {
+  width: min(1020px, 95vw);
+  margin: 50px auto 4px !important;
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
-.groove-brand .brand-sym { color: #00f0ff; font-weight: 700; }
-.groove-brand .brand-text { color: #ffffff; font-weight: 700; letter-spacing: 0.08em; }
-.groove-brand .brand-badge {
-    font-size: 0.60rem;
-    padding: 2px 6px;
-    background: rgba(0, 240, 255, 0.12);
-    border: 1px solid rgba(0, 240, 255, 0.35);
-    border-radius: 4px;
-    color: #00f0ff;
-    letter-spacing: 0.05em;
+.iso-figure {
+  margin: 0 !important;
 }
-.groove-nav {
-    display: flex;
-    gap: 0.30rem;
-    align-items: center;
-    flex-wrap: wrap;
+.iso-plate {
+  padding: 12px 16px 14px !important;
 }
-.groove-nav .nav-item {
-    text-decoration: none;
-    font-size: 0.70rem;
-    color: #8c8c90;
-    padding: 3px 7px;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    transition: all 0.18s ease;
-}
-.groove-nav .nav-item:hover {
-    color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.04);
-}
-.groove-nav .nav-item.active {
-    color: #00f0ff;
-    border-color: rgba(0, 240, 255, 0.5);
-    background: rgba(0, 240, 255, 0.12);
-    box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
-}
-
 .city-stage {
   position: relative;
   width: 100%;
   aspect-ratio: ${W} / ${H};
+  max-height: calc(100vh - 195px);
   user-select: none;
 }
 .city-stage svg, .city-stage canvas {
@@ -655,38 +561,99 @@ const EXTRA_CSS = `
   mix-blend-mode: screen;
 }
 
+.groove-nav-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 46px;
+    z-index: 99999;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    background: rgba(11, 11, 11, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    box-sizing: border-box;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+.groove-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+}
+.groove-brand .brand-sym { color: #00f0ff; font-weight: 700; }
+.groove-brand .brand-text { color: #ffffff; font-weight: 700; letter-spacing: 0.08em; }
+.groove-brand .brand-badge {
+    font-size: 0.58rem;
+    padding: 2px 5px;
+    background: rgba(0, 240, 255, 0.12);
+    border: 1px solid rgba(0, 240, 255, 0.35);
+    border-radius: 4px;
+    color: #00f0ff;
+}
+.groove-nav {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.groove-nav .nav-item {
+    text-decoration: none;
+    font-size: 0.68rem;
+    color: #8c8c90;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+.groove-nav .nav-item:hover {
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04);
+}
+.groove-nav .nav-item.active {
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.5);
+    background: rgba(0, 240, 255, 0.12);
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+}
+
 .city-dock {
   position: fixed;
-  bottom: 1.2rem;
+  bottom: 0.8rem;
   left: 50%;
   transform: translateX(-50%);
-  height: 46px;
-  background: rgba(14, 18, 24, 0.92);
+  height: 40px;
+  background: rgba(14, 18, 24, 0.94);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(0, 240, 255, 0.25);
-  border-radius: 23px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
-  padding: 0 1.2rem;
-  gap: 1.0rem;
+  padding: 0 1.0rem;
+  gap: 0.8rem;
   z-index: 1000;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.65);
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 }
 .dock-control {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 .dock-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: #8c8c90;
   white-space: nowrap;
 }
 .dock-slider {
   -webkit-appearance: none;
-  width: 100px;
+  width: 90px;
   height: 4px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 2px;
@@ -695,8 +662,8 @@ const EXTRA_CSS = `
 }
 .dock-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #00f0ff;
   box-shadow: 0 0 8px #00f0ff;
@@ -704,7 +671,7 @@ const EXTRA_CSS = `
 }
 .dock-separator {
   width: 1px;
-  height: 20px;
+  height: 18px;
   background: rgba(255, 255, 255, 0.12);
 }
 .dock-btn {
@@ -712,8 +679,8 @@ const EXTRA_CSS = `
   border: 1px solid rgba(255, 255, 255, 0.18);
   color: #b0b0b8;
   font-family: inherit;
-  font-size: 0.72rem;
-  padding: 4px 10px;
+  font-size: 0.68rem;
+  padding: 3px 8px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -734,13 +701,13 @@ const EXTRA_CSS = `
 
 const plateHtml = k.plateHtml({
   fig: "Fig 4",
-  title: "Sector 07 Megacity",
-  hint: "Usa el dock inferior para modular la precipitacion y alternar la farola",
-  readout: "Precipitacion: 48 mm/h // Modo: Tormenta // Red: 100%",
+  title: "Mini-City Diorama",
+  hint: "Observa cada gota caer y generar su onda en el suelo // Arrastra el slider para modular la lluvia",
+  readout: "Precipitacion: 39 mm/h // Lluvia sostenida // Noche Cyberpunk // Farola: On",
   keys: [
-    { mark: "lit", label: "Farola Cenital & Mastil de Telecomunicaciones (Z: 360 mm)" },
-    { mark: "raised", label: "Viaducto de Monorrail Elevado y Rascacielos Alfa" },
-    { mark: "flat", label: "Asfalto con Charcos y Ondas Causticas en WebGL" },
+    { mark: "lit", label: "Nubes Volumetricas Flotantes (Z: 240 mm)" },
+    { mark: "raised", label: "Torre Central y Bloques Residenciales" },
+    { mark: "flat", label: "Ondas Concentricas de Lluvia por Gota Individual" },
   ],
   caption: CAPTION_TEXT,
   body: stageHtml,
@@ -749,24 +716,21 @@ const plateHtml = k.plateHtml({
 const pageBody = `
 ${topNavHtml}
 <style>${EXTRA_CSS}</style>
-<div class="city-container">
-  ${plateHtml}
-</div>
+${plateHtml}
 ${bottomDockHtml}
 `;
 
 const fullHtml = k.pageHtml({
-  title: "Linux Groove - Sector 07 Megacity (Skill Anatomy & WebGL)",
+  title: "Linux Groove - Diorama Urbano en Miniatura (Skill Anatomy & Lluvia)",
   theme: "dark",
   body: pageBody,
   script: kitScript() + glScript() + CLIENT_JS.replace("__DATA__", JSON.stringify(DATA)),
-  width: 760,
+  width: 1000,
 });
 
 // Guardar como city.html y machine_city.html
 writeFileSync("pruebas_web/public/city.html", fullHtml, "utf8");
 writeFileSync("pruebas_web/public/machine_city.html", fullHtml, "utf8");
 
-console.log("Ciudad Isometrica generada con exito!");
-console.log("- Escrita en pruebas_web/public/city.html:", (fullHtml.length / 1024).toFixed(0), "KB");
-console.log("- Escrita en pruebas_web/public/machine_city.html:", (fullHtml.length / 1024).toFixed(0), "KB");
+console.log("Miniatura de Ciudad generada con exito!");
+console.log("- city.html:", (fullHtml.length / 1024).toFixed(0), "KB");
