@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Linux Groove - Laberinto 3D Cyberpunk & CSS Scroll-Driven</title>
+    <title>Linux Groove - Laberinto 3D Scroll-Driven Puro (Cero JS)</title>
     <link rel="stylesheet" href="styles_labyrinth.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
         <div class="brand-container">
             <span class="brand-icon">🎷</span>
             <span class="brand-title">LINUX GROOVE</span>
-            <span class="brand-version">3D LABYRINTH</span>
+            <span class="brand-version">SCROLL-DRIVEN 3D</span>
         </div>
         <nav class="nav-links">
             <a href="index.html" class="nav-btn">⚡ Rayos Eléctricos</a>
@@ -21,32 +21,32 @@
         </nav>
     </header>
 
-    <!-- ESCENARIO PRINCIPAL: STREAM DE RAYMARCHING 3D EN RUST -->
+    <!-- ESCENARIO PRINCIPAL: FILMSTRIP 3D SCROLL-DRIVEN PURO (CERO JAVASCRIPT) -->
     <div class="stream-viewport">
         <div class="stream-container">
-            <img class="maze-stream" src="/stream_labyrinth" alt="Linux Groove 3D Cyberpunk Labyrinth Raymarching Stream">
+            <div class="maze-filmstrip" role="img" aria-label="Linux Groove 3D Cyberpunk Labyrinth Scroll-Driven Frame"></div>
             <div class="stream-scanlines"></div>
             <div class="stream-vignette"></div>
         </div>
 
-        <!-- HUD HOLOGRÁFICO CON PARALLAX (CERO JS) -->
+        <!-- HUD HOLOGRÁFICO CON TELEMETRÍA (CERO JS) -->
         <div class="hud-layer" aria-hidden="true">
             <div class="hud-reticle"></div>
             <div class="hud-corner top-left">
-                <span class="hud-label">COORDS</span>
-                <span class="hud-val">X: +1.28 | Y: -0.34 | Z: ∞</span>
+                <span class="hud-label">MODO</span>
+                <span class="hud-val">SCROLL-DRIVEN PURO</span>
             </div>
             <div class="hud-corner top-right">
-                <span class="hud-label">SDF RAYMARCH</span>
-                <span class="hud-val">26 STEPS // 60 FPS</span>
+                <span class="hud-label">ESTADO</span>
+                <span class="hud-val">SIN SCROLL = QUIETO</span>
             </div>
             <div class="hud-corner bottom-left">
-                <span class="hud-label">MOTOR</span>
-                <span class="hud-val">RUST AXUM + TOKIO</span>
+                <span class="hud-label">MOTOR 3D</span>
+                <span class="hud-val">RUST 64 FR FILMSTRIP</span>
             </div>
             <div class="hud-corner bottom-right">
-                <span class="hud-label">CLIENTE</span>
-                <span class="hud-val">0 BYTES JS // CSS SCROLL</span>
+                <span class="hud-label">CARGA CLIENTE</span>
+                <span class="hud-val">0% CPU // 0 BYTES JS</span>
             </div>
             <div class="hud-compass">
                 <div class="compass-bar"></div>
@@ -60,11 +60,11 @@
         <!-- SECTOR 01: EL UMBRAL CIBERNÉTICO -->
         <section class="sector-block" id="sector-1">
             <div class="sector-card">
-                <div class="sector-badge">SECTOR 01 // ACCESO PRIMARIO</div>
-                <h1>El Umbral Cibernético</h1>
-                <p>Bienvenido al <strong>Laberinto 3D de Linux Groove</strong>. Renderizado en tiempo real mediante <strong>Raymarching volumétrico (SDF)</strong> ejecutado en el backend de <strong>Rust</strong> sin utilizar motores de juego ni GPU externa en el navegador.</p>
+                <div class="sector-badge">SECTOR 01 // UMBRAL ESTÁTICO</div>
+                <h1>El Umbral del Laberinto</h1>
+                <p>Observa que la escena 3D está <strong>completamente congelada</strong>. No avanza sola. El motor está esperando tu movimiento. Mueve la rueda del ratón hacia abajo para iniciar la inmersión tridimensional.</p>
                 <div class="scroll-instruction">
-                    <span class="arrow-anim">↓</span> Desplaza hacia abajo para avanzar en la profundidad 3D
+                    <span class="arrow-anim">↓</span> Desplaza hacia abajo para avanzar la cámara 3D
                 </div>
             </div>
         </section>
@@ -73,8 +73,8 @@
         <section class="sector-block" id="sector-2">
             <div class="sector-card">
                 <div class="sector-badge">SECTOR 02 // COLUMNAS DE POTENCIA</div>
-                <h2>Corredores de Neón Infinitos</h2>
-                <p>Las columnas cilíndricas y muros se calculan matemáticamente en cada fotograma mediante funciones de distancia signada. La iluminación y la niebla volumétrica reaccionan a la trayectoria analítica de la cámara.</p>
+                <h2>Corredores de Neón</h2>
+                <p>A medida que scrolleas, tú tienes el control absoluto de la velocidad de avance. Si te detienes, la cámara se frena al instante; si scrolleas hacia arriba, <strong>la cámara retrocede de reversa suavemente</strong>.</p>
                 <div class="telemetry-bar">
                     <div class="bar-fill" style="width: 45%;"></div>
                 </div>
@@ -84,9 +84,9 @@
         <!-- SECTOR 03: DESCENSO AL NÚCLEO -->
         <section class="sector-block" id="sector-3">
             <div class="sector-card">
-                <div class="sector-badge">SECTOR 03 // HIPERESPACIO</div>
-                <h2>Aceleración por Deformación FOV</h2>
-                <p>Al continuar desplazándote, las propiedades CSS <code>animation-timeline: scroll(root block)</code> escalan la perspectiva óptica del video, rotan el ángulo de horizonte y modulan los filtros de resplandor neón con precisión a nivel de fotograma.</p>
+                <div class="sector-badge">SECTOR 03 // HIPERESPACIO DETERMINISTA</div>
+                <h2>Cero Sobrecarga de CPU</h2>
+                <p>Tu computadora (incluso si fuera de hace 10 años) no tiene que calcular ningún polígono ni shader pesado. El navegador simplemente posiciona el fotograma exacto del filmstrip pre-renderizado en Rust en <strong>0 milisegundos</strong>.</p>
                 <div class="telemetry-bar">
                     <div class="bar-fill" style="width: 75%;"></div>
                 </div>
@@ -98,7 +98,7 @@
             <div class="sector-card">
                 <div class="sector-badge">SECTOR 04 // EL NÚCLEO RESONANTE</div>
                 <h2>El Núcleo Soundwave</h2>
-                <p>Has alcanzado el centro del laberinto. La onda sonora flotante encarna la identidad de Linux Groove: máxima elegancia visual, cero sobrecarga de JavaScript y latencia ultrabaja en streaming.</p>
+                <p>Has alcanzado el centro del laberinto. La onda sonora dorada de Linux Groove flota ante ti. Haz scroll hacia arriba en cualquier momento para volver hacia el umbral exterior.</p>
                 <div class="action-row">
                     <a href="index.html" class="action-btn">⚡ Probar Rayos Eléctricos</a>
                     <a href="#sector-1" class="action-btn secondary">↑ Volver al Umbral</a>
@@ -110,4 +110,3 @@
 
 </body>
 </html>
-

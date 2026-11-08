@@ -216,3 +216,4 @@ Aquí ocurre la magia mediante la función de temporización escalonada `steps(6
 Esta arquitectura une lo mejor de dos mundos:
 - **La potencia matemática de Rust en el backend:** Genera el 3D con sombras, niebla volumétrica y resplandores neón analíticos.
 - **La ligereza extrema de los estándares web modernos en el frontend:** Cualquier navegador, incluso en un ordenador antiguo con gráficos integrados modestos, navega en 3D sin retrasos, sin calentamiento y sin una sola línea de código JavaScript.
+

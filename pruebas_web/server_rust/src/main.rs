@@ -18,25 +18,37 @@ use tower_http::services::ServeDir;
 struct AppState {
     electric_stream: broadcast::Sender<Bytes>,
     labyrinth_stream: broadcast::Sender<Bytes>,
+    filmstrip_bytes: Bytes,
 }
 
 #[tokio::main]
 async fn main() {
     println!("===========================================================");
     println!("  🎷 LINUX GROOVE - RUST PIXEL STREAMER (RAYON MULTICORE)");
-    println!("  Raymarching 3D a 60+ FPS | 0 JS en Cliente | Ultra-Fluido");
+    println!("  Scroll-Driven 3D Filmstrip | 0% CPU Cliente | 0 JS");
     println!("===========================================================");
 
     let num_cpus = num_cpus();
     println!("⚡ Inicializando pool de hilos Rayon con {} núcleos de CPU...", num_cpus);
 
-    // Canales de difusión broadcast para clientes concurrentes
+    // Pre-generar tira de fotogramas 3D en paralelo para Scroll-Driven Puro
+    println!("🎞️  Pre-renderizando secuencia de 64 fotogramas 3D del laberinto...");
+    let t_start = std::time::Instant::now();
+    let filmstrip_bytes = generate_labyrinth_filmstrip(64, 480, 270);
+    println!(
+        "✅ Tira 3D completada en {:?}: {:.1} KB (64 fotogramas listos)",
+        t_start.elapsed(),
+        (filmstrip_bytes.len() as f32) / 1024.0
+    );
+
+    // Canales de difusión broadcast para clientes de streaming en vivo
     let (tx_electric, _rx_elec) = broadcast::channel::<Bytes>(16);
     let (tx_labyrinth, _rx_maze) = broadcast::channel::<Bytes>(16);
 
     let state = Arc::new(AppState {
         electric_stream: tx_electric.clone(),
         labyrinth_stream: tx_labyrinth.clone(),
+        filmstrip_bytes,
     });
 
     // Subproceso dedicado 1: Rayos Eléctricos Neón (60 FPS exactos)
@@ -46,7 +58,7 @@ async fn main() {
         .spawn(move || {
             let width = 640;
             let height = 360;
-            let frame_target = Duration::from_micros(16_666); // 60 FPS
+            let frame_target = Duration::from_micros(16_666);
             let mut next_frame = std::time::Instant::now();
             let mut time: f32 = 0.0;
 
@@ -67,14 +79,14 @@ async fn main() {
         })
         .expect("Error al iniciar subproceso de rayos");
 
-    // Subproceso dedicado 2: Laberinto 3D Raymarching con Rayon (60 FPS fluidos)
+    // Subproceso dedicado 2: Laberinto 3D Streaming continuo (60 FPS fluidos)
     let tx_maze_render = tx_labyrinth.clone();
     std::thread::Builder::new()
         .name("labyrinth-raymarching-worker".to_string())
         .spawn(move || {
             let width = 512;
             let height = 288;
-            let frame_target = Duration::from_micros(16_666); // 60 FPS
+            let frame_target = Duration::from_micros(16_666);
             let mut next_frame = std::time::Instant::now();
             let mut time: f32 = 0.0;
 
@@ -95,13 +107,14 @@ async fn main() {
         })
         .expect("Error al iniciar subproceso de laberinto");
 
-    // Servidor HTTP Axum para servir las páginas y los flujos MJPEG
+    // Servidor HTTP Axum para servir páginas, filmstrip y flujos MJPEG
     let public_dir = std::env::var("GROOVE_PUBLIC_DIR").unwrap_or_else(|_| "../public".to_string());
     println!("📁 Sirviendo contenido estático desde: {}", public_dir);
 
     let app = Router::new()
         .route("/stream", get(stream_electric_handler))
         .route("/stream_labyrinth", get(stream_labyrinth_handler))
+        .route("/labyrinth_filmstrip.jpg", get(filmstrip_handler))
         .fallback_service(ServeDir::new(public_dir))
         .layer(CorsLayer::permissive())
         .with_state(state);
@@ -113,8 +126,9 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
 
     println!("📡 Servidor activo en http://localhost:{}", port);
-    println!("🌐 Rayos Eléctricos: http://localhost:{}/index.html", port);
-    println!("🌌 Laberinto 3D:     http://localhost:{}/labyrinth.html", port);
+    println!("🌐 Rayos Eléctricos:     http://localhost:{}/index.html", port);
+    println!("🌌 Laberinto 3D Scroll:  http://localhost:{}/labyrinth.html", port);
+    println!("🎞️  Filmstrip 3D (64 fr): http://localhost:{}/labyrinth_filmstrip.jpg", port);
 
     let listener = tokio::net::TcpListener::bind(addr).await.expect("Error al enlazar socket");
     axum::serve(listener, app).await.expect("Error en el servidor");
@@ -124,6 +138,16 @@ fn num_cpus() -> usize {
     std::thread::available_parallelism()
         .map(|p| p.get())
         .unwrap_or(4)
+}
+
+/// Handler HTTP para servir la tira de fotogramas 3D con caché inmutable
+async fn filmstrip_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "image/jpeg")
+        .header(header::CACHE_CONTROL, "public, max-age=86400, immutable")
+        .body(Body::from(state.filmstrip_bytes.clone()))
+        .unwrap()
 }
 
 /// Handler HTTP para streaming continuo de Rayos Eléctricos
@@ -235,7 +259,7 @@ fn render_electric_rays_parallel(time: f32, width: usize, height: usize) -> Byte
 }
 
 // =========================================================================
-// RENDERIZADOR 2: Laberinto 3D Raymarching Paralelizado con Rayon
+// RENDERIZADOR 2: Laberinto 3D y Generador de Filmstrip 3D con Rayon
 // =========================================================================
 
 #[inline(always)]
@@ -262,7 +286,7 @@ fn cross3(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
     ]
 }
 
-/// Función de Distancia Signada (SDF) de alta eficiencia
+/// Función de Distancia Signada (SDF) del Laberinto 3D
 #[inline(always)]
 fn map_labyrinth(p: [f32; 3], time: f32) -> (f32, u8, f32) {
     let d_floor = 1.6 - p[1];
@@ -302,7 +326,7 @@ fn map_labyrinth(p: [f32; 3], time: f32) -> (f32, u8, f32) {
     (d_scene, mat, neon_proximity)
 }
 
-/// Normal analítica acelerada mediante tetraedro de 4 puntos (50% más rápida)
+/// Normal analítica acelerada por tetraedro de 4 puntos
 #[inline(always)]
 fn calc_normal_tetra(p: [f32; 3], time: f32) -> [f32; 3] {
     let e = 0.008;
@@ -317,8 +341,8 @@ fn calc_normal_tetra(p: [f32; 3], time: f32) -> [f32; 3] {
     ])
 }
 
-fn render_labyrinth_3d_parallel(time: f32, width: usize, height: usize) -> Bytes {
-    let mut rgb_buf = vec![0u8; width * height * 3];
+/// Renderiza un fotograma tridimensional en un slice de bytes RGB
+fn render_labyrinth_frame_raw(time: f32, width: usize, height: usize, out_rgb: &mut [u8]) {
     let inv_w = 1.0 / (width as f32);
     let inv_h = 1.0 / (height as f32);
     let aspect = (width as f32) / (height as f32);
@@ -341,24 +365,132 @@ fn render_labyrinth_3d_parallel(time: f32, width: usize, height: usize) -> Bytes
 
     let fog_color = [0.03f32, 0.05, 0.12];
 
-    // Distribución multihilo paralela con Rayon por filas de píxeles
+    for y in 0..height {
+        let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
+        let row_start = y * width * 3;
+
+        for x in 0..width {
+            let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
+
+            let fov = 1.35;
+            let rd = norm3([
+                fwd[0] * fov + right[0] * uv_x + up[0] * uv_y,
+                fwd[1] * fov + right[1] * uv_x + up[1] * uv_y,
+                fwd[2] * fov + right[2] * uv_x + up[2] * uv_y,
+            ]);
+
+            let mut t = 0.12f32;
+            let mut hit_mat = 0u8;
+            let mut hit_p = [0.0f32; 3];
+            let mut glow_cyan = 0.0f32;
+            let mut glow_amber = 0.0f32;
+            let mut hit = false;
+
+            for _step in 0..22 {
+                let p = [ro[0] + rd[0] * t, ro[1] + rd[1] * t, ro[2] + rd[2] * t];
+                let (d, mat, neon_dist) = map_labyrinth(p, time);
+
+                glow_cyan += 0.015 / (neon_dist + 0.12);
+                if p[2].sin() > 0.0 {
+                    glow_amber += 0.012 / (neon_dist + 0.14);
+                }
+
+                if d < 0.012 {
+                    hit = true;
+                    hit_mat = mat;
+                    hit_p = p;
+                    break;
+                }
+
+                t += d * 0.92;
+                if t > 26.0 {
+                    break;
+                }
+            }
+
+            let (mut r, mut g, mut b) = if hit {
+                let normal = calc_normal_tetra(hit_p, time);
+                let light_dir = norm3([0.2, 0.8, -0.5]);
+                let diff = dot3(normal, light_dir).max(0.0) * 0.7 + 0.3;
+                let fog_factor = (-t * 0.12).exp().clamp(0.0, 1.0);
+
+                let base_color = match hit_mat {
+                    1 => [0.0f32, 0.95, 1.0],
+                    2 => [0.85f32, 0.20, 0.95],
+                    3 => [1.0f32, 0.90, 0.40],
+                    _ => {
+                        let grid_x = ((hit_p[0] * 3.0).floor() as i32).abs() % 2;
+                        let grid_z = ((hit_p[2] * 2.0).floor() as i32).abs() % 2;
+                        if grid_x == grid_z {
+                            [0.08f32, 0.11, 0.22]
+                        } else {
+                            [0.04f32, 0.06, 0.14]
+                        }
+                    }
+                };
+
+                (
+                    base_color[0] * diff * fog_factor + fog_color[0] * (1.0 - fog_factor),
+                    base_color[1] * diff * fog_factor + fog_color[1] * (1.0 - fog_factor),
+                    base_color[2] * diff * fog_factor + fog_color[2] * (1.0 - fog_factor),
+                )
+            } else {
+                let grad = (rd[1] * 0.5 + 0.5).clamp(0.0, 1.0);
+                (fog_color[0] * grad, fog_color[1] * grad + 0.02, fog_color[2] * grad + 0.06)
+            };
+
+            r += glow_amber * 0.9 + glow_cyan * 0.1;
+            g += glow_cyan * 0.85 + glow_amber * 0.4;
+            b += glow_cyan * 1.1 + glow_amber * 0.05;
+
+            let px_idx = row_start + x * 3;
+            out_rgb[px_idx] = (r.min(1.0) * 255.0) as u8;
+            out_rgb[px_idx + 1] = (g.min(1.0) * 255.0) as u8;
+            out_rgb[px_idx + 2] = (b.min(1.0) * 255.0) as u8;
+        }
+    }
+}
+
+/// Renderiza un solo frame de streaming continuo (usado para /stream_labyrinth)
+fn render_labyrinth_3d_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+
+    // Paralelización por filas con Rayon
     rgb_buf
         .par_chunks_mut(width * 3)
         .enumerate()
         .for_each(|(y, row)| {
+            let inv_w = 1.0 / (width as f32);
+            let inv_h = 1.0 / (height as f32);
+            let aspect = (width as f32) / (height as f32);
+
+            let cam_x = (time * 0.35).sin() * 1.1;
+            let cam_y = (time * 0.25).cos() * 0.35;
+            let cam_z = time * 3.8;
+            let ro = [cam_x, cam_y, cam_z];
+
+            let target = [
+                cam_x + (time * 0.35).cos() * 0.35,
+                cam_y - (time * 0.25).sin() * 0.2,
+                cam_z + 6.0,
+            ];
+
+            let fwd = norm3([target[0] - ro[0], target[1] - ro[1], target[2] - ro[2]]);
+            let world_up = [0.0f32, 1.0, 0.0];
+            let right = norm3(cross3(fwd, world_up));
+            let up = cross3(right, fwd);
+            let fog_color = [0.03f32, 0.05, 0.12];
+
             let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
 
             for x in 0..width {
                 let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
-
-                let fov = 1.35;
                 let rd = norm3([
-                    fwd[0] * fov + right[0] * uv_x + up[0] * uv_y,
-                    fwd[1] * fov + right[1] * uv_x + up[1] * uv_y,
-                    fwd[2] * fov + right[2] * uv_x + up[2] * uv_y,
+                    fwd[0] * 1.35 + right[0] * uv_x + up[0] * uv_y,
+                    fwd[1] * 1.35 + right[1] * uv_x + up[1] * uv_y,
+                    fwd[2] * 1.35 + right[2] * uv_x + up[2] * uv_y,
                 ]);
 
-                // Raymarching acelerado con sobre-relajación
                 let mut t = 0.12f32;
                 let mut hit_mat = 0u8;
                 let mut hit_p = [0.0f32; 3];
@@ -369,31 +501,24 @@ fn render_labyrinth_3d_parallel(time: f32, width: usize, height: usize) -> Bytes
                 for _step in 0..22 {
                     let p = [ro[0] + rd[0] * t, ro[1] + rd[1] * t, ro[2] + rd[2] * t];
                     let (d, mat, neon_dist) = map_labyrinth(p, time);
-
                     glow_cyan += 0.015 / (neon_dist + 0.12);
                     if p[2].sin() > 0.0 {
                         glow_amber += 0.012 / (neon_dist + 0.14);
                     }
-
                     if d < 0.012 {
                         hit = true;
                         hit_mat = mat;
                         hit_p = p;
                         break;
                     }
-
                     t += d * 0.92;
-                    if t > 26.0 {
-                        break;
-                    }
+                    if t > 26.0 { break; }
                 }
 
                 let (mut r, mut g, mut b) = if hit {
                     let normal = calc_normal_tetra(hit_p, time);
-                    let light_dir = norm3([0.2, 0.8, -0.5]);
-                    let diff = dot3(normal, light_dir).max(0.0) * 0.7 + 0.3;
+                    let diff = dot3(normal, [0.2, 0.8, -0.5]).max(0.0) * 0.7 + 0.3;
                     let fog_factor = (-t * 0.12).exp().clamp(0.0, 1.0);
-
                     let base_color = match hit_mat {
                         1 => [0.0f32, 0.95, 1.0],
                         2 => [0.85f32, 0.20, 0.95],
@@ -401,14 +526,9 @@ fn render_labyrinth_3d_parallel(time: f32, width: usize, height: usize) -> Bytes
                         _ => {
                             let grid_x = ((hit_p[0] * 3.0).floor() as i32).abs() % 2;
                             let grid_z = ((hit_p[2] * 2.0).floor() as i32).abs() % 2;
-                            if grid_x == grid_z {
-                                [0.08f32, 0.11, 0.22]
-                            } else {
-                                [0.04f32, 0.06, 0.14]
-                            }
+                            if grid_x == grid_z { [0.08f32, 0.11, 0.22] } else { [0.04f32, 0.06, 0.14] }
                         }
                     };
-
                     (
                         base_color[0] * diff * fog_factor + fog_color[0] * (1.0 - fog_factor),
                         base_color[1] * diff * fog_factor + fog_color[1] * (1.0 - fog_factor),
@@ -436,6 +556,37 @@ fn render_labyrinth_3d_parallel(time: f32, width: usize, height: usize) -> Bytes
         &rgb_buf,
         width as u16,
         height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+/// Genera la tira completa de 64 fotogramas en memoria apilados verticalmente
+pub fn generate_labyrinth_filmstrip(num_frames: usize, frame_w: usize, frame_h: usize) -> Bytes {
+    let frame_bytes = frame_w * frame_h * 3;
+    let total_h = frame_h * num_frames;
+    let mut filmstrip_buf = vec![0u8; frame_w * total_h * 3];
+
+    // Renderizado en paralelo de los 64 fotogramas repartidos entre los 10 núcleos
+    filmstrip_buf
+        .par_chunks_mut(frame_bytes)
+        .enumerate()
+        .for_each(|(frame_idx, frame_slice)| {
+            // Avance suave a lo largo del recorrido 3D del laberinto (Sector 1 -> Sector 4)
+            let progress = (frame_idx as f32) / ((num_frames - 1) as f32);
+            let time_val = progress * 7.5; // Recorrido cinematográfico completo
+
+            render_labyrinth_frame_raw(time_val, frame_w, frame_h, frame_slice);
+        });
+
+    // Compresión JPEG de la tira completa a memoria (calidad 72 para balance perfecto de peso < 800 KB)
+    let mut jpeg_buf = Vec::with_capacity(700 * 1024);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 72);
+    let _ = encoder.encode(
+        &filmstrip_buf,
+        frame_w as u16,
+        total_h as u16,
         jpeg_encoder::ColorType::Rgb,
     );
 

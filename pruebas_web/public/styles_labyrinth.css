@@ -140,12 +140,15 @@ body {
     justify-content: center;
 }
 
-.maze-stream {
+.maze-filmstrip {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    background-image: url('/labyrinth_filmstrip.jpg');
+    background-repeat: no-repeat;
+    background-size: 100% 6400%;
+    background-position: center 0%;
     transform-origin: center center;
-    will-change: transform, filter;
+    will-change: background-position;
     filter: contrast(1.08) brightness(1.02);
 }
 
@@ -460,35 +463,21 @@ body {
    ========================================================================== */
 
 @supports (animation-timeline: scroll(root block)) {
-    /* Deformación y zoom de cámara 3D sincronizados con el scroll de la página */
-    .maze-stream {
-        animation-name: mazeCameraTraversal;
-        animation-timing-function: linear;
+    /* El avance tridimensional del laberinto está 100% gobernado por el scroll del usuario */
+    .maze-filmstrip {
+        animation-name: scrubLabyrinth3D;
+        animation-timing-function: steps(63);
         animation-fill-mode: both;
         animation-timeline: scroll(root block);
         animation-range: 0% 100%;
     }
 
-    @keyframes mazeCameraTraversal {
+    @keyframes scrubLabyrinth3D {
         0% {
-            transform: scale(1.0) rotate(0deg);
-            filter: contrast(1.05) brightness(1.0) hue-rotate(0deg);
-        }
-        25% {
-            transform: scale(1.3) rotate(-1.5deg);
-            filter: contrast(1.15) brightness(1.05) hue-rotate(5deg);
-        }
-        50% {
-            transform: scale(1.75) rotate(2.0deg);
-            filter: contrast(1.25) brightness(1.12) hue-rotate(15deg);
-        }
-        75% {
-            transform: scale(2.15) rotate(-1.0deg);
-            filter: contrast(1.35) brightness(1.18) hue-rotate(30deg);
+            background-position: center 0%;
         }
         100% {
-            transform: scale(2.5) rotate(0deg);
-            filter: contrast(1.45) brightness(1.25) hue-rotate(45deg);
+            background-position: center 100%;
         }
     }
 
@@ -523,7 +512,7 @@ body {
         scroll-behavior: auto;
     }
 
-    .maze-stream,
+    .maze-filmstrip,
     .sector-card,
     .arrow-anim,
     .compass-bar {
