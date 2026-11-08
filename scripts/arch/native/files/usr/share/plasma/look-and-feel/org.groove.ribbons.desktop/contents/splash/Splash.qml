@@ -1,5 +1,5 @@
 /*
-    Linux Groove - Groove Stroke Screensaver Splash Screen (GLSL GPU Shader Edition)
+    Linux Groove - Groove Stroke Screensaver Splash Screen (Free Electric Lightning Edition)
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 
@@ -26,7 +26,7 @@ Rectangle {
         introAnim.running = true;
     }
 
-    // Temporizador continuo ultra fluido para el Shader
+    // Temporizador continuo para el Shader de rayos eléctricos
     property real screensaverTime: 0.0
     NumberAnimation on screensaverTime {
         from: 0.0
@@ -36,8 +36,18 @@ Rectangle {
         running: true
     }
 
+    // Temporizador de movimiento continuo tipo protector de pantalla (cadencia pausada de 14s)
+    property real screensaverPhase: 0.0
+    NumberAnimation on screensaverPhase {
+        from: 0.0
+        to: Math.PI * 2
+        duration: 14000
+        loops: Animation.Infinite
+        running: true
+    }
+
     // -------------------------------------------------------------------------
-    // CAPA 1: Esfera de Cristal Eléctrica (Plasma Shader en GPU a 60 FPS)
+    // CAPA 1: Rayos Eléctricos Libres en GPU (Plasma Shader a 60 FPS)
     // -------------------------------------------------------------------------
     ShaderEffect {
         id: ribbonsShader
@@ -52,7 +62,7 @@ Rectangle {
     }
 
     // -------------------------------------------------------------------------
-    // CAPA 2: Emblema SVG / PNG Central de Groove (Electrodo de Alta Tensión)
+    // CAPA 2: Emblema SVG / PNG Central de Groove con la animación maestra
     // -------------------------------------------------------------------------
     Item {
         id: logoCenter
@@ -62,6 +72,10 @@ Rectangle {
         height: width * 0.66
         opacity: 1.0
 
+        // Deriva suave y continua en los ejes X e Y (efecto cámara flotante)
+        x: (parent.width - width) / 2 + Math.sin(root.screensaverPhase) * 10
+        y: (parent.height - height) / 2 + Math.cos(root.screensaverPhase * 0.8) * 7
+
         Image {
             id: logoImage
             anchors.fill: parent
@@ -70,11 +84,22 @@ Rectangle {
             smooth: true
             source: "images/groove-logo-glow.png"
 
+            // Respiración de escala cinematográfica (zoom continuo de 7 segundos)
             SequentialAnimation on scale {
                 loops: Animation.Infinite
                 running: true
-                NumberAnimation { from: 0.99; to: 1.015; duration: 2800; easing.type: Easing.InOutSine }
-                NumberAnimation { from: 1.015; to: 0.99; duration: 2800; easing.type: Easing.InOutSine }
+                NumberAnimation {
+                    from: 1.00
+                    to: 1.035
+                    duration: 7000
+                    easing.type: Easing.InOutSine
+                }
+                NumberAnimation {
+                    from: 1.035
+                    to: 1.00
+                    duration: 7000
+                    easing.type: Easing.InOutSine
+                }
             }
         }
     }
@@ -88,15 +113,15 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottomMargin: Kirigami.Units.gridUnit * 2.2
         text: "L I N U X   G R O O V E"
-        color: "#6b7d92"
+        color: "#ffffff"
         font.pixelSize: Kirigami.Units.gridUnit * 0.70
         font.letterSpacing: 6
         font.weight: Font.DemiBold
-        opacity: 0.70
+        opacity: 0.75
     }
 
     // -------------------------------------------------------------------------
-    // CAPA 3: Transiciones Suaves
+    // CAPA 4: Transiciones Suaves
     // -------------------------------------------------------------------------
     ParallelAnimation {
         id: introAnim

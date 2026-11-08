@@ -18,111 +18,90 @@ float hash11(float p) {
     return fract(p);
 }
 
-// Turbulencia eléctrica continua y orgánica
-float electricDischarge(float rNorm, float fi, float t) {
+// Turbulencia eléctrica multi-frecuencia continua y orgánica
+float electricDischarge(float r, float fi, float t) {
     float v = 0.0;
-    v += sin(rNorm * 8.0 + t * 4.5 + fi * 2.3) * 0.35;
-    v += sin(rNorm * 22.0 - t * 9.0 + fi * 4.7) * 0.20;
-    v += sin(rNorm * 52.0 + t * 21.0 - fi * 1.1) * 0.10;
-    v += cos(rNorm * 95.0 - t * 35.0) * 0.05;
+    v += sin(r * 7.5 + t * 4.8 + fi * 2.1) * 0.38;
+    v += sin(r * 19.0 - t * 9.5 + fi * 4.3) * 0.22;
+    v += sin(r * 46.0 + t * 22.0 - fi * 1.5) * 0.11;
+    v += cos(r * 88.0 - t * 38.0) * 0.05;
     return v;
 }
 
 void main() {
-    // 1. Coordenadas normalizadas con centro en (0, 0)
+    // 1. Coordenadas normalizadas con centro exacto en (0, 0)
     vec2 p = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
     float r = length(p);
     float theta = atan(p.y, p.x);
 
-    float R_globe = 0.42;
-    float R_core  = 0.145;
+    float R_core = 0.135;
 
     vec3 finalColor = vec3(0.0);
 
-    // 2. Nebulosa gaseosa interna de la esfera
-    if (r < R_globe) {
-        float gas = pow(clamp(1.0 - r / R_globe, 0.0, 1.0), 1.6) * 0.16;
-        finalColor += vec3(0.18, 0.08, 0.35) * gas;
-    }
-
-    // 3. 16 Rayos y Arcos de Plasma Eléctrico
-    if (r >= R_core * 0.85 && r <= R_globe * 1.02) {
-        float rNorm = clamp((r - R_core) / (R_globe - R_core), 0.0, 1.0);
-        float envelope = sin(rNorm * 3.14159265);
+    // =========================================================================
+    // 2. 16 RAYOS ELÉCTRICOS LIBRES (Emanando del centro hacia los bordes)
+    // =========================================================================
+    if (r >= R_core * 0.82) {
+        float alpha = max(0.0, (r - R_core) / 0.80);
+        float envelope = min(1.0, alpha * 2.5); // Fijo en el centro, se abre libremente
+        // Desvanecimiento suave al salir por las orillas de la pantalla
+        float edgeFade = clamp((1.25 - r) / 0.45, 0.0, 1.0);
 
         for (int i = 0; i < 16; ++i) {
             float fi = float(i);
             float baseAngle = (fi / 16.0) * 6.2831853;
-            float drift = sin(uTime * 0.40 + fi * 1.4) * 0.60 + cos(uTime * 0.22 - fi * 0.8) * 0.30;
-            float jumpStep = floor(uTime * 1.4 + fi * 0.75);
-            float jumpAngle = (hash11(jumpStep * 17.3) - 0.5) * 0.85;
-            float contactAngle = baseAngle + drift + jumpAngle;
+            
+            // Deriva orgánica continua y saltos cuánticos de tensión eléctrica
+            float drift = sin(uTime * 0.35 + fi * 1.3) * 0.55 + cos(uTime * 0.20 - fi * 0.7) * 0.30;
+            float jumpStep = floor(uTime * 1.3 + fi * 0.7);
+            float jumpAngle = (hash11(jumpStep * 19.1) - 0.5) * 0.75;
+            
+            float arcAngle = baseAngle + drift + jumpAngle;
+            arcAngle += electricDischarge(r, fi, uTime) * envelope;
 
-            float arcAngle = mix(baseAngle, contactAngle, rNorm);
-            arcAngle += electricDischarge(rNorm, fi, uTime) * envelope;
-
-            // Distancia polar envuelta en [-pi, pi]
+            // Distancia euclídea del fragmento al rayo eléctrico
             float dAngle = mod(theta - arcAngle + 3.14159265, 6.2831853) - 3.14159265;
             float distToArc = r * abs(dAngle);
 
-            // Núcleo blanco incandescente y halo de plasma
-            float core = pow(max(0.0, 1.0 - distToArc / 0.0028), 1.5) * 2.2;
-            float glow = 0.0035 / (distToArc * distToArc * 350.0 + distToArc + 0.0030) * 1.2;
-            float flicker = 0.80 + 0.20 * sin(uTime * 24.0 + fi * 8.0);
-            float intensity = (core + glow) * flicker;
+            // Núcleo blanco incandescente + aura bloom de alta luminosidad
+            float core = pow(max(0.0, 1.0 - distToArc / 0.0030), 1.5) * 2.4;
+            float glow = 0.0040 / (distToArc * distToArc * 260.0 + distToArc + 0.0028) * 1.25;
+            
+            // Parpadeo eléctrico de alta tensión
+            float flicker = 0.80 + 0.20 * sin(uTime * 25.0 + fi * 8.0);
+            float intensity = (core + glow) * flicker * edgeFade;
 
-            // Colores de los arcos: cian eléctrico, magenta tesla, ámbar solar
+            // Paleta de colores vivos de plasma: Cian Eléctrico, Magenta Neón, Ámbar Solar
             vec3 arcCol;
             float m = mod(fi, 3.0);
             if (m < 1.0) {
-                arcCol = vec3(0.10, 0.90, 1.00);
+                arcCol = vec3(0.05, 0.95, 1.00); // Cian eléctrico
             } else if (m < 2.0) {
-                arcCol = vec3(0.95, 0.20, 0.85);
+                arcCol = vec3(0.95, 0.18, 0.90); // Magenta neón Tesla
             } else {
-                arcCol = vec3(1.00, 0.75, 0.15);
+                arcCol = vec3(1.00, 0.78, 0.18); // Fuego ámbar solar
             }
-            arcCol = clamp(arcCol + vec3(core * 0.9), 0.0, 1.0);
 
-            finalColor += arcCol * intensity * 0.28;
+            // El núcleo arde en blanco brillante
+            arcCol = clamp(arcCol + vec3(core * 0.90), 0.0, 1.0);
 
-            // Chispa / nodo de contacto en la pared del cristal
-            vec2 contactPos = R_globe * vec2(cos(contactAngle), sin(contactAngle));
-            float dSpot = length(p - contactPos);
-            float spot = 0.0035 / (dSpot * dSpot * 350.0 + dSpot + 0.0025) * 0.60;
-            finalColor += arcCol * spot;
+            finalColor += arcCol * intensity * 0.30;
         }
     }
 
-    // 4. Cristal de la Esfera (Borde Fresnel y Destellos Especulares 3D)
-    float dRim = abs(r - R_globe);
-    float rim = (0.0040 / (dRim + 0.0035)) * 0.45;
-    rim += pow(clamp(r / R_globe, 0.0, 1.0), 18.0) * 0.40;
-    finalColor += vec3(0.35, 0.75, 1.00) * rim;
-
-    // Destello de luz especular en el cristal
-    vec2 specPos = p - vec2(-0.24, 0.24);
-    float spec = exp(-dot(specPos, specPos) * 32.0) * 0.40;
-    vec2 specPos2 = p - vec2(0.22, -0.22);
-    spec += exp(-dot(specPos2, specPos2) * 45.0) * 0.12;
-    finalColor += vec3(0.95, 0.98, 1.00) * spec;
-
-    // Desvanecimiento exterior hacia el negro puro
-    if (r > R_globe) {
-        float fade = max(0.0, 1.0 - (r - R_globe) / 0.025);
-        float outerGlow = 0.0025 / (r - R_globe + 0.010) * 0.12;
-        finalColor = finalColor * fade + vec3(0.35, 0.75, 1.00) * outerGlow;
-    }
-
-    // 5. Aura de energía del núcleo central
+    // =========================================================================
+    // 3. CORONA DE ENERGÍA ALREDEDOR DEL ELECTRODO CENTRAL (LOGO GROOVE)
+    // =========================================================================
     float dCore = length(p * vec2(1.0, 1.35));
-    float coreAura = 0.006 / (dCore + 0.014) * 0.40;
+    float coreAura = 0.006 / (dCore + 0.014) * 0.45;
+    coreAura *= (0.85 + 0.15 * sin(uTime * 5.0));
     finalColor += vec3(0.25, 0.75, 1.00) * coreAura;
 
-    // Máscara suave para preservar la nitidez del logotipo central
+    // Máscara suave para preservar el fondo oscuro nítido del logotipo
     float logoClearance = smoothstep(0.12, 0.18, dCore);
-    finalColor *= (0.20 + 0.80 * logoClearance);
+    finalColor *= (0.25 + 0.75 * logoClearance);
 
-    // Ajuste de contraste cinematográfico
+    // Curva de tono cinematográfico con contraste
     finalColor = pow(max(finalColor, vec3(0.0)), vec3(0.88));
 
     fragColor = vec4(finalColor, 1.0) * qt_Opacity;
