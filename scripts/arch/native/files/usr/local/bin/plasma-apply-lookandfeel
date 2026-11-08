@@ -1,0 +1,33 @@
+#!/usr/bin/bash
+# Groove OS: Wrapper for plasma-apply-lookandfeel
+# Ensures that desktop theme (plasmarc) and color schemes are synchronized
+# simultaneously when the user toggles dark/light mode in the system tray or settings.
+
+/usr/bin/plasma-apply-lookandfeel "$@"
+ret=$?
+
+is_dark=0
+is_light=0
+
+for arg in "$@"; do
+    case "$arg" in
+        *breezedark*|*dark*|*Dark*)
+            is_dark=1
+            ;;
+        *breeze*|*light*|*Light*)
+            if [[ "$arg" != *breezedark* && "$arg" != *dark* ]]; then
+                is_light=1
+            fi
+            ;;
+    esac
+done
+
+if [ "$is_dark" -eq 1 ]; then
+    plasma-apply-desktoptheme breeze-dark >/dev/null 2>&1 || true
+    plasma-apply-colorscheme BreezeDark >/dev/null 2>&1 || true
+elif [ "$is_light" -eq 1 ]; then
+    plasma-apply-desktoptheme breeze-light >/dev/null 2>&1 || true
+    plasma-apply-colorscheme BreezeLight >/dev/null 2>&1 || true
+fi
+
+exit $ret

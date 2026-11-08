@@ -2,9 +2,10 @@
 
 ## 1. Resumen Ejecutivo del Problema
 
-Al activar o desactivar el **Modo Oscuro** desde el widget del sistema (**Brillo y color** / Bandeja del sistema), se observaban dos síntomas críticos:
-1. **Falta de sincronización visual:** Las ventanas de las aplicaciones (Firefox, Dolphin, Konsole) cambiaban a tonos oscuros, pero la **barra de tareas (panel)** y los popups de la bandeja del sistema permanecían en color **blanco / gris claro** (`#EFF0F1`).
-2. **Aspecto alterado del panel tras cambios de iconos:** Al reiniciarse `plasmashell` tras instalar un icono o actualizar la caché, el panel adoptaba el tema claro por defecto en lugar del tema oscuro persistente.
+Al interactuar con el interruptor de **Modo Oscuro** desde el widget del sistema (**Brillo y color** / Bandeja del sistema), se presentaron dos anomalías consecutivas:
+
+1. **Fallo Inicial (Panel no se oscurecía):** Las ventanas de las aplicaciones (Firefox, Dolphin, Konsole) cambiaban a tonos oscuros, pero la **barra de tareas (panel)** y los popups de la bandeja del sistema permanecían en color **blanco / gris claro** (`#EFF0F1`).
+2. **Fallo Secundario (Panel atascado en Oscuro al activar Modo Claro):** Al desactivar el interruptor a modo claro ("Brisa"), las ventanas volvían a blanco, pero el panel y las ventanas emergentes se quedaban permanentemente en **modo oscuro** (`breeze-dark`), impidiendo que el tema claro se reflejara en la barra de tareas.
 
 ---
 
@@ -88,93 +89,78 @@ En el backend C++:
 // Flujo interno de DarkModeControl
 void DarkModeControl::setDarkMode(bool dark) {
     QString targetPackage = dark ? m_defaultDarkLookAndFeel : m_defaultLightLookAndFeel;
-    // Ejecuta plasma-apply-lookandfeel -a targetPackage
-    // m_defaultDarkLookAndFeel apunta a 'org.kde.breezedark.desktop'
+    // Ejecuta de forma desacoplada:
+    // QProcess::startDetached("plasma-apply-lookandfeel", QStringList{"-a", targetPackage});
 }
 ```
-Debido a que `org.kde.breezedark.desktop` tenía `[plasmarc][Theme] name=default`, el comando únicamente aplicaba la paleta a las ventanas (`kdeglobals`), pero borraba el tema de la barra de tareas en `plasmarc`.
+
+### Causa Raíz 4: Por qué el Modo Claro se quedaba atascado en Modo Oscuro
+Al ejecutar `plasma-apply-lookandfeel -a org.kde.breeze.desktop` (modo claro):
+1. `plasma-apply-lookandfeel` en Plasma 6 **NO ejecuta `plasma-apply-desktoptheme`**, y omite escribir la clave `name=breeze-light` en `~/.config/plasmarc` (dejando el archivo `plasmarc` del usuario vacío o sin la directiva `[Theme]`).
+2. Al no tener directiva de tema el usuario, Plasma 6 recurre al archivo del sistema `/etc/xdg/plasmarc`.
+3. Como `/etc/xdg/plasmarc` contenía `[Theme] name=breeze-dark` (para establecer el modo oscuro por defecto de la distribución), Plasma continuaba cargando el tema de escritorio **oscuro** en la barra de tareas y popups a pesar de que el usuario había seleccionado el modo claro.
 
 ---
 
-## 4. Solución Implementada y Fragmentos de Código
+## 4. Solución Definitiva: Wrapper Sincronizador en `/usr/local/bin/plasma-apply-lookandfeel`
 
-Para corregir el fallo de forma definitiva tanto en la sesión en vivo como en la ISO y en nuevas cuentas de usuario, se implementaron cuatro cambios estructurales:
+Para garantizar una sincronización perfecta y bidireccional (Claro <-> Oscuro) sin depender de las inconsistencias internas de `KLookAndFeelManager`, se implementó un **wrapper interceptor** en `/usr/local/bin/plasma-apply-lookandfeel`.
 
-### 1. Corrección del paquete de tema oscuro oficial (`org.kde.breezedark.desktop`)
-Se sobreescribió `/usr/share/plasma/look-and-feel/org.kde.breezedark.desktop/contents/defaults` para asignar explícitamente `breeze-dark`:
+Dado que `/usr/local/bin` tiene máxima precedencia sobre `/usr/bin` en el `$PATH` del sistema de Groove OS, cualquier invocación de `QProcess::startDetached("plasma-apply-lookandfeel", ...)` disparada por el applet de brillo/color o por el panel de preferencias del sistema es interceptada transparentemente.
 
-```ini
-[kdeglobals][KDE]
-widgetStyle=Breeze
-
-[kdeglobals][General]
-ColorScheme=BreezeDark
-
-[kdeglobals][Icons]
-Theme=breeze-dark
-
-[plasmarc][Theme]
-name=breeze-dark      # <--- CORREGIDO: Fuerza el panel oscuro explícito
-
-[Wallpaper]
-Image=Next
-```
-
-### 2. Configuración coherente para el modo claro (`org.kde.breeze.desktop`)
-Se aseguró que al desactivar el modo oscuro, el panel cambie a `breeze-light` sin ambigüedad:
-
-```ini
-# /usr/share/plasma/look-and-feel/org.kde.breeze.desktop/contents/defaults
-[kdeglobals][KDE]
-widgetStyle=Breeze
-
-[kdeglobals][General]
-ColorScheme=BreezeLight
-
-[kdeglobals][Icons]
-Theme=breeze
-
-[plasmarc][Theme]
-name=breeze-light     # <--- Asigna el panel claro correspondiente
-
-[Wallpaper]
-Image=Next
-```
-
-### 3. Creación del fallback a nivel de sistema (`/etc/xdg/plasmarc`)
-Se creó `/etc/xdg/plasmarc` para que cualquier usuario nuevo o cualquier reinicio mantenga el tema oscuro por defecto del sistema operativo:
-
-```ini
-# /etc/xdg/plasmarc
-[Theme]
-name=breeze-dark
-```
-
-Y en el esqueleto para nuevos usuarios (`/etc/skel/.config/plasmarc`):
-```ini
-# /etc/skel/.config/plasmarc
-[Theme]
-name=breeze-dark
-```
-
-### 4. Sincronización en vivo de la sesión actual
-Se aplicaron los temas directamente en la sesión de Wayland del usuario `groove`:
+### Código del Wrapper (`/usr/local/bin/plasma-apply-lookandfeel`)
 ```bash
-sudo -u groove DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus QT_QPA_PLATFORM=offscreen plasma-apply-desktoptheme breeze-dark
-sudo -u groove DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus QT_QPA_PLATFORM=offscreen plasma-apply-colorscheme BreezeDark
+#!/usr/bin/bash
+# Groove OS: Wrapper sincronizador para plasma-apply-lookandfeel
+# Asegura la sincronización atómica entre el esquema de color de ventanas (kdeglobals)
+# y el tema del escritorio Plasma (plasmarc / panel / popups).
+
+/usr/bin/plasma-apply-lookandfeel "$@"
+ret=$?
+
+is_dark=0
+is_light=0
+
+for arg in "$@"; do
+    case "$arg" in
+        *breezedark*|*dark*|*Dark*)
+            is_dark=1
+            ;;
+        *breeze*|*light*|*Light*)
+            if [[ "$arg" != *breezedark* && "$arg" != *dark* ]]; then
+                is_light=1
+            fi
+            ;;
+    esac
+done
+
+if [ "$is_dark" -eq 1 ]; then
+    plasma-apply-desktoptheme breeze-dark >/dev/null 2>&1 || true
+    plasma-apply-colorscheme BreezeDark >/dev/null 2>&1 || true
+elif [ "$is_light" -eq 1 ]; then
+    plasma-apply-desktoptheme breeze-light >/dev/null 2>&1 || true
+    plasma-apply-colorscheme BreezeLight >/dev/null 2>&1 || true
+fi
+
+exit $ret
 ```
+
+### Beneficios del Wrapper Interceptor:
+1. **Atómico:** Cuando el usuario conmuta a Claro, se actualizan simultáneamente `kdeglobals` (`BreezeLight`) y `plasmarc` (`name=breeze-light`), notificando de inmediato a `plasmashell` vía D-Bus.
+2. **Sobrescribe el Fallback del Sistema:** Al escribir explícitamente `name=breeze-light` en `~/.config/plasmarc`, la preferencia del usuario toma prioridad absoluta sobre `/etc/xdg/plasmarc`.
+3. **No Colisiona con Pacman:** Al ubicarse en `/usr/local/bin/`, ninguna actualización de paquetes oficial de Arch Linux o KDE sobreescribirá este comportamiento.
 
 ---
 
 ## 5. Tabla Comparativa de Comportamiento
 
-| Componente | Antes de la Solución | Después de la Solución |
+| Acción del Usuario | Antes de la Solución | Después de la Solución Definitiva |
 | :--- | :--- | :--- |
-| **Ventanas de Aplicación (Dolphin, etc.)** | Se volvían oscuras | Se vuelven oscuras |
-| **Barra de Tareas (Panel)** | Se quedaba blanca / gris claro (`#EFF0F1`) | **Oscura profunda (`#1E2022`)** |
-| **Popups de la Bandeja (Brillo y color)** | Fondo blanco con texto claro ilegible | **Fondo oscuro con texto blanco nítido** |
-| **Icono de Inicio de Groove** | Presente | **Presente y resaltado sobre fondo oscuro** |
-| **Fallback ante borrado de config** | Caía al tema claro | **Protegido por `/etc/xdg/plasmarc` en oscuro** |
+| **Activar Modo Oscuro** | Ventanas oscuras, panel blanco (`#EFF0F1`) | **Ventanas oscuras Y panel oscuro (`#1E2022`)** |
+| **Desactivar Modo Oscuro (Modo Claro)** | Ventanas claras, panel atascado en oscuro | **Ventanas claras Y panel claro (`#EFF0F1`)** |
+| **Popups de la Bandeja (Brillo y color)** | Fondo inconsistente con el tema seleccionado | **Sincronizados al 100% con el tema activo** |
+| **Icono de Inicio de Groove (Soundwave)** | Sin cambios | **Visible y nítido tanto en fondo claro como oscuro** |
+| **Persistencia tras Reinicio** | Podía resetearse a claro | **Garantizada mediante `/etc/xdg/plasmarc` y `~/.config/`** |
 
 ---
 
@@ -184,3 +170,4 @@ Los archivos corregidos han sido integrados en los repositorios locales y en el 
 - Repositorio git: [`scripts/arch/native/files/etc/xdg/plasmarc`](file:///Volumes/HDEXTERNO/linux_groove/scripts/arch/native/files/etc/xdg/plasmarc)
 - Defaults de Look & Feel: [`scripts/arch/native/files/usr/share/plasma/look-and-feel/org.kde.breezedark.desktop/contents/defaults`](file:///Volumes/HDEXTERNO/linux_groove/scripts/arch/native/files/usr/share/plasma/look-and-feel/org.kde.breezedark.desktop/contents/defaults)
 - Rootfs de la ISO: Sincronizado en `groove-graphical-build:/tmp/groove-native-root-0.4.1-rc1/`.
+
