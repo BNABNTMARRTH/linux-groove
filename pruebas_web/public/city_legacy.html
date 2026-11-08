@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Ciudad Nocturna, Lluvia y Dashboard Scroll-Driven</title>
+    <link rel="stylesheet" href="styles_city.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (MINIMALISTA, SIN EMOJIS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">CITY NOIR // TELEMETRY</span>
+        </div>
+        <nav class="nav-links" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+            <a href="index.html" class="nav-btn">[ Rayos ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto ]</a>
+            <a href="city.html" class="nav-btn active">[ Ciudad ]</a>
+            <a href="objects_mouse.html" class="nav-btn">[ 3D: Primitivas ]</a>
+            <a href="anatomy_inspect.html" class="nav-btn">[ 3D: Bio ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+            <a href="machine_dial.html" class="nav-btn">[ Maq: Comparador ]</a>
+            <a href="machine_ripple.html" class="nav-btn">[ Maq: Ondas ]</a>
+        </nav>
+    </header>
+
+    <!-- ESCENARIO PRINCIPAL: STREAMING DE CIUDAD LLUVIOSA EN RUST (CERO JS) -->
+    <div class="stream-viewport">
+        <div class="stream-container">
+            <img class="city-stream" src="/stream_city" alt="Linux Groove Rainy City Stream">
+            <div class="stream-scanlines"></div>
+            <div class="stream-vignette"></div>
+        </div>
+
+        <!-- HUD HOLOGRAFICO CON TELEMETRIA (SIN EMOJIS) -->
+        <div class="hud-layer" aria-hidden="true">
+            <div class="hud-reticle"></div>
+            <div class="hud-corner top-left">
+                <span class="hud-label">// SECTOR</span>
+                <span class="hud-val">BOULEVARD CENTRAL 04</span>
+            </div>
+            <div class="hud-corner top-right">
+                <span class="hud-label">// ATMOSFERA</span>
+                <span class="hud-val">LLUVIA Y ASFALTO MOJADO</span>
+            </div>
+            <div class="hud-corner bottom-left">
+                <span class="hud-label">// MOTOR</span>
+                <span class="hud-val">RUST RAYMARCHING + SIMD</span>
+            </div>
+            <div class="hud-corner bottom-right">
+                <span class="hud-label">// CLIENTE</span>
+                <span class="hud-val">0 BYTES JS // CSS SCROLL</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- PISTA DE NARRATIVA Y DASHBOARD SCROLL-DRIVEN -->
+    <main class="scroll-track">
+
+        <!-- SECCION 1: HERO CINEMATOGRAFICO -->
+        <section class="story-section" id="hero">
+            <div class="glass-panel hero-card">
+                <span class="badge">[ SISTEMA OPERATIVO // TELEMETRIA EN VIVO ]</span>
+                <h1 class="kinetic-title">Groove Noir</h1>
+                <p>Una avenida urbana nocturna bajo la lluvia con <strong>asfalto reflectante</strong> y letreros de neon generados analiticamente en <strong>Rust</strong>. Al hacer scroll, la camara recorre la calle mientras las graficas y metricas del sistema se revelan en tiempo real.</p>
+                <div class="scroll-cue">
+                    <span class="cue-bullet">[v]</span> Desplaza hacia abajo para visualizar graficas y metricas
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCION 2: GRAFICAS DE TELEMETRIA DEL KERNEL -->
+        <section class="story-section" id="telemetry">
+            <div class="glass-panel dashboard-card">
+                <span class="badge">[ RENDIMIENTO DEL KERNEL // TIEMPO REAL ]</span>
+                <h2>Metricas de Latencia y Eficiencia</h2>
+                <p class="section-lead">Observa como las barras de telemetria se animan directamente en el silicio de tu pantalla al desplazarte por la avenida.</p>
+
+                <div class="chart-container">
+                    <div class="chart-row">
+                        <div class="chart-info">
+                            <span class="metric-name">Planificacion de Procesos (Scheduler)</span>
+                            <span class="metric-val">0.12 ms // OPTIMO</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill bar-cyan" style="--target-width: 96%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="chart-row">
+                        <div class="chart-info">
+                            <span class="metric-name">Cadencia de Fotogramas Wayland</span>
+                            <span class="metric-val">16.66 ms // 60 FPS</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill bar-amber" style="--target-width: 98%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="chart-row">
+                        <div class="chart-info">
+                            <span class="metric-name">Rendimiento de Pipeline SIMD</span>
+                            <span class="metric-val">9.4 GB/s // 10 NUCLEOS</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill bar-magenta" style="--target-width: 92%;"></div>
+                        </div>
+                    </div>
+
+                    <div class="chart-row">
+                        <div class="chart-info">
+                            <span class="metric-name">Huella de Memoria RAM en Servidor</span>
+                            <span class="metric-val">19.2 MB // ULTRA LIGERO</span>
+                        </div>
+                        <div class="bar-track">
+                            <div class="bar-fill bar-cyan" style="--target-width: 88%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ANILLOS CIRCULARES DE DATOS SVG (SIN JS) -->
+                <div class="rings-grid">
+                    <div class="ring-card">
+                        <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="ring-bg" cx="40" cy="40" r="32"></circle>
+                            <circle class="ring-fg ring-cyan" cx="40" cy="40" r="32" style="stroke-dashoffset: 20;"></circle>
+                        </svg>
+                        <div class="ring-info">
+                            <span class="ring-num">99.8%</span>
+                            <span class="ring-lbl">Estabilidad</span>
+                        </div>
+                    </div>
+
+                    <div class="ring-card">
+                        <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="ring-bg" cx="40" cy="40" r="32"></circle>
+                            <circle class="ring-fg ring-amber" cx="40" cy="40" r="32" style="stroke-dashoffset: 35;"></circle>
+                        </svg>
+                        <div class="ring-info">
+                            <span class="ring-num">0% JS</span>
+                            <span class="ring-lbl">Carga Cliente</span>
+                        </div>
+                    </div>
+
+                    <div class="ring-card">
+                        <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+                            <circle class="ring-bg" cx="40" cy="40" r="32"></circle>
+                            <circle class="ring-fg ring-magenta" cx="40" cy="40" r="32" style="stroke-dashoffset: 15;"></circle>
+                        </svg>
+                        <div class="ring-info">
+                            <span class="ring-num">60 FPS</span>
+                            <span class="ring-lbl">Fluidez Nativa</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECCION 3: ESPECTRO DE AUDIO GROOVE -->
+        <section class="story-section" id="audio">
+            <div class="glass-panel spectrum-card">
+                <span class="badge">[ PROCESAMIENTO DE AUDIO // ALSA + PIPEWIRE ]</span>
+                <h2>Ecualizador de Frecuencias en Vivo</h2>
+                <p class="section-lead">Representacion dinamica de las bandas sonoras del reproductor Groove procesadas en coma flotante a 96 kHz.</p>
+
+                <!-- BARRAS ANIMADAS DE ESPECTRO SONORO (CSS PURO) -->
+                <div class="spectrum-visualizer" aria-label="Equalizer Spectrum Bars">
+                    <div class="eq-bar" style="--delay: 0.1s; --min-h: 20%; --max-h: 85%;"></div>
+                    <div class="eq-bar" style="--delay: 0.3s; --min-h: 35%; --max-h: 95%;"></div>
+                    <div class="eq-bar" style="--delay: 0.2s; --min-h: 15%; --max-h: 70%;"></div>
+                    <div class="eq-bar" style="--delay: 0.5s; --min-h: 40%; --max-h: 100%;"></div>
+                    <div class="eq-bar" style="--delay: 0.4s; --min-h: 25%; --max-h: 90%;"></div>
+                    <div class="eq-bar" style="--delay: 0.6s; --min-h: 50%; --max-h: 80%;"></div>
+                    <div class="eq-bar" style="--delay: 0.2s; --min-h: 30%; --max-h: 95%;"></div>
+                    <div class="eq-bar" style="--delay: 0.7s; --min-h: 10%; --max-h: 60%;"></div>
+                    <div class="eq-bar" style="--delay: 0.3s; --min-h: 45%; --max-h: 90%;"></div>
+                    <div class="eq-bar" style="--delay: 0.5s; --min-h: 20%; --max-h: 85%;"></div>
+                    <div class="eq-bar" style="--delay: 0.1s; --min-h: 60%; --max-h: 100%;"></div>
+                    <div class="eq-bar" style="--delay: 0.4s; --min-h: 35%; --max-h: 75%;"></div>
+                </div>
+
+                <div class="audio-meta">
+                    <span class="meta-tag">FORMATO: FLAC 24-BIT</span>
+                    <span class="meta-tag">MUESTREO: 96.0 KHZ</span>
+                    <span class="meta-tag">BUFFER: 64 FRAMES</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCION 4: ARQUITECTURA ACRILICA -->
+        <section class="story-section" id="architecture">
+            <div class="glass-panel summary-card">
+                <span class="badge">[ ARQUITECTURA SOSTENIBLE // CERO SOBRECARGA ]</span>
+                <h2>Elegancia, Potencia y Soberania</h2>
+                <p>Linux Groove demuestra que las experiencias web de lujo no necesitan gigabytes de librerias JavaScript. La combinacion de renderizado analitico en el servidor y animaciones nativas en CSS produce resultados cinematograficos sin calentar tu procesador.</p>
+
+                <div class="action-row">
+                    <a href="index.html" class="action-btn">[ Ver Rayos Electricos ]</a>
+                    <a href="labyrinth.html" class="action-btn secondary">[ Ver Laberinto 3D ]</a>
+                    <a href="#hero" class="action-btn tertiary">[ ^ Volver Arriba ]</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
+

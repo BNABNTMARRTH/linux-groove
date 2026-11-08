@@ -111,3 +111,4 @@ Esto confiere un claroscuro continuo que esculpe el volumen tridimensional ante 
 - **Dock Inferior Flotante de 46px:** En todas las pantallas interactivas, los controles se comprimen en una franja horizontal inferior de vidrio oscuro translúcido (`background: rgba(3, 7, 5, 0.78); backdrop-filter: blur(16px)`).
 - **100% Espacio Central Libre:** Mas de 250px de margen alrededor del modelo 3D para inspeccion pura.
 - **Estricto Cero Emojis:** Todos los badges, botones y lecturas se implementan con tipografia tecnica limpia.
+
