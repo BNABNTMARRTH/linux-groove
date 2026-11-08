@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Groove Contributors"
+            }
+        ],
+        "Description": "Linux Groove Ribbons Screensaver Splash",
+        "Id": "org.groove.ribbons.desktop",
+        "Name": "Groove Listones de Luz",
+        "ServiceTypes": [
+            "Plasma/LookAndFeel"
+        ],
+        "Version": "1.0"
+    },
+    "X-Plasma-APIVersion": "2"
+}
