@@ -1,0 +1,14 @@
+[package]
+name = "groove-streamer"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+tokio = { version = "1.38", features = ["full"] }
+axum = { version = "0.7" }
+tower-http = { version = "0.5", features = ["cors", "fs"] }
+jpeg-encoder = "0.6"
+bytes = "1.6"
+tokio-stream = { version = "0.1", features = ["sync"] }

@@ -88,3 +88,4 @@ flowchart TD
    ```
 3. **Auditoría de cliente Web:**
    Comprobar en el navegador que el stream funciona de fondo y el scroll modula la animación con **cero scripts en ejecución**.
+
