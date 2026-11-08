@@ -28,19 +28,19 @@ struct AppState {
 #[tokio::main]
 async fn main() {
     println!("===========================================================");
-    println!("  🎷 LINUX GROOVE - RUST PIXEL STREAMER (RAYON MULTICORE)");
+    println!("  [+] LINUX GROOVE - RUST PIXEL STREAMER (RAYON MULTICORE)");
     println!("  Scroll-Driven 3D Filmstrip | 0% CPU Cliente | 0 JS");
     println!("===========================================================");
 
     let num_cpus = num_cpus();
-    println!("⚡ Inicializando pool de hilos Rayon con {} núcleos de CPU...", num_cpus);
+    println!("  [+] Inicializando pool de hilos Rayon con {} nucleos de CPU...", num_cpus);
 
     // Pre-generar tira de fotogramas 3D en paralelo para Scroll-Driven Puro
-    println!("🎞️  Pre-renderizando secuencia de 64 fotogramas 3D del laberinto...");
+    println!("  [+] Pre-renderizando secuencia de 64 fotogramas 3D del laberinto...");
     let t_start = std::time::Instant::now();
     let filmstrip_bytes = generate_labyrinth_filmstrip(64, 480, 270);
     println!(
-        "✅ Tira 3D completada en {:?}: {:.1} KB (64 fotogramas listos)",
+        "  [OK] Tira 3D completada en {:?}: {:.1} KB (64 fotogramas listos)",
         t_start.elapsed(),
         (filmstrip_bytes.len() as f32) / 1024.0
     );

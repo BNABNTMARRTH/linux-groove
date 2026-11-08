@@ -127,7 +127,7 @@ struct AppState {
 
 #[tokio::main]
 async fn main() {
-    println!("🚀 Iniciando Linux Groove Pixel Streamer en Rust...");
+    println!("[>] Iniciando Linux Groove Pixel Streamer en Rust...");
 
     // Canal de difusión circular zero-copy para múltiples clientes
     let (tx, _rx) = broadcast::channel::<Bytes>(16);
@@ -159,7 +159,7 @@ async fn main() {
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
-    println!("📡 Servidor escuchando en http://{}", addr);
+    println!("[*] Servidor escuchando en http://{}", addr);
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

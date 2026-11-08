@@ -18,7 +18,7 @@ export async function createGroove3DEngine(canvasId, options = {}) {
     const wasmModule = await WebAssembly.instantiate(wasmBuffer);
     const wasm = wasmModule.instance.exports;
 
-    const particleCount = options.particleCount || 3584;
+    const particleCount = options.particleCount || 8192;
     wasm.init_engine(particleCount);
 
     if (options.anatomyMode) {

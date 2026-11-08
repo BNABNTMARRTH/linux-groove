@@ -17,12 +17,15 @@
         </div>
         <nav class="nav-links">
             <a href="index.html" class="nav-btn">[ Rayos ]</a>
-            <a href="labyrinth.html" class="nav-btn">[ Laberinto 3D ]</a>
-            <a href="city.html" class="nav-btn">[ Ciudad Lluviosa ]</a>
-            <a href="objects_scroll.html" class="nav-btn">[ 3D: Primitivas ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto ]</a>
+            <a href="city.html" class="nav-btn">[ Ciudad ]</a>
+            <a href="objects_mouse.html" class="nav-btn">[ 3D: Primitivas ]</a>
             <a href="anatomy_scroll.html" class="nav-btn active">[ Bio: Scroll ]</a>
             <a href="anatomy_inspect.html" class="nav-btn">[ Bio: Mouse ]</a>
-            <a href="anatomy_deconstruct.html" class="nav-btn">[ Bio: Deconstruccion ]</a>
+            <a href="anatomy_deconstruct.html" class="nav-btn">[ Bio: Despiece ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+            <a href="machine_dial.html" class="nav-btn">[ Maq: Comparador ]</a>
+            <a href="machine_ripple.html" class="nav-btn">[ Maq: Ondas ]</a>
         </nav>
     </header>
 
@@ -104,7 +107,7 @@
         const hudEcg = document.getElementById('hud-cardiac-readout');
 
         createGroove3DEngine('canvas3d', {
-            particleCount: 3840,
+            particleCount: 8192,
             morphOnScroll: true,
             anatomyMode: true,
             initialGeometry: 0, // Mano

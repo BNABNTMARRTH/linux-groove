@@ -16,7 +16,7 @@ Para lograr que la animación sea **estrictamente gobernada por el scroll** (con
 
 | Factor | WebGL en el Navegador | Streaming de Video en Vivo | Filmstrip 3D con CSS Steps (Esta Arquitectura) |
 | :--- | :--- | :--- | :--- |
-| **PC de hace 10 años (Core i3/i5, 2014)** | 🔴 5 – 10 FPS (Inutilizable, ventiladores a tope) | 🟡 40 – 60 FPS (Pero avanza sola sin scroll) | 🟢 **60 FPS Nativos Fluidos** |
+| **PC de hace 10 años (Core i3/i5, 2014)** | [R] 5 – 10 FPS (Inutilizable, ventiladores a tope) | [Y] 40 – 60 FPS (Pero avanza sola sin scroll) | [G] **60 FPS Nativos Fluidos** |
 | **Uso de CPU en el Cliente** | 70% – 95% | 10% – 15% (Decodificación continua) | **0% – 2% (Solo muestra una imagen)** |
 | **Uso de GPU en el Cliente** | 100% (Renderizado de millones de rayos 3D) | 5% (Video) | **Mínimo (Aceleración de dibujo 2D)** |
 | **Comportamiento sin Scroll** | Sigue renderizando y gastando batería | Sigue corriendo el video solo | **100% Congelado, 0 consumo de recursos** |

@@ -15,7 +15,7 @@ use geometry::GeometryModel;
 use geometry_anatomy::AnatomyModel;
 use particles::ParticleSystem;
 
-pub const MAX_PARTICLES: usize = 6144;
+pub const MAX_PARTICLES: usize = 8192;
 pub const MAX_LINES: usize = 1024;
 
 #[repr(C)]
@@ -230,40 +230,110 @@ pub extern "C" fn update_scene(
             mouse_active,
         );
 
-        // Paleta de color segun el modelo anatomico activo
-        let (pt_color_r, pt_color_g, pt_color_b) = if engine.is_anatomy_mode {
-            match engine.selected_anatomy {
-                2 => (255, 34, 85),   // Corazon: carmesi y rubi
-                1 => (0, 243, 255),   // Cabeza: cian neural
-                _ => (0, 255, 170),   // Mano: esmeralda bio-digital
-            }
-        } else {
-            (0, 243, 255)
-        };
+        // Vector de iluminacion clave 3D (luz anterolateral superior)
+        let light_dir = Vec3::new(0.35, 0.75, 0.90).normalize();
 
-        // 1. Proyectar particulas 3D -> 2D
+        // 1. Proyectar particulas 3D -> 2D con iluminacion por normales
         let mut pt_idx = 0;
         for (i, p) in engine.particles.particles.iter().enumerate() {
             if pt_idx >= MAX_PARTICLES { break; }
             let (sx, sy, depth, scale, visible) = engine.camera.project(&p.pos, width, height);
             if visible {
-                let alpha = (1.4 - depth * 0.18).clamp(0.15, 1.0);
-                
-                // Color modulado si es corazon con pulso
-                let (r, g, b) = if engine.is_anatomy_mode && engine.selected_anatomy == 2 {
-                    if i % 3 == 0 { (255, 220, 100) } else { (255, 34, 85) }
-                } else if engine.is_anatomy_mode && engine.selected_anatomy == 0 {
-                    if i % 3 == 0 { (240, 255, 250) } else { (0, 255, 170) }
+                let base_alpha = (1.4 - depth * 0.18).clamp(0.15, 1.0);
+
+                let (r, g, b, size_mult, alpha_mult) = if engine.is_anatomy_mode {
+                    // Calculo de pseudonormal para claroscuro y volumen anatomico tangible
+                    let normal = match engine.selected_anatomy {
+                        0 => {
+                            // Mano: normal radial de falanges y dorso de palma
+                            let nx = p.pos.x * 1.5;
+                            let ny = if p.pos.y > -0.15 { 0.1 } else { 0.0 };
+                            let nz = p.pos.z * 3.5;
+                            let len_sq = nx * nx + ny * ny + nz * nz;
+                            if len_sq > 0.001 {
+                                let inv = 1.0 / len_sq.sqrt();
+                                Vec3::new(nx * inv, ny * inv, nz * inv)
+                            } else {
+                                Vec3::new(0.0, 0.0, 1.0)
+                            }
+                        },
+                        1 => {
+                            // Cabeza: normal radial desde el centro encefalico (0.0, 0.32, -0.12)
+                            let nx = p.pos.x / 0.82;
+                            let ny = (p.pos.y - 0.32) / 0.95;
+                            let nz = (p.pos.z + 0.12) / 1.05;
+                            let len_sq = nx * nx + ny * ny + nz * nz;
+                            if len_sq > 0.001 {
+                                let inv = 1.0 / len_sq.sqrt();
+                                Vec3::new(nx * inv, ny * inv, nz * inv)
+                            } else {
+                                Vec3::new(0.0, 0.0, 1.0)
+                            }
+                        },
+                        _ => {
+                            // Corazon: normal desde el eje axial
+                            let nx = p.pos.x / 1.15;
+                            let ny = (p.pos.y + 0.25) / 1.0;
+                            let nz = p.pos.z / 0.95;
+                            let len_sq = nx * nx + ny * ny + nz * nz;
+                            if len_sq > 0.001 {
+                                let inv = 1.0 / len_sq.sqrt();
+                                Vec3::new(nx * inv, ny * inv, nz * inv)
+                            } else {
+                                Vec3::new(0.0, 0.0, 1.0)
+                            }
+                        }
+                    };
+
+                    let dot = (normal.x * light_dir.x + normal.y * light_dir.y + normal.z * light_dir.z).max(0.0);
+                    let intensity = 0.30 + 0.70 * dot;
+                    let sz = 0.85 + 0.70 * dot;
+
+                    match engine.selected_anatomy {
+                        2 => {
+                            // Corazon: carmesi profundo con reflejos dorados y rubi vivo
+                            if dot > 0.75 && i % 3 == 0 {
+                                (255, 230, 130, sz * 1.25, 1.0)
+                            } else {
+                                let r = (255.0 * intensity).min(255.0) as u8;
+                                let g = (38.0 * intensity).min(255.0) as u8;
+                                let b = (85.0 * intensity).min(255.0) as u8;
+                                (r, g, b, sz, intensity)
+                            }
+                        },
+                        1 => {
+                            // Cabeza: cian neural bio-cibernetico con destellos fotonicos en crestas
+                            if dot > 0.80 && i % 4 == 0 {
+                                (220, 250, 255, sz * 1.3, 1.0)
+                            } else {
+                                let r = 0;
+                                let g = (243.0 * intensity).min(255.0) as u8;
+                                let b = (255.0 * intensity).min(255.0) as u8;
+                                (r, g, b, sz, intensity)
+                            }
+                        },
+                        _ => {
+                            // Mano: esmeralda digital con realce blanco en nudillos y dedos
+                            if dot > 0.80 && i % 4 == 0 {
+                                (240, 255, 250, sz * 1.3, 1.0)
+                            } else {
+                                let r = 0;
+                                let g = (255.0 * intensity).min(255.0) as u8;
+                                let b = (170.0 * intensity).min(255.0) as u8;
+                                (r, g, b, sz, intensity)
+                            }
+                        }
+                    }
                 } else {
-                    (p.r, p.g, p.b)
+                    (p.r, p.g, p.b, 1.0, 1.0)
                 };
 
                 BUFFER_POINTS[pt_idx] = ProjectedPoint {
                     x: sx,
                     y: sy,
                     depth,
-                    size: (p.size * scale * 0.008).clamp(1.0, 6.0),
-                    alpha,
+                    size: (p.size * scale * 0.0075 * size_mult).clamp(1.0, 5.5),
+                    alpha: (base_alpha * alpha_mult).clamp(0.12, 1.0),
                     r, g, b,
                     _pad: 0,
                 };
@@ -273,57 +343,42 @@ pub extern "C" fn update_scene(
         engine.active_points = pt_idx;
 
         // 2. Proyectar aristas vectoriales (Wireframes & Frames)
-        let line_alpha_mod = (1.0 - deconstruct * 1.4).max(0.0);
+        // REGLA FUNDAMENTAL: En modo anatomia, CERO lineas wireframe (100% volumen de particulas)
         let mut ln_idx = 0;
-
-        if line_alpha_mod > 0.02 {
-            let edges = if engine.is_anatomy_mode {
-                match engine.selected_anatomy {
-                    0 => &engine.anatomy.hand_edges,
-                    1 => &engine.anatomy.head_edges,
-                    _ => &engine.anatomy.heart_edges,
-                }
-            } else {
-                match engine.selected_geom {
+        if !engine.is_anatomy_mode {
+            let line_alpha_mod = (1.0 - deconstruct * 1.4).max(0.0);
+            if line_alpha_mod > 0.02 {
+                let edges = match engine.selected_geom {
                     0 => &engine.geometry.edges_sphere,
                     1 => &engine.geometry.edges_cube,
                     _ => &engine.geometry.edges_torus,
-                }
-            };
+                };
 
-            for e in edges {
-                if ln_idx >= MAX_LINES { break; }
-                let idx_a = (e.idx_a as usize) % target_positions.len();
-                let idx_b = (e.idx_b as usize) % target_positions.len();
+                for e in edges {
+                    if ln_idx >= MAX_LINES { break; }
+                    let idx_a = (e.idx_a as usize) % target_positions.len();
+                    let idx_b = (e.idx_b as usize) % target_positions.len();
 
-                let p1 = &engine.particles.particles[idx_a].pos;
-                let p2 = &engine.particles.particles[idx_b].pos;
+                    let p1 = &engine.particles.particles[idx_a].pos;
+                    let p2 = &engine.particles.particles[idx_b].pos;
 
-                let (x1, y1, d1, _, v1) = engine.camera.project(p1, width, height);
-                let (x2, y2, d2, _, v2) = engine.camera.project(p2, width, height);
+                    let (x1, y1, d1, _, v1) = engine.camera.project(p1, width, height);
+                    let (x2, y2, d2, _, v2) = engine.camera.project(p2, width, height);
 
-                if v1 && v2 {
-                    let avg_depth = (d1 + d2) * 0.5;
-                    let alpha = (1.2 - avg_depth * 0.16).clamp(0.1, 0.9) * line_alpha_mod;
+                    if v1 && v2 {
+                        let avg_depth = (d1 + d2) * 0.5;
+                        let alpha = (1.2 - avg_depth * 0.16).clamp(0.1, 0.9) * line_alpha_mod;
+                        let (r, g, b) = if e.is_frame { (255, 170, 0) } else { (0, 243, 255) };
 
-                    let (r, g, b) = if engine.is_anatomy_mode {
-                        match engine.selected_anatomy {
-                            2 => if e.is_frame { (255, 200, 80) } else { (255, 50, 90) },
-                            1 => if e.is_frame { (255, 170, 0) } else { (0, 243, 255) },
-                            _ => if e.is_frame { (255, 255, 255) } else { (0, 255, 170) },
-                        }
-                    } else {
-                        if e.is_frame { (255, 170, 0) } else { (0, 243, 255) }
-                    };
-
-                    BUFFER_LINES[ln_idx] = ProjectedLine {
-                        x1, y1, x2, y2,
-                        depth: avg_depth,
-                        alpha,
-                        r, g, b,
-                        is_frame: if e.is_frame { 1 } else { 0 },
-                    };
-                    ln_idx += 1;
+                        BUFFER_LINES[ln_idx] = ProjectedLine {
+                            x1, y1, x2, y2,
+                            depth: avg_depth,
+                            alpha,
+                            r, g, b,
+                            is_frame: if e.is_frame { 1 } else { 0 },
+                        };
+                        ln_idx += 1;
+                    }
                 }
             }
         }
