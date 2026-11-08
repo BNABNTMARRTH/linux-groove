@@ -1,0 +1,572 @@
+/* ==========================================================================
+   LINUX GROOVE - LABERINTO 3D CYBERPUNK (STYLESHEET)
+   Cero JavaScript | CSS Scroll-Driven Animations | Parallax Nativo
+   ========================================================================== */
+
+:root {
+    --bg-dark: #04060c;
+    --cyan-glow: #00f3ff;
+    --magenta-glow: #ff007f;
+    --amber-glow: #ffb300;
+    --card-bg: rgba(6, 10, 24, 0.78);
+    --card-border: rgba(0, 243, 255, 0.35);
+    --hud-color: rgba(0, 243, 255, 0.85);
+    --text-primary: #e6f6ff;
+    --text-muted: #8ea4c2;
+    --font-mono: "SF Mono", "Fira Code", "Courier New", monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+}
+
+body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, #080c18 0%, #030408 100%);
+}
+
+/* ==========================================================================
+   BARRA DE NAVEGACIÓN SUPERIOR (GLASSMORPHISM)
+   ========================================================================== */
+
+.top-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2rem;
+    background: rgba(4, 6, 12, 0.65);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(0, 243, 255, 0.15);
+}
+
+.brand-container {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-mono);
+}
+
+.brand-icon {
+    font-size: 1.4rem;
+}
+
+.brand-title {
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    background: linear-gradient(90deg, #ffffff, var(--cyan-glow));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-version {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    background: rgba(0, 243, 255, 0.15);
+    border: 1px solid var(--cyan-glow);
+    border-radius: 4px;
+    color: var(--cyan-glow);
+    letter-spacing: 0.1em;
+}
+
+.nav-links {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-btn {
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+}
+
+.nav-btn:hover {
+    color: var(--cyan-glow);
+    border-color: rgba(0, 243, 255, 0.3);
+    background: rgba(0, 243, 255, 0.08);
+}
+
+.nav-btn.active {
+    color: #ffffff;
+    border-color: var(--cyan-glow);
+    background: rgba(0, 243, 255, 0.18);
+    box-shadow: 0 0 12px rgba(0, 243, 255, 0.3);
+}
+
+/* ==========================================================================
+   VIEWPORT FIJO DEL STREAMING 3D EN TIEMPO REAL
+   ========================================================================== */
+
+.stream-viewport {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.stream-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.maze-stream {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: center center;
+    will-change: transform, filter;
+    filter: contrast(1.08) brightness(1.02);
+}
+
+.stream-scanlines {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15) 0px,
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 3px
+    );
+    pointer-events: none;
+}
+
+.stream-vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at 50% 50%,
+        transparent 45%,
+        rgba(4, 6, 12, 0.75) 85%,
+        #04060c 100%
+    );
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   HUD HOLOGRÁFICO (RETÍCULA, TELEMETRÍA Y CORNERS)
+   ========================================================================== */
+
+.hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    font-family: var(--font-mono);
+    color: var(--hud-color);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+.hud-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 180px;
+    height: 180px;
+    transform: translate(-50%, -50%);
+    border: 1px dashed rgba(0, 243, 255, 0.25);
+    border-radius: 50%;
+}
+
+.hud-reticle::before,
+.hud-reticle::after {
+    content: "";
+    position: absolute;
+    background: var(--cyan-glow);
+    opacity: 0.6;
+}
+
+.hud-reticle::before {
+    top: 50%;
+    left: -15px;
+    right: -15px;
+    height: 1px;
+}
+
+.hud-reticle::after {
+    left: 50%;
+    top: -15px;
+    bottom: -15px;
+    width: 1px;
+}
+
+.hud-corner {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px 12px;
+    background: rgba(4, 6, 14, 0.55);
+    border: 1px solid rgba(0, 243, 255, 0.2);
+    backdrop-filter: blur(6px);
+}
+
+.hud-label {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+}
+
+.hud-val {
+    font-weight: 700;
+    color: var(--cyan-glow);
+}
+
+.hud-corner.top-left {
+    top: 75px;
+    left: 2rem;
+    border-left: 3px solid var(--cyan-glow);
+}
+
+.hud-corner.top-right {
+    top: 75px;
+    right: 2rem;
+    text-align: right;
+    border-right: 3px solid var(--magenta-glow);
+}
+
+.hud-corner.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+    border-left: 3px solid var(--amber-glow);
+}
+
+.hud-corner.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+    text-align: right;
+    border-right: 3px solid var(--cyan-glow);
+}
+
+.hud-compass {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.compass-bar {
+    width: 60px;
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan-glow), var(--magenta-glow));
+    border-radius: 2px;
+    animation: compassScan 4s ease-in-out infinite alternate;
+}
+
+@keyframes compassScan {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(180px); }
+}
+
+/* ==========================================================================
+   PISTA DE NARRATIVA Y WAYPOINTS SCROLL-DRIVEN
+   ========================================================================== */
+
+.scroll-track {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+.sector-block {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.sector-card {
+    max-width: 580px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 12px;
+    padding: 2.5rem 2.8rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 243, 255, 0.12);
+    position: relative;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.sector-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 20px;
+    right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+}
+
+.sector-badge {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--cyan-glow);
+    letter-spacing: 0.15em;
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+}
+
+.sector-card h1,
+.sector-card h2 {
+    font-size: 2.1rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ffffff 40%, var(--cyan-glow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sector-card p {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+.sector-card strong {
+    color: #ffffff;
+}
+
+.sector-card code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    padding: 2px 6px;
+    background: rgba(0, 243, 255, 0.12);
+    border: 1px solid rgba(0, 243, 255, 0.25);
+    border-radius: 4px;
+    color: var(--cyan-glow);
+}
+
+.scroll-instruction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    color: var(--amber-glow);
+    padding: 8px 14px;
+    background: rgba(255, 179, 0, 0.08);
+    border: 1px solid rgba(255, 179, 0, 0.25);
+    border-radius: 6px;
+}
+
+.arrow-anim {
+    display: inline-block;
+    animation: arrowBounce 1.5s infinite;
+}
+
+@keyframes arrowBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+}
+
+.telemetry-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan-glow), var(--magenta-glow));
+    border-radius: 2px;
+}
+
+.action-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.action-btn {
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #04060c;
+    background: var(--cyan-glow);
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--cyan-glow);
+    transition: all 0.25s ease;
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.4);
+}
+
+.action-btn:hover {
+    background: #ffffff;
+    box-shadow: 0 0 25px rgba(0, 243, 255, 0.7);
+    transform: translateY(-2px);
+}
+
+.action-btn.secondary {
+    color: var(--text-primary);
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: none;
+}
+
+.action-btn.secondary:hover {
+    border-color: var(--cyan-glow);
+    color: var(--cyan-glow);
+    background: rgba(0, 243, 255, 0.08);
+}
+
+/* ==========================================================================
+   CSS SCROLL-DRIVEN ANIMATIONS (ESTÁNDAR MODERNO SIN JAVASCRIPT)
+   ========================================================================== */
+
+@supports (animation-timeline: scroll(root block)) {
+    /* Deformación y zoom de cámara 3D sincronizados con el scroll de la página */
+    .maze-stream {
+        animation-name: mazeCameraTraversal;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+        animation-timeline: scroll(root block);
+        animation-range: 0% 100%;
+    }
+
+    @keyframes mazeCameraTraversal {
+        0% {
+            transform: scale(1.0) rotate(0deg);
+            filter: contrast(1.05) brightness(1.0) hue-rotate(0deg);
+        }
+        25% {
+            transform: scale(1.3) rotate(-1.5deg);
+            filter: contrast(1.15) brightness(1.05) hue-rotate(5deg);
+        }
+        50% {
+            transform: scale(1.75) rotate(2.0deg);
+            filter: contrast(1.25) brightness(1.12) hue-rotate(15deg);
+        }
+        75% {
+            transform: scale(2.15) rotate(-1.0deg);
+            filter: contrast(1.35) brightness(1.18) hue-rotate(30deg);
+        }
+        100% {
+            transform: scale(2.5) rotate(0deg);
+            filter: contrast(1.45) brightness(1.25) hue-rotate(45deg);
+        }
+    }
+
+    /* Revelado cinemático de tarjetas al entrar en el viewport con view-timeline */
+    .sector-card {
+        view-timeline-name: --sectorCard;
+        view-timeline-axis: block;
+        animation-timeline: --sectorCard;
+        animation-name: sectorCardReveal;
+        animation-range: entry 15% cover 50%;
+        animation-fill-mode: both;
+    }
+
+    @keyframes sectorCardReveal {
+        0% {
+            opacity: 0;
+            transform: translateY(60px) scale(0.92);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1.0);
+        }
+    }
+}
+
+/* ==========================================================================
+   ACCESIBILIDAD Y MOVIMIENTO REDUCIDO
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .maze-stream,
+    .sector-card,
+    .arrow-anim,
+    .compass-bar {
+        animation: none !important;
+        transform: none !important;
+    }
+}
+
+/* ==========================================================================
+   ADAPTABILIDAD RESPONSIVA (MÓVILES Y PANTALLAS PEQUEÑAS)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .top-nav {
+        padding: 0 1rem;
+    }
+
+    .brand-title {
+        font-size: 0.9rem;
+    }
+
+    .hud-corner.top-left,
+    .hud-corner.top-right {
+        top: 65px;
+        font-size: 0.65rem;
+        padding: 4px 8px;
+    }
+
+    .hud-corner.bottom-left,
+    .hud-corner.bottom-right {
+        display: none; /* Simplificar HUD en pantallas estrechas */
+    }
+
+    .sector-card {
+        padding: 1.8rem 1.6rem;
+    }
+
+    .sector-card h1,
+    .sector-card h2 {
+        font-size: 1.6rem;
+    }
+
+    .sector-card p {
+        font-size: 0.95rem;
+    }
+}

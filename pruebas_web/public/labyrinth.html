@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Laberinto 3D Cyberpunk & CSS Scroll-Driven</title>
+    <link rel="stylesheet" href="styles_labyrinth.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR (SIN JS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-icon">🎷</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-version">3D LABYRINTH</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">⚡ Rayos Eléctricos</a>
+            <a href="labyrinth.html" class="nav-btn active">🌌 Laberinto 3D</a>
+        </nav>
+    </header>
+
+    <!-- ESCENARIO PRINCIPAL: STREAM DE RAYMARCHING 3D EN RUST -->
+    <div class="stream-viewport">
+        <div class="stream-container">
+            <img class="maze-stream" src="/stream_labyrinth" alt="Linux Groove 3D Cyberpunk Labyrinth Raymarching Stream">
+            <div class="stream-scanlines"></div>
+            <div class="stream-vignette"></div>
+        </div>
+
+        <!-- HUD HOLOGRÁFICO CON PARALLAX (CERO JS) -->
+        <div class="hud-layer" aria-hidden="true">
+            <div class="hud-reticle"></div>
+            <div class="hud-corner top-left">
+                <span class="hud-label">COORDS</span>
+                <span class="hud-val">X: +1.28 | Y: -0.34 | Z: ∞</span>
+            </div>
+            <div class="hud-corner top-right">
+                <span class="hud-label">SDF RAYMARCH</span>
+                <span class="hud-val">26 STEPS // 60 FPS</span>
+            </div>
+            <div class="hud-corner bottom-left">
+                <span class="hud-label">MOTOR</span>
+                <span class="hud-val">RUST AXUM + TOKIO</span>
+            </div>
+            <div class="hud-corner bottom-right">
+                <span class="hud-label">CLIENTE</span>
+                <span class="hud-val">0 BYTES JS // CSS SCROLL</span>
+            </div>
+            <div class="hud-compass">
+                <div class="compass-bar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PISTA DE NARRATIVA ESPACIAL SCROLL-DRIVEN -->
+    <main class="scroll-track">
+
+        <!-- SECTOR 01: EL UMBRAL CIBERNÉTICO -->
+        <section class="sector-block" id="sector-1">
+            <div class="sector-card">
+                <div class="sector-badge">SECTOR 01 // ACCESO PRIMARIO</div>
+                <h1>El Umbral Cibernético</h1>
+                <p>Bienvenido al <strong>Laberinto 3D de Linux Groove</strong>. Renderizado en tiempo real mediante <strong>Raymarching volumétrico (SDF)</strong> ejecutado en el backend de <strong>Rust</strong> sin utilizar motores de juego ni GPU externa en el navegador.</p>
+                <div class="scroll-instruction">
+                    <span class="arrow-anim">↓</span> Desplaza hacia abajo para avanzar en la profundidad 3D
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTOR 02: CORREDORES DE NEÓN -->
+        <section class="sector-block" id="sector-2">
+            <div class="sector-card">
+                <div class="sector-badge">SECTOR 02 // COLUMNAS DE POTENCIA</div>
+                <h2>Corredores de Neón Infinitos</h2>
+                <p>Las columnas cilíndricas y muros se calculan matemáticamente en cada fotograma mediante funciones de distancia signada. La iluminación y la niebla volumétrica reaccionan a la trayectoria analítica de la cámara.</p>
+                <div class="telemetry-bar">
+                    <div class="bar-fill" style="width: 45%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTOR 03: DESCENSO AL NÚCLEO -->
+        <section class="sector-block" id="sector-3">
+            <div class="sector-card">
+                <div class="sector-badge">SECTOR 03 // HIPERESPACIO</div>
+                <h2>Aceleración por Deformación FOV</h2>
+                <p>Al continuar desplazándote, las propiedades CSS <code>animation-timeline: scroll(root block)</code> escalan la perspectiva óptica del video, rotan el ángulo de horizonte y modulan los filtros de resplandor neón con precisión a nivel de fotograma.</p>
+                <div class="telemetry-bar">
+                    <div class="bar-fill" style="width: 75%;"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTOR 04: EL SANTUARIO SOUNDWAVE -->
+        <section class="sector-block" id="sector-4">
+            <div class="sector-card">
+                <div class="sector-badge">SECTOR 04 // EL NÚCLEO RESONANTE</div>
+                <h2>El Núcleo Soundwave</h2>
+                <p>Has alcanzado el centro del laberinto. La onda sonora flotante encarna la identidad de Linux Groove: máxima elegancia visual, cero sobrecarga de JavaScript y latencia ultrabaja en streaming.</p>
+                <div class="action-row">
+                    <a href="index.html" class="action-btn">⚡ Probar Rayos Eléctricos</a>
+                    <a href="#sector-1" class="action-btn secondary">↑ Volver al Umbral</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>

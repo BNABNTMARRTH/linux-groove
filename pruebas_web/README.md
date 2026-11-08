@@ -1,21 +1,42 @@
-# Pruebas Web: Pixel Streaming con Rust & CSS Scroll-Driven
+# Pruebas Web: Pixel Streaming con Rust & CSS Scroll-Driven (Cero JavaScript)
 
-Este directorio contiene la arquitectura, especificaciones, código de referencia y plan de ejecución para ejecutar animaciones de shaders de alto rendimiento desarrolladas en **Linux Groove** (Qt 6 / GLSL) y transmitirlas en tiempo real hacia la web utilizando un backend nativo en **Rust**, controlado enteramente por **CSS Scroll-Driven Animations nativas (cero JavaScript)**.
-
----
-
-## 📚 Documentos Disponibles en este Directorio
-
-1. 📋 **[`PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md`](./PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md)**  
-   *Plan de trabajo, especificaciones de componentes y etapas de verificación del proyecto.*
-
-2. 🏛️ **[`ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md`](./ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md)**  
-   *Explicación arquitectónica completa, comparativa técnica de rendimiento (Rust vs Python), diagrama de flujo detallado y fragmentos de código listos para producción para `Cargo.toml`, `src/main.rs`, `index.html` y `styles.css`.*
+Este directorio contiene las experiencias web interactivas, servidores de streaming de ultra bajo consumo y documentación arquitectónica de **Linux Groove**, ejecutando animaciones y mundos tridimensionales con renderizado nativo en el servidor transmitidos a 60 FPS mediante **Rust Pixel Streaming** y controlados por **CSS Scroll-Driven Animations nativas (cero JavaScript)**.
 
 ---
 
-### Puntos Destacados:
-- **Backend Rust:** Servidor HTTP asíncrono con `tokio` + `axum` con canales de difusión *zero-copy*.
-- **Cero JavaScript:** El cliente web solo utiliza HTML5 nativo y CSS moderno (`animation-timeline: scroll()`).
-- **Peso de Descarga en el Cliente:** Menor a **6 KB** de payload inicial.
-- **Transmisión a 60 FPS:** Compatible con navegadores móviles y de escritorio.
+## 🚀 Experiencias Disponibles
+
+| Experiencia | URL de Navegación | Endpoint de Video MJPEG | Descripción Visual |
+| :--- | :--- | :--- | :--- |
+| **1. Rayos Eléctricos Neón** | [`http://localhost:8089/index.html`](http://localhost:8089/index.html) | `/stream` | Rayos y ondas de audio de Groove generadas proceduralmente con GLSL en Rust. |
+| **2. Laberinto 3D Cyberpunk** | [`http://localhost:8089/labyrinth.html`](http://localhost:8089/labyrinth.html) | `/stream_labyrinth` | Laberinto tridimensional infinito con Raymarching (SDF), columnas de neón, niebla y HUD holográfico. |
+
+---
+
+## 📚 Documentación Técnica y Arquitectura
+
+1. 🌌 **[`ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md`](./ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md)**  
+   *Fundamentos matemáticos de Raymarching (Sphere Tracing), funciones de distancia signada (SDF), cámara paramétrica 3D, niebla volumétrica y orquestación con CSS Scroll-Driven.*
+
+2. 📋 **[`PLAN_LABERINTO_3D_SCROLL_DRIVEN.md`](./PLAN_LABERINTO_3D_SCROLL_DRIVEN.md)**  
+   *Plan de ejecución detallado para el Laberinto 3D.*
+
+3. 🏛️ **[`ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md`](./ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md)**  
+   *Explicación arquitectónica completa del motor de Pixel Streaming en Rust (Axum + Tokio), comparativa con Python y especificaciones Zero-JS.*
+
+4. 📋 **[`PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md`](./PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md)**  
+   *Plan de implementación del proyecto base de rayos eléctricos.*
+
+---
+
+## 🛠️ Ejecución y Pruebas Rápidas
+
+```bash
+# Iniciar el servidor (si no está corriendo en background)
+cd pruebas_web/server_rust
+GROOVE_PUBLIC_DIR=../public PORT=8089 cargo run --release
+
+# O abrir directamente en el navegador:
+# http://localhost:8089/index.html
+# http://localhost:8089/labyrinth.html
+```
