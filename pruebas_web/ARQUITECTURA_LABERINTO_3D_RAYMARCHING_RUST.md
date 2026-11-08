@@ -264,3 +264,4 @@ El frontend no utiliza scripts del lado del cliente (`<script>` prohibido). Toda
 
 ## 6. Conclusión
 La combinación de **Rust (Raymarching analítico)** y **CSS moderno (Scroll-Driven Animations)** demuestra que es posible lograr mundos 3D interactivos, inmersivos y con fidelidad cinematográfica en la web sin incurrir en la pesadez de frameworks JavaScript en el navegador ni exponer algoritmos o modelos al cliente.
+

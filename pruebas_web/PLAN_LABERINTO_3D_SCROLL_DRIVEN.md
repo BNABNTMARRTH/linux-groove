@@ -101,3 +101,4 @@ Diseño visual de alta gama inspirado en *Blade Runner* y la estética cyberpunk
 2. Comprobación de ambos endpoints (`/stream` y `/stream_labyrinth`) vía HTTP.
 3. Comprobación de entrega de `labyrinth.html` y `styles_labyrinth.css`.
 4. Extracción y validación de fotograma de prueba en JPEG del laberinto 3D.
+

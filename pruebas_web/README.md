@@ -15,16 +15,19 @@ Este directorio contiene las experiencias web interactivas, servidores de stream
 
 ## 📚 Documentación Técnica y Arquitectura
 
-1. 🌌 **[`ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md`](./ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md)**  
+1. ⚡ **[`OPTIMIZACION_MULTIHILO_RAYON_60FPS.md`](./OPTIMIZACION_MULTIHILO_RAYON_60FPS.md)**  
+   *Diagnóstico del cuello de botella mononúcleo, solución multihilo con Rayon a 10 núcleos, temporizador fixed-timestep a 60 FPS, normales por tetraedro y métricas comparativas.*
+
+2. 🌌 **[`ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md`](./ARQUITECTURA_LABERINTO_3D_RAYMARCHING_RUST.md)**  
    *Fundamentos matemáticos de Raymarching (Sphere Tracing), funciones de distancia signada (SDF), cámara paramétrica 3D, niebla volumétrica y orquestación con CSS Scroll-Driven.*
 
-2. 📋 **[`PLAN_LABERINTO_3D_SCROLL_DRIVEN.md`](./PLAN_LABERINTO_3D_SCROLL_DRIVEN.md)**  
+3. 📋 **[`PLAN_LABERINTO_3D_SCROLL_DRIVEN.md`](./PLAN_LABERINTO_3D_SCROLL_DRIVEN.md)**  
    *Plan de ejecución detallado para el Laberinto 3D.*
 
-3. 🏛️ **[`ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md`](./ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md)**  
+4. 🏛️ **[`ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md`](./ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md)**  
    *Explicación arquitectónica completa del motor de Pixel Streaming en Rust (Axum + Tokio), comparativa con Python y especificaciones Zero-JS.*
 
-4. 📋 **[`PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md`](./PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md)**  
+5. 📋 **[`PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md`](./PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md)**  
    *Plan de implementación del proyecto base de rayos eléctricos.*
 
 ---

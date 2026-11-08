@@ -12,3 +12,4 @@ tower-http = { version = "0.5", features = ["cors", "fs"] }
 jpeg-encoder = "0.6"
 bytes = "1.6"
 tokio-stream = { version = "0.1", features = ["sync"] }
+rayon = "1.10"
