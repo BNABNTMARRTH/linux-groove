@@ -186,19 +186,19 @@ pub extern "C" fn update_scene(
             } else {
                 match engine.selected_anatomy {
                     0 => {
-                        // MANO: flexiona dedos si el mouse se mueve verticalmente
-                        let flex = (engine.smooth_mouse_y.abs() * 0.8).clamp(0.0, 1.0);
-                        engine.anatomy.hand_targets.iter().map(|p| {
-                            if p.y > 0.0 {
-                                Vec3::new(p.x, p.y * (1.0 - flex * 0.25), p.z + flex * 0.35)
-                            } else {
-                                *p
-                            }
-                        }).collect()
+                        // MANO ANIMADA: cinemática de 30 huesos de hand_animation.glb
+                        (0..engine.active_points)
+                            .map(|i| engine.anatomy.get_animated_hand(i, engine.time))
+                            .collect()
                     },
-                    1 => engine.anatomy.head_targets.clone(),
+                    1 => {
+                        // CRANEO: despiece orbital de 25 huesos de craneo.glb
+                        (0..engine.active_points)
+                            .map(|i| engine.anatomy.get_skull_deconstructed(i, deconstruct))
+                            .collect()
+                    },
                     _ => {
-                        // CORAZON: latido cardiaco ritmico continuo en tiempo real (72 BPM)
+                        // CORAZON: sístole y diástole de anim_heart.glb
                         (0..engine.active_points)
                             .map(|i| engine.anatomy.get_pulsing_heart(i, engine.time))
                             .collect()

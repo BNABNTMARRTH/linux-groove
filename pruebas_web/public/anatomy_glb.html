@@ -3,21 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Linux Groove - Anatomia 3D // Visor de Particulas Vivas (.GLB)</title>
+    <title>Linux Groove - Anatomia 3D // Motor Rust Wasm & GLB Nativos</title>
     <link rel="stylesheet" href="styles_anatomy_glb.css">
-    <!-- Scripts locales (Zero dependencia externa, offline) -->
-    <script src="vendor/three.min.js"></script>
-    <script src="vendor/GLTFLoader.js"></script>
-    <script src="vendor/OrbitControls.js"></script>
 </head>
 <body>
 
-    <!-- BARRA DE NAVEGACION SUPERIOR (SIN EMOJIS) -->
+    <!-- BARRA DE NAVEGACION SUPERIOR (100% RUST / HTML / CSS - CERO EMOJIS) -->
     <header class="top-nav">
         <div class="brand-container">
             <span class="brand-bullet">[+]</span>
             <span class="brand-title">LINUX GROOVE</span>
-            <span class="brand-tag">ANATOMIA 3D // PARTÍCULAS GLB</span>
+            <span class="brand-tag">RUST WASM // ANATOMIA GLB</span>
         </div>
         <nav class="nav-links">
             <a href="index.html" class="nav-btn">[ Rayos ]</a>
@@ -27,14 +23,14 @@
             <a href="anatomy_scroll.html" class="nav-btn">[ Bio: Scroll ]</a>
             <a href="anatomy_inspect.html" class="nav-btn">[ Bio: Mouse ]</a>
             <a href="anatomy_deconstruct.html" class="nav-btn">[ Bio: Despiece ]</a>
-            <a href="anatomy_glb.html" class="nav-btn active">[ Bio: GLB ]</a>
+            <a href="anatomy_glb.html" class="nav-btn active">[ Bio: GLB Rust ]</a>
             <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
             <a href="machine_dial.html" class="nav-btn">[ Maq: Comparador ]</a>
             <a href="machine_ripple.html" class="nav-btn">[ Maq: Ondas ]</a>
         </nav>
     </header>
 
-    <!-- VIEWPORT 3D PRINCIPAL -->
+    <!-- VIEWPORT 3D PRINCIPAL (CANVAS NATIVO HTML5 / RUST ZERO-COPY) -->
     <main class="viewport-container">
         <canvas id="canvas-gl"></canvas>
         <div class="screen-grid"></div>
@@ -43,24 +39,24 @@
         <!-- HUD DE TELEMETRIA BIOMEDICA -->
         <div class="hud-layer" aria-hidden="true">
             <div class="hud-corner top-left">
-                <span class="hud-label">// MOTOR BIOMECANICO</span>
-                <span class="hud-val" id="hud-engine">GPU SKINNING // GLTF 2.0</span>
+                <span class="hud-label">// MOTOR MATEMATICO NATIVO</span>
+                <span class="hud-val" id="hud-engine">RUST WASM // ZERO-COPY MEMORY</span>
             </div>
             <div class="hud-corner top-right">
-                <span class="hud-label">// RENDIMIENTO & FPS</span>
-                <span class="hud-val" id="hud-fps">60 FPS // 0 MS LATENCIA</span>
+                <span class="hud-label">// RENDIMIENTO & COMPUTO</span>
+                <span class="hud-val" id="hud-fps">60 FPS // RUST ENGINE_3D.WASM</span>
             </div>
         </div>
 
-        <!-- TARJETA LATERAL DE METADATOS DEL MODELO -->
+        <!-- TARJETA LATERAL DE METADATOS DEL MODELO GLB -->
         <aside class="meta-card">
             <div class="meta-header">
-                <span class="meta-badge" id="meta-badge">[ MODELO ACTIVO ]</span>
+                <span class="meta-badge" id="meta-badge">[ MODELO GLB RUST ]</span>
                 <span style="font-size: 0.65rem; color: var(--bio-cyan);" id="meta-source">hand_animation.glb</span>
             </div>
-            <h2 class="meta-title" id="meta-title">Mano Biomecanica</h2>
+            <h2 class="meta-title" id="meta-title">Mano Biomecanica Articulada</h2>
             <p class="meta-desc" id="meta-desc">
-                Mapeo directo de partículas 3D ancladas a una estructura esquelética con 30 articulaciones. Las partículas se deforman en tiempo real acompañando la flexión de las falanges.
+                Geometria real extraida de hand_animation.glb con 30 articulaciones oseas. Rust WebAssembly calcula la cinematica continua interpolando las poses sin dependencias externas.
             </p>
             <div class="meta-specs">
                 <div class="spec-item">
@@ -73,11 +69,11 @@
                 </div>
                 <div class="spec-item">
                     <span class="spec-k">PARTICULAS</span>
-                    <span class="spec-v" id="spec-particles">12,000 pts</span>
+                    <span class="spec-v" id="spec-particles">8,192 pts</span>
                 </div>
                 <div class="spec-item">
-                    <span class="spec-k">MUESTREO</span>
-                    <span class="spec-v" id="spec-sampling">GPU Surface</span>
+                    <span class="spec-k">EJECUCION</span>
+                    <span class="spec-v" id="spec-sampling">Rust Wasm SIMD</span>
                 </div>
             </div>
         </aside>
@@ -87,134 +83,74 @@
             <!-- FILA 1: SELECTOR DE MODELOS Y ACCIONES -->
             <div class="dock-row">
                 <div class="model-selector">
-                    <button class="btn-model active" data-model="hand_anim">[ Mano Articulada ]</button>
-                    <button class="btn-model" data-model="heart">[ Corazon Pulsante ]</button>
-                    <button class="btn-model" data-model="craneo">[ Craneo Despiece ]</button>
-                    <button class="btn-model" data-model="hand_static">[ Mano Ligera ]</button>
+                    <button class="btn-model active" data-id="0">[ Mano Articulada (30 Huesos) ]</button>
+                    <button class="btn-model" data-id="1">[ Craneo Despiece (25 Huesos) ]</button>
+                    <button class="btn-model" data-id="2">[ Corazon en Latido (72 BPM) ]</button>
                 </div>
                 <div class="action-buttons">
-                    <button class="btn-action" id="btn-play-pause">[ Pausar ]</button>
-                    <button class="btn-action" id="btn-ghost-mesh">[ Malla Molde: Off ]</button>
-                    <button class="btn-action" id="btn-disperse-pulse">[ Pulso Dispersion ]</button>
+                    <button class="btn-action" id="btn-reset-cam">[ Recentrar Giro ]</button>
+                    <button class="btn-action" id="btn-pulse-burst">[ Impulso de Dispersion ]</button>
                 </div>
             </div>
 
-            <!-- FILA 2: DESLIZADORES TECNICOS Y PALETAS -->
+            <!-- FILA 2: DESLIZADORES TECNICOS Y PARAMETROS RUST -->
             <div class="dock-row">
                 <div class="control-sliders">
                     <label class="slider-unit">
-                        <span>Timeline:</span>
-                        <input type="range" id="slider-timeline" min="0" max="1000" value="0">
-                        <span id="label-time">0.00s</span>
+                        <span>Despiece Orbital:</span>
+                        <input type="range" id="slider-deconstruct" min="0" max="100" value="0">
+                        <span id="label-deconstruct">0%</span>
                     </label>
                     <label class="slider-unit">
-                        <span>Calibre:</span>
-                        <input type="range" id="slider-size" min="10" max="80" value="35">
-                        <span id="label-size">3.5px</span>
-                    </label>
-                    <label class="slider-unit">
-                        <span>Dispersion:</span>
-                        <input type="range" id="slider-dispersion" min="0" max="100" value="0">
-                        <span id="label-dispersion">0%</span>
+                        <span>Transmutacion Morph:</span>
+                        <input type="range" id="slider-morph" min="0" max="300" value="0">
+                        <span id="label-morph">0.0</span>
                     </label>
                 </div>
                 <div class="palette-group">
-                    <span>Paleta:</span>
-                    <button class="btn-pal pal-cyan active" data-color="#00f3ff" title="Holograma Cian"></button>
-                    <button class="btn-pal pal-amber" data-color="#ffaa00" title="Bio-Ambar"></button>
-                    <button class="btn-pal pal-ruby" data-color="#ff2255" title="Vascular Rubi"></button>
-                    <button class="btn-pal pal-emerald" data-color="#00ffaa" title="Esmeralda"></button>
-                    <button class="btn-pal pal-violet" data-color="#b366ff" title="Rayos X Violeta"></button>
+                    <span style="font-size: 0.68rem; color: var(--bio-emerald);">[ 100% RUST + HTML + CSS // CERO LIBRERIAS EXTERNAS ]</span>
                 </div>
             </div>
         </footer>
-
-        <!-- FEEDBACK DE CARGA OVERLAY -->
-        <div class="loading-overlay" id="loading-overlay">
-            <div class="loading-spinner"></div>
-            <div class="loading-text" id="loading-text">CARGANDO MODELO 3D GLB...</div>
-            <div class="loading-subtext">Muestreando vertices y pesos esqueleticos en GPU</div>
-        </div>
     </main>
 
-    <!-- MOTOR LOGICO PRINCIPAL -->
-    <script>
-    (function() {
-        'use strict';
+    <!-- PUENTE WASM DIRECTO (ZERO-COPY) -->
+    <script type="module">
+        import { createGroove3DEngine } from './wasm_loader.js';
 
-        // 1. Configuracion de Modelos
-        const MODELS = {
-            hand_anim: {
-                id: 'hand_anim',
+        const MODELS_INFO = [
+            {
+                id: 0,
                 name: 'Mano Biomecanica Articulada',
-                file: 'models/hand_animation.glb',
-                desc: 'Malla con 30 articulaciones oseas y 39 canales cinematicos. Las particulas se anclan a los huesos mediante skinning weights deformandose con la flexion de las falanges.',
+                file: 'hand_animation.glb',
+                desc: 'Geometria real extraida de hand_animation.glb con 30 articulaciones oseas. Rust WebAssembly calcula la cinematica continua interpolando las poses a 60 FPS.',
                 kinematics: '30 Huesos',
-                particles: '14,000 pts',
-                sampling: 'GPU Skinned Mesh',
-                defaultColor: '#00f3ff',
-                scaleAdjust: 0.95
+                duration: '4.62s Ciclo',
+                particles: '8,192 pts',
+                sampling: 'Rust Wasm SIMD'
             },
-            heart: {
-                id: 'heart',
-                name: 'Corazon Humano Pulsante',
-                file: 'models/anim_heart.glb',
-                desc: 'Estructura miocardica con animacion de Morph Targets (Blend Shapes). Las particulas se expanden y contraen en sístole y diastole simulando el pulso cardiaco real.',
-                kinematics: 'Morph Weights',
-                particles: '10,000 pts',
-                sampling: 'Mesh Morphing',
-                defaultColor: '#ff2255',
-                scaleAdjust: 1.05
-            },
-            craneo: {
-                id: 'craneo',
+            {
+                id: 1,
                 name: 'Craneo Anatomico en Despiece',
-                file: 'models/craneo.glb',
-                desc: 'Conjunto tomografico de 25 huesos craneales (frontal, parietal, temporal, maxilares). Al reproducirse, cada cluster de particulas se desacopla en despiece orbital.',
-                kinematics: '25 Mallas / 22 Canales',
-                particles: '24,000 pts',
-                sampling: 'Multi-Node Cluster',
-                defaultColor: '#ffaa00',
-                scaleAdjust: 0.85
+                file: 'craneo.glb',
+                desc: 'Malla tomografica de 25 huesos craneales (frontal, parietal, maxilares). Al deslizar el despiece, Rust desplaza cada hueso radialmente en el espacio 3D.',
+                kinematics: '25 Huesos',
+                duration: 'Despiece Orbital',
+                particles: '8,192 pts',
+                sampling: 'Rust Multi-Vector'
             },
-            hand_static: {
-                id: 'hand_static',
-                name: 'Mano Humana Ligera',
-                file: 'models/hand.glb',
-                desc: 'Variante esqueletica ligera de 17 huesos y canales de rotacion. Excelente densidad y velocidad de calculo para hardware liviano.',
-                kinematics: '17 Huesos',
-                particles: '8,000 pts',
-                sampling: 'GPU Skinned Mesh',
-                defaultColor: '#00ffaa',
-                scaleAdjust: 1.0
+            {
+                id: 2,
+                name: 'Corazon Humano Pulsante',
+                file: 'anim_heart.glb',
+                desc: 'Estructura miocardica con Morph Targets reales de anim_heart.glb. Rust calcula la sistole y diastole a 72 BPM en tiempo real.',
+                kinematics: 'Morph Target QRS',
+                duration: '72 BPM Continuo',
+                particles: '8,192 pts',
+                sampling: 'Rust Morph Blend'
             }
-        };
+        ];
 
-        let currentModelKey = 'hand_anim';
-        let isPlaying = true;
-        let showGhostMesh = false;
-        let activeColor = new THREE.Color(0x00f3ff);
-        let dispersionVal = 0.0;
-        let pulseVal = 0.0;
-        let pointSize = 35.0;
-
-        // 2. Elementos DOM
-        const canvas = document.getElementById('canvas-gl');
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        const btnPlayPause = document.getElementById('btn-play-pause');
-        const btnGhostMesh = document.getElementById('btn-ghost-mesh');
-        const btnDispersePulse = document.getElementById('btn-disperse-pulse');
-        const sliderTimeline = document.getElementById('slider-timeline');
-        const labelTime = document.getElementById('label-time');
-        const sliderSize = document.getElementById('slider-size');
-        const labelSize = document.getElementById('label-size');
-        const sliderDispersion = document.getElementById('slider-dispersion');
-        const labelDispersion = document.getElementById('label-dispersion');
-        const modelBtns = document.querySelectorAll('.btn-model');
-        const palBtns = document.querySelectorAll('.btn-pal');
-
-        // Metadatos
         const metaSource = document.getElementById('meta-source');
         const metaTitle = document.getElementById('meta-title');
         const metaDesc = document.getElementById('meta-desc');
@@ -222,524 +158,85 @@
         const specDuration = document.getElementById('spec-duration');
         const specParticles = document.getElementById('spec-particles');
         const specSampling = document.getElementById('spec-sampling');
-        const hudEngine = document.getElementById('hud-engine');
-        const hudFps = document.getElementById('hud-fps');
 
-        // 3. Inicializacion Three.js
-        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        const sliderDeconstruct = document.getElementById('slider-deconstruct');
+        const labelDeconstruct = document.getElementById('label-deconstruct');
+        const sliderMorph = document.getElementById('slider-morph');
+        const labelMorph = document.getElementById('label-morph');
+        const btnResetCam = document.getElementById('btn-reset-cam');
+        const btnPulseBurst = document.getElementById('btn-pulse-burst');
+        const modelBtns = document.querySelectorAll('.btn-model');
 
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        camera.position.set(0, 0, 7.0);
+        let engine = null;
 
-        const controls = new THREE.OrbitControls(camera, canvas);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxDistance = 20.0;
-        controls.minDistance = 2.0;
-
-        // Luces para malla molde
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambientLight);
-
-        const dirLight1 = new THREE.DirectionalLight(0x00f3ff, 0.8);
-        dirLight1.position.set(5, 10, 7);
-        scene.add(dirLight1);
-
-        const dirLight2 = new THREE.DirectionalLight(0xffaa00, 0.5);
-        dirLight2.position.set(-5, -5, -5);
-        scene.add(dirLight2);
-
-        // Variables de animacion activa
-        let activeGltfScene = null;
-        let activeMixer = null;
-        let activeAction = null;
-        let animationDuration = 1.0;
-        let activeParticleGroup = null;
-        let activeGhostGroup = null;
-        let particleMaterials = [];
-
-        // GLTF Loader
-        const loader = new THREE.GLTFLoader();
-
-        // 4. Shader de Particulas de Alta Precision
-        function createParticleMaterial(color, hasSkinning, hasMorph) {
-            const mat = new THREE.ShaderMaterial({
-                skinning: hasSkinning,
-                morphTargets: hasMorph,
-                transparent: true,
-                depthWrite: false,
-                blending: THREE.AdditiveBlending,
-                uniforms: THREE.UniformsUtils.merge([
-                    THREE.UniformsLib.common,
-                    hasSkinning ? THREE.UniformsLib.skinning : {},
-                    {
-                        uTime: { value: 0 },
-                        uColor: { value: color },
-                        uPointSize: { value: pointSize },
-                        uDispersion: { value: dispersionVal },
-                        uPulse: { value: pulseVal }
-                    }
-                ]),
-                vertexShader: `
-                    #include <common>
-                    ${hasSkinning ? '#include <skinning_pars_vertex>' : ''}
-                    ${hasMorph ? '#include <morphtarget_pars_vertex>' : ''}
-
-                    uniform float uTime;
-                    uniform float uPointSize;
-                    uniform float uDispersion;
-                    uniform float uPulse;
-
-                    attribute float randomPhase;
-                    attribute vec3 originalPos;
-
-                    varying vec3 vNormal;
-                    varying float vDepth;
-                    varying float vPhase;
-
-                    void main() {
-                        vPhase = randomPhase;
-                        vNormal = normal;
-
-                        ${hasSkinning ? '#include <skinbase_vertex>' : ''}
-                        #include <begin_vertex>
-                        ${hasMorph ? '#include <morphtarget_vertex>' : ''}
-                        ${hasSkinning ? '#include <skinning_vertex>' : ''}
-
-                        // Dispersion estocastica hacia el exterior
-                        vec3 dispDir = normalize(transformed + vec3(sin(randomPhase * 6.28 + uTime), cos(randomPhase * 4.12), sin(randomPhase * 2.18)));
-                        float totalDisp = uDispersion * 3.5 + uPulse * 2.5 * sin(uTime * 6.0 + randomPhase * 12.0);
-                        transformed += dispDir * totalDisp;
-
-                        vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);
-                        gl_Position = projectionMatrix * mvPosition;
-
-                        vDepth = -mvPosition.z;
-                        gl_PointSize = (uPointSize * 0.1) * (260.0 / max(0.5, vDepth));
-                    }
-                `,
-                fragmentShader: `
-                    uniform vec3 uColor;
-                    uniform float uTime;
-                    varying vec3 vNormal;
-                    varying float vDepth;
-                    varying float vPhase;
-
-                    void main() {
-                        vec2 coord = gl_PointCoord - vec2(0.5);
-                        float r = length(coord);
-                        if (r > 0.5) discard;
-
-                        float core = smoothstep(0.5, 0.0, r);
-                        float glow = exp(-r * 3.6);
-                        float twinkle = 0.88 + 0.12 * sin(uTime * 4.0 + vPhase * 6.28);
-
-                        vec3 col = uColor * twinkle + vec3(0.15, 0.25, 0.3) * glow;
-                        gl_FragColor = vec4(col, core * 0.95);
-                    }
-                `
+        async function init() {
+            // Inicializar motor en modo anatomia con la mano por defecto (id: 0)
+            engine = await createGroove3DEngine('canvas-gl', {
+                anatomyMode: true,
+                particleCount: 8192,
+                initialGeometry: 0
             });
-            particleMaterials.push(mat);
-            return mat;
-        }
 
-        // 5. Funcion de Muestreo de Superficie y Creacion de Particulas
-        function sampleMeshToParticles(mesh, targetCount, isSkinned, isMorph) {
-            const geo = mesh.geometry;
-            const posAttr = geo.attributes.position;
-            const normAttr = geo.attributes.normal;
-            const indexAttr = geo.index;
-            const skinIndexAttr = geo.attributes.skinIndex;
-            const skinWeightAttr = geo.attributes.skinWeight;
+            // Selector de modelos
+            modelBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modelBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const id = parseInt(btn.dataset.id, 10);
+                    engine.setAnatomyGeometry(id);
 
-            if (!posAttr) return null;
-
-            const vertCount = posAttr.count;
-            const triCount = indexAttr ? indexAttr.count / 3 : Math.floor(vertCount / 3);
-
-            // Determinar densidad
-            const count = Math.max(vertCount, Math.min(targetCount, 26000));
-            const newPos = new Float32Array(count * 3);
-            const newNorm = new Float32Array(count * 3);
-            const newPhase = new Float32Array(count);
-            const newOrigPos = new Float32Array(count * 3);
-
-            let newSkinIndex = null;
-            let newSkinWeight = null;
-            if (isSkinned && skinIndexAttr && skinWeightAttr) {
-                newSkinIndex = new Float32Array(count * 4);
-                newSkinWeight = new Float32Array(count * 4);
-            }
-
-            // Muestreo baricéntrico sobre triángulos
-            for (let i = 0; i < count; i++) {
-                let i0, i1, i2;
-                if (i < vertCount) {
-                    // Primeros puntos son los vertices exactos
-                    i0 = i; i1 = i; i2 = i;
-                } else if (indexAttr) {
-                    const tri = Math.floor(Math.random() * triCount);
-                    i0 = indexAttr.getX(tri * 3);
-                    i1 = indexAttr.getX(tri * 3 + 1);
-                    i2 = indexAttr.getX(tri * 3 + 2);
-                } else {
-                    const tri = Math.floor(Math.random() * triCount);
-                    i0 = tri * 3;
-                    i1 = tri * 3 + 1;
-                    i2 = tri * 3 + 2;
-                }
-
-                // Coordenadas baricentricas
-                let u = Math.random();
-                let v = Math.random();
-                if (u + v > 1.0) { u = 1.0 - u; v = 1.0 - v; }
-                const w = 1.0 - u - v;
-
-                const px = u * posAttr.getX(i0) + v * posAttr.getX(i1) + w * posAttr.getX(i2);
-                const py = u * posAttr.getY(i0) + v * posAttr.getY(i1) + w * posAttr.getY(i2);
-                const pz = u * posAttr.getZ(i0) + v * posAttr.getZ(i1) + w * posAttr.getZ(i2);
-
-                let nx = 0, ny = 1, nz = 0;
-                if (normAttr) {
-                    nx = u * normAttr.getX(i0) + v * normAttr.getX(i1) + w * normAttr.getX(i2);
-                    ny = u * normAttr.getY(i0) + v * normAttr.getY(i1) + w * normAttr.getY(i2);
-                    nz = u * normAttr.getZ(i0) + v * normAttr.getZ(i1) + w * normAttr.getZ(i2);
-                }
-
-                newPos[i * 3] = px;
-                newPos[i * 3 + 1] = py;
-                newPos[i * 3 + 2] = pz;
-
-                newOrigPos[i * 3] = px;
-                newOrigPos[i * 3 + 1] = py;
-                newOrigPos[i * 3 + 2] = pz;
-
-                newNorm[i * 3] = nx;
-                newNorm[i * 3 + 1] = ny;
-                newNorm[i * 3 + 2] = nz;
-
-                newPhase[i] = Math.random();
-
-                // Heredar pesos esqueleticos del vertice dominante
-                if (newSkinIndex && newSkinWeight) {
-                    const dominantIdx = (u >= v && u >= w) ? i0 : ((v >= w) ? i1 : i2);
-                    newSkinIndex[i * 4] = skinIndexAttr.getX(dominantIdx);
-                    newSkinIndex[i * 4 + 1] = skinIndexAttr.getY(dominantIdx);
-                    newSkinIndex[i * 4 + 2] = skinIndexAttr.getZ(dominantIdx);
-                    newSkinIndex[i * 4 + 3] = skinIndexAttr.getW(dominantIdx);
-
-                    newSkinWeight[i * 4] = skinWeightAttr.getX(dominantIdx);
-                    newSkinWeight[i * 4 + 1] = skinWeightAttr.getY(dominantIdx);
-                    newSkinWeight[i * 4 + 2] = skinWeightAttr.getZ(dominantIdx);
-                    newSkinWeight[i * 4 + 3] = skinWeightAttr.getW(dominantIdx);
-                }
-            }
-
-            const pGeo = new THREE.BufferGeometry();
-            pGeo.setAttribute('position', new THREE.BufferAttribute(newPos, 3));
-            pGeo.setAttribute('normal', new THREE.BufferAttribute(newNorm, 3));
-            pGeo.setAttribute('originalPos', new THREE.BufferAttribute(newOrigPos, 3));
-            pGeo.setAttribute('randomPhase', new THREE.BufferAttribute(newPhase, 1));
-
-            if (newSkinIndex && newSkinWeight) {
-                pGeo.setAttribute('skinIndex', new THREE.BufferAttribute(newSkinIndex, 4));
-                pGeo.setAttribute('skinWeight', new THREE.BufferAttribute(newSkinWeight, 4));
-            }
-
-            // Clonar morphAttributes si existen (para corazon)
-            if (isMorph && geo.morphAttributes && geo.morphAttributes.position) {
-                pGeo.morphAttributes.position = geo.morphAttributes.position;
-            }
-
-            const pMat = createParticleMaterial(activeColor, isSkinned, isMorph);
-            let pointsObj;
-
-            if (isSkinned) {
-                // SkinnedMesh tratado como puntos por el shader
-                pointsObj = new THREE.SkinnedMesh(pGeo, pMat);
-                pointsObj.isPoints = true;
-                pointsObj.bind(mesh.skeleton, mesh.bindMatrix);
-            } else {
-                pointsObj = new THREE.Points(pGeo, pMat);
-                if (isMorph && mesh.morphTargetInfluences) {
-                    pointsObj.morphTargetInfluences = mesh.morphTargetInfluences;
-                    pointsObj.morphTargetDictionary = mesh.morphTargetDictionary;
-                }
-            }
-
-            return pointsObj;
-        }
-
-        // 6. Carga y Mapeo del Modelo Activo
-        function loadModel(modelKey) {
-            const config = MODELS[modelKey];
-            if (!config) return;
-
-            loadingOverlay.style.display = 'flex';
-            loadingOverlay.style.opacity = '1';
-            loadingText.textContent = `CARGANDO ${config.name.toUpperCase()}...`;
-
-            // Limpiar escena anterior
-            if (activeGltfScene) {
-                scene.remove(activeGltfScene);
-                activeGltfScene = null;
-            }
-            if (activeParticleGroup) {
-                scene.remove(activeParticleGroup);
-                activeParticleGroup = null;
-            }
-            if (activeGhostGroup) {
-                scene.remove(activeGhostGroup);
-                activeGhostGroup = null;
-            }
-            particleMaterials = [];
-            activeMixer = null;
-
-            // Actualizar metadatos UI
-            metaSource.textContent = config.file.split('/').pop();
-            metaTitle.textContent = config.name;
-            metaDesc.textContent = config.desc;
-            specKinematics.textContent = config.kinematics;
-            specParticles.textContent = config.particles;
-            specSampling.textContent = config.sampling;
-
-            loader.load(config.file, function(gltf) {
-                activeGltfScene = gltf.scene;
-
-                // Normalizar centrado y escala universal
-                const bbox = new THREE.Box3().setFromObject(gltf.scene);
-                const center = bbox.getCenter(new THREE.Vector3());
-                const size = bbox.getSize(new THREE.Vector3());
-                const maxDim = Math.max(size.x, size.y, size.z);
-                const normScale = (4.8 / maxDim) * (config.scaleAdjust || 1.0);
-
-                gltf.scene.position.sub(center.multiplyScalar(normScale));
-                gltf.scene.scale.setScalar(normScale);
-
-                // Grupos para particulas y malla fantasma
-                activeParticleGroup = new THREE.Group();
-                activeParticleGroup.position.copy(gltf.scene.position);
-                activeParticleGroup.scale.copy(gltf.scene.scale);
-
-                activeGhostGroup = new THREE.Group();
-                activeGhostGroup.position.copy(gltf.scene.position);
-                activeGhostGroup.scale.copy(gltf.scene.scale);
-                activeGhostGroup.visible = showGhostMesh;
-
-                let meshesFound = 0;
-                let isSkinnedOverall = false;
-
-                // Recorrer nodos y generar particulas ancladas
-                gltf.scene.traverse(function(node) {
-                    if (node.isMesh) {
-                        meshesFound++;
-                        const isSkinned = !!node.isSkinnedMesh;
-                        const isMorph = !!(node.morphTargetInfluences && node.morphTargetInfluences.length > 0);
-                        if (isSkinned) isSkinnedOverall = true;
-
-                        // Target count segun modelo
-                        let pTarget = 12000;
-                        if (modelKey === 'craneo') pTarget = Math.floor(25000 / 25);
-                        else if (modelKey === 'heart') pTarget = 10000;
-                        else if (modelKey === 'hand_anim') pTarget = 14000;
-
-                        const pObj = sampleMeshToParticles(node, pTarget, isSkinned, isMorph);
-                        if (pObj) {
-                            if (node.parent && node.parent !== gltf.scene && !isSkinned) {
-                                // Para craneo (mallas hijas de nodos transformados)
-                                node.parent.add(pObj);
-                            } else {
-                                activeParticleGroup.add(pObj);
-                            }
-                        }
-
-                        // Malla fantasma transparente
-                        const ghostMat = new THREE.MeshPhysicalMaterial({
-                            color: 0x00f3ff,
-                            wireframe: true,
-                            transparent: true,
-                            opacity: 0.12,
-                            roughness: 0.2,
-                            metalness: 0.8
-                        });
-                        node.material = ghostMat;
-                    }
-                });
-
-                // Malla fantasma (el gltf original con material transparente)
-                gltf.scene.visible = showGhostMesh;
-                scene.add(gltf.scene);
-                scene.add(activeParticleGroup);
-
-                // Configurar animador
-                if (gltf.animations && gltf.animations.length > 0) {
-                    activeMixer = new THREE.AnimationMixer(gltf.scene);
-                    const clip = gltf.animations[0];
-                    activeAction = activeMixer.clipAction(clip);
-                    animationDuration = clip.duration;
-                    specDuration.textContent = `${animationDuration.toFixed(2)}s Ciclo`;
-                    activeAction.play();
-                } else {
-                    specDuration.textContent = 'Estatico';
-                }
-
-                // Ocultar overlay
-                setTimeout(() => {
-                    loadingOverlay.style.opacity = '0';
-                    setTimeout(() => { loadingOverlay.style.display = 'none'; }, 300);
-                }, 200);
-
-            }, undefined, function(err) {
-                console.error('Error cargando modelo:', err);
-                loadingText.textContent = 'ERROR CARGANDO ARCHIVO GLB';
-            });
-        }
-
-        // 7. Eventos de Interfaz de Usuario
-        modelBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                modelBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentModelKey = btn.dataset.model;
-                loadModel(currentModelKey);
-            });
-        });
-
-        btnPlayPause.addEventListener('click', () => {
-            isPlaying = !isPlaying;
-            btnPlayPause.textContent = isPlaying ? '[ Pausar ]' : '[ Reanudar ]';
-            btnPlayPause.classList.toggle('toggle-on', !isPlaying);
-            if (activeAction) {
-                activeAction.paused = !isPlaying;
-            }
-        });
-
-        btnGhostMesh.addEventListener('click', () => {
-            showGhostMesh = !showGhostMesh;
-            btnGhostMesh.textContent = showGhostMesh ? '[ Malla Molde: On ]' : '[ Malla Molde: Off ]';
-            btnGhostMesh.classList.toggle('toggle-on', showGhostMesh);
-            if (activeGltfScene) {
-                activeGltfScene.visible = showGhostMesh;
-            }
-        });
-
-        let pulseTimeout = null;
-        btnDispersePulse.addEventListener('click', () => {
-            pulseVal = 1.0;
-            if (pulseTimeout) clearTimeout(pulseTimeout);
-            pulseTimeout = setTimeout(() => { pulseVal = 0.0; }, 1200);
-        });
-
-        sliderTimeline.addEventListener('input', (e) => {
-            if (activeMixer && activeAction) {
-                isPlaying = false;
-                btnPlayPause.textContent = '[ Reanudar ]';
-                btnPlayPause.classList.add('toggle-on');
-                activeAction.paused = true;
-                const ratio = parseFloat(e.target.value) / 1000.0;
-                activeAction.time = ratio * animationDuration;
-                activeMixer.update(0);
-                labelTime.textContent = `${activeAction.time.toFixed(2)}s`;
-            }
-        });
-
-        sliderSize.addEventListener('input', (e) => {
-            pointSize = parseFloat(e.target.value);
-            labelSize.textContent = `${(pointSize * 0.1).toFixed(1)}px`;
-            particleMaterials.forEach(m => {
-                m.uniforms.uPointSize.value = pointSize;
-            });
-        });
-
-        sliderDispersion.addEventListener('input', (e) => {
-            dispersionVal = parseFloat(e.target.value) / 100.0;
-            labelDispersion.textContent = `${Math.round(dispersionVal * 100)}%`;
-            particleMaterials.forEach(m => {
-                m.uniforms.uDispersion.value = dispersionVal;
-            });
-        });
-
-        palBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                palBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const colHex = btn.dataset.color;
-                activeColor.set(colHex);
-                particleMaterials.forEach(m => {
-                    m.uniforms.uColor.value = activeColor;
+                    // Actualizar metadatos
+                    const info = MODELS_INFO[id];
+                    metaSource.textContent = info.file;
+                    metaTitle.textContent = info.name;
+                    metaDesc.textContent = info.desc;
+                    specKinematics.textContent = info.kinematics;
+                    specDuration.textContent = info.duration;
+                    specParticles.textContent = info.particles;
+                    specSampling.textContent = info.sampling;
                 });
             });
-        });
 
-        // 8. Bucle de Renderizado y Telemetria a 60 FPS
-        const clock = new THREE.Clock();
-        let frameCount = 0;
-        let lastTime = performance.now();
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const delta = clock.getDelta();
-            const elapsedTime = clock.getElapsedTime();
-
-            // Actualizar controles de orbita
-            controls.update();
-
-            // Actualizar animacion de esqueleto / morphs
-            if (activeMixer && isPlaying) {
-                activeMixer.update(delta);
-                if (activeAction) {
-                    const prog = (activeAction.time % animationDuration) / animationDuration;
-                    sliderTimeline.value = Math.floor(prog * 1000);
-                    labelTime.textContent = `${(activeAction.time % animationDuration).toFixed(2)}s`;
-                }
-            }
-
-            // Actualizar uniforms de particulas
-            if (pulseVal > 0.001) {
-                pulseVal *= 0.94;
-            }
-            particleMaterials.forEach(m => {
-                m.uniforms.uTime.value = elapsedTime;
-                m.uniforms.uPulse.value = pulseVal;
+            // Control de despiece
+            sliderDeconstruct.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value) / 100.0;
+                engine.setDeconstruct(val);
+                labelDeconstruct.textContent = `${Math.round(val * 100)}%`;
             });
 
-            // Rotacion suave automatica de presentacion
-            if (activeParticleGroup && !controls.state == -1) {
-                // Giro libre controlado por usuario
-            }
+            // Control de transmutacion morph
+            sliderMorph.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value) / 100.0;
+                engine.setMorph(val);
+                labelMorph.textContent = val.toFixed(1);
+            });
 
-            renderer.render(scene, camera);
+            // Impulso de dispersion
+            let burstTimeout = null;
+            btnPulseBurst.addEventListener('click', () => {
+                engine.setDeconstruct(1.0);
+                sliderDeconstruct.value = 100;
+                labelDeconstruct.textContent = '100%';
+                if (burstTimeout) clearTimeout(burstTimeout);
+                burstTimeout = setTimeout(() => {
+                    engine.setDeconstruct(0.0);
+                    sliderDeconstruct.value = 0;
+                    labelDeconstruct.textContent = '0%';
+                }, 1000);
+            });
 
-            // Telemetria FPS
-            frameCount++;
-            const now = performance.now();
-            if (now - lastTime >= 1000) {
-                const fps = Math.round((frameCount * 1000) / (now - lastTime));
-                hudFps.textContent = `${fps} FPS // 0 MS LATENCIA`;
-                frameCount = 0;
-                lastTime = now;
-            }
+            // Recentrar
+            btnResetCam.addEventListener('click', () => {
+                engine.setDeconstruct(0.0);
+                engine.setMorph(0.0);
+                sliderDeconstruct.value = 0;
+                sliderMorph.value = 0;
+                labelDeconstruct.textContent = '0%';
+                labelMorph.textContent = '0.0';
+            });
         }
 
-        // 9. Resize Responsive
-        window.addEventListener('resize', () => {
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h);
-        });
-
-        // Iniciar con modelo principal
-        loadModel(currentModelKey);
-        animate();
-
-    })();
+        init();
     </script>
 </body>
 </html>
