@@ -1,12 +1,18 @@
 # Pruebas Web: Pixel Streaming con Rust & CSS Scroll-Driven
 
-Este directorio contiene la arquitectura, especificaciones y código de referencia para ejecutar animaciones de shaders de alto rendimiento desarrolladas en **Linux Groove** (Qt 6 / GLSL) y transmitirlas en tiempo real hacia la web utilizando un backend nativo en **Rust**, controlado enteramente por **CSS Scroll-Driven Animations nativas (cero JavaScript)**.
+Este directorio contiene la arquitectura, especificaciones, código de referencia y plan de ejecución para ejecutar animaciones de shaders de alto rendimiento desarrolladas en **Linux Groove** (Qt 6 / GLSL) y transmitirlas en tiempo real hacia la web utilizando un backend nativo en **Rust**, controlado enteramente por **CSS Scroll-Driven Animations nativas (cero JavaScript)**.
 
-## Documento Principal de Arquitectura
+---
 
-Para consultar la explicación completa, comparativa técnica, diagramas y fragmentos de código listos para producción, consulta:
+## 📚 Documentos Disponibles en este Directorio
 
-👉 **[`ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md`](./ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md)**
+1. 📋 **[`PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md`](./PLAN_IMPLEMENTACION_WEB_SCROLL_DRIVEN.md)**  
+   *Plan de trabajo, especificaciones de componentes y etapas de verificación del proyecto.*
+
+2. 🏛️ **[`ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md`](./ARQUITECTURA_RUST_PIXEL_STREAMING_SCROLL_DRIVEN.md)**  
+   *Explicación arquitectónica completa, comparativa técnica de rendimiento (Rust vs Python), diagrama de flujo detallado y fragmentos de código listos para producción para `Cargo.toml`, `src/main.rs`, `index.html` y `styles.css`.*
+
+---
 
 ### Puntos Destacados:
 - **Backend Rust:** Servidor HTTP asíncrono con `tokio` + `axum` con canales de difusión *zero-copy*.
