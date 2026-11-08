@@ -262,4 +262,83 @@ Cualquier shader de **[ShaderToy.com](https://www.shadertoy.com/)** (por ejemplo
 
 ---
 
+## 7. Caso Práctico Real: Pantalla "Groove Stroke" (180 Filamentos de Luz)
+
+La animación **"Groove Stroke"** (`org.groove.ribbons.desktop`) es el ejemplo cumbre de shaders GLSL en Linux Groove. Implementa una estética estilo protector de pantalla orgánico de fibra óptica sobre fondo 100% negro.
+
+### 7.1. Arquitectura en Tres Capas en QML
+
+```qml
+// CAPA 0: Base 100% negro puro
+Rectangle {
+    id: root
+    width: 1280; height: 800
+    color: "#000000"
+
+    // CAPA 1: Hilos de luz generados en GPU por fragment shader
+    ShaderEffect {
+        id: ribbonsShader
+        z: 1
+        anchors.fill: parent
+        property real uTime: root.screensaverTime
+        property vector2d uResolution: Qt.vector2d(width, height)
+        fragmentShader: "shaders/ribbons.frag.qsb"
+    }
+
+    // CAPA 2: Emblema SVG/PNG de teclas de piano, completamente en capa superior
+    Item {
+        id: logoCenter
+        z: 10
+        anchors.centerIn: parent
+        Image {
+            anchors.fill: parent
+            source: "images/groove-logo-glow.png"
+        }
+    }
+}
+```
+
+### 7.2. 60 Filamentos Finos por Listón (Efecto Fibra Óptica)
+
+En vez de bandas gruesas y planas, se calculan ~60 filamentos delgados por listón mediante un bucle de acumulación de intensidad lumínica:
+
+```glsl
+for (int i = 0; i < 60; ++i) {
+    float fi = float(i) / 59.0;
+    float offset = (fi - 0.5) * ribbonWidth1;
+    
+    // Variación armónica que trenza cada hilo independientemente
+    float phase = fi * 15.70;
+    float wobble = sin(uv.x * (3.6 + fi * 1.8) + phase + t1 * 1.1) * (0.016 * (1.0 - abs(fi - 0.5) * 0.5));
+    
+    float strandY = baseWave1 + offset + wobble;
+    float d = abs(uv.y - strandY);
+    
+    // Núcleo ultrafino de 0.0011 más halo bloom
+    float core = max(0.0, 1.0 - d / 0.0011);
+    float bloom = 0.00065 / (d + 0.0018);
+    float intensity = core * 1.1 + bloom * 0.75;
+    
+    vec3 col = mix(vec3(1.0, 0.88, 0.32), vec3(1.0, 0.42, 0.05), fi);
+    finalColor += col * (intensity * 0.11) * clearance;
+}
+```
+
+### 7.3. Evasión del Logo sin Costuras ($C^\infty$ Continuity)
+
+**Problema:** Un condicional o función `sign(uv.y)` genera una discontinuidad abrupta en el ecuador $y = 0$, produciendo una costura o corte horizontal visible.
+
+**Solución Matemática:** Se utiliza un campo de evasión gaussiano continuo dependiente de $x$:
+$$\text{dodgeX} = \exp(-x^2 \cdot 10.0)$$
+
+Al acercarse a la posición horizontal del logotipo ($x \to 0$):
+- El listón superior se desvía suavemente hacia arriba: $y_{\text{base}} + \text{dodgeX} \cdot 0.19$.
+- Los listones inferiores se desvían suavemente hacia abajo: $y_{\text{base}} - \text{dodgeX} \cdot 0.18$.
+- El logotipo está protegido además por una máscara elíptica de exclusión `clearance = smoothstep(0.18, 0.38, length(uv * vec2(1.0, 1.36)))`.
+
+El resultado es un flujo libre de fricciones, 100% continuo, que fluye alrededor del emblema central como seda en el viento.
+
+---
+
 *Fin del documento técnico.*
+

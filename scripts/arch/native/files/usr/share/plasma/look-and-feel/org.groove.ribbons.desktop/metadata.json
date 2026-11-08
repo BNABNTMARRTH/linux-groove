@@ -6,9 +6,9 @@
                 "Name": "Groove Contributors"
             }
         ],
-        "Description": "Linux Groove Ribbons Screensaver Splash",
+        "Description": "Linux Groove Stroke Screensaver Splash",
         "Id": "org.groove.ribbons.desktop",
-        "Name": "Groove Listones de Luz",
+        "Name": "Groove Stroke",
         "ServiceTypes": [
             "Plasma/LookAndFeel"
         ],

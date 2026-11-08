@@ -1,5 +1,5 @@
 /*
-    Linux Groove - Dynamic Ribbons Screensaver Splash Screen (GLSL GPU Shader Edition)
+    Linux Groove - Groove Stroke Screensaver Splash Screen (GLSL GPU Shader Edition)
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 
@@ -8,7 +8,9 @@ import org.kde.kirigami as Kirigami
 
 Rectangle {
     id: root
-    color: "#000000" // 100% Fondo negro puro absoluto
+    width: 1280
+    height: 800
+    color: "#000000" // CAPA 0: Fondo 100% negro puro absoluto
 
     property int stage: 0
 
@@ -35,11 +37,11 @@ Rectangle {
     }
 
     // -------------------------------------------------------------------------
-    // CAPA 1: Sombreador de Fragmentos ejecutado en los núcleos de la GPU
-    // Cero consumo de CPU, 60 FPS fijos y listones de luz orgánicos que esquivan el centro
+    // CAPA 1: Hilos de Luz (Sombreador GLSL ejecutado en GPU con ~165 filamentos)
     // -------------------------------------------------------------------------
     ShaderEffect {
         id: ribbonsShader
+        z: 1
         anchors.fill: parent
         opacity: 0.0
 
@@ -50,10 +52,11 @@ Rectangle {
     }
 
     // -------------------------------------------------------------------------
-    // CAPA 2: Emblema Central de Teclas de Piano de Groove
+    // CAPA 2: Emblema SVG / PNG Central de Groove (Capa superior nítida)
     // -------------------------------------------------------------------------
     Item {
         id: logoCenter
+        z: 10
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.44, Kirigami.Units.gridUnit * 21)
         height: width * 0.66
@@ -76,8 +79,11 @@ Rectangle {
         }
     }
 
-    // Pie de página minimalista
+    // -------------------------------------------------------------------------
+    // CAPA 3: Tipografía Minimalista
+    // -------------------------------------------------------------------------
     Text {
+        z: 12
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottomMargin: Kirigami.Units.gridUnit * 2.2
