@@ -37,13 +37,13 @@ Rectangle {
     }
 
     // -------------------------------------------------------------------------
-    // CAPA 1: Hilos de Luz (Sombreador GLSL ejecutado en GPU con ~165 filamentos)
+    // CAPA 1: Esfera de Cristal Eléctrica (Plasma Shader en GPU a 60 FPS)
     // -------------------------------------------------------------------------
     ShaderEffect {
         id: ribbonsShader
         z: 1
         anchors.fill: parent
-        opacity: 0.0
+        opacity: 1.0
 
         property real uTime: root.screensaverTime
         property vector2d uResolution: Qt.vector2d(width, height)
@@ -52,7 +52,7 @@ Rectangle {
     }
 
     // -------------------------------------------------------------------------
-    // CAPA 2: Emblema SVG / PNG Central de Groove (Capa superior nítida)
+    // CAPA 2: Emblema SVG / PNG Central de Groove (Electrodo de Alta Tensión)
     // -------------------------------------------------------------------------
     Item {
         id: logoCenter
@@ -60,7 +60,7 @@ Rectangle {
         anchors.centerIn: parent
         width: Math.min(parent.width * 0.44, Kirigami.Units.gridUnit * 21)
         height: width * 0.66
-        opacity: 0.0
+        opacity: 1.0
 
         Image {
             id: logoImage

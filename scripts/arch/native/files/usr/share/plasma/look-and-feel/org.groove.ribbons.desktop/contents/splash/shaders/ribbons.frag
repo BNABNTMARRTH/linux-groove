@@ -10,118 +10,120 @@ layout(std140, binding = 0) uniform buf {
     vec2 uResolution;
 };
 
+// Generador de números pseudoaleatorios rápido para GPU
+float hash11(float p) {
+    p = fract(p * 0.1031);
+    p *= p + 33.33;
+    p *= p + p;
+    return fract(p);
+}
+
+// Turbulencia eléctrica continua y orgánica
+float electricDischarge(float rNorm, float fi, float t) {
+    float v = 0.0;
+    v += sin(rNorm * 8.0 + t * 4.5 + fi * 2.3) * 0.35;
+    v += sin(rNorm * 22.0 - t * 9.0 + fi * 4.7) * 0.20;
+    v += sin(rNorm * 52.0 + t * 21.0 - fi * 1.1) * 0.10;
+    v += cos(rNorm * 95.0 - t * 35.0) * 0.05;
+    return v;
+}
+
 void main() {
-    // 1. Normalización de coordenadas con centro en (0, 0)
-    vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
+    // 1. Coordenadas normalizadas con centro en (0, 0)
+    vec2 p = (gl_FragCoord.xy - 0.5 * uResolution) / uResolution.y;
+    float r = length(p);
+    float theta = atan(p.y, p.x);
 
-    // 2. Zona de Exclusión Elíptica para el logotipo central
-    // Asegura que el centro se mantenga 100% negro puro para el emblema
-    vec2 logoBox = uv * vec2(1.0, 1.36);
-    float distToCenter = length(logoBox);
-    float clearance = smoothstep(0.18, 0.38, distToCenter);
-
-    // 3. Campo de evasión continuo Gaussiano (C-infinito sin costuras)
-    float dodgeX = exp(-uv.x * uv.x * 10.0);
+    float R_globe = 0.42;
+    float R_core  = 0.145;
 
     vec3 finalColor = vec3(0.0);
 
-    // =========================================================================
-    // LISTÓN 1: Ámbar / Dorado Solar (Inferior, 60 filamentos de luz)
-    // =========================================================================
-    float t1 = uTime * 0.45;
-    float baseWave1 = -0.27 - (dodgeX * 0.18)
-                    + sin(uv.x * 2.4 + t1) * 0.14
-                    + sin(uv.x * 1.2 - t1 * 0.6) * 0.08;
-
-    float ribbonWidth1 = 0.13 + 0.05 * sin(uv.x * 2.0 + t1 * 0.8);
-
-    for (int i = 0; i < 60; ++i) {
-        float fi = float(i) / 59.0; // 0.0 a 1.0
-        float offset = (fi - 0.5) * ribbonWidth1;
-        
-        float phase = fi * 15.70;
-        // Los hilos se trenzan y abren suavemente en forma de abanico de seda
-        float wobble = sin(uv.x * (3.6 + fi * 1.8) + phase + t1 * 1.1) * (0.016 * (1.0 - abs(fi - 0.5) * 0.5));
-        
-        float strandY = baseWave1 + offset + wobble;
-        float d = abs(uv.y - strandY);
-        
-        // Núcleo brillante y nítido + halo bloom luminoso
-        float core = max(0.0, 1.0 - d / 0.0011);
-        float bloom = 0.00065 / (d + 0.0018);
-        float intensity = core * 1.1 + bloom * 0.75;
-        
-        // Gradiente oro resplandeciente a ámbar fuego
-        vec3 col = mix(vec3(1.0, 0.88, 0.32), vec3(1.0, 0.42, 0.05), fi);
-        col += vec3(0.40, 0.30, 0.10) * (1.0 - abs(fi - 0.5) * 2.0);
-
-        finalColor += col * (intensity * 0.11) * clearance;
+    // 2. Nebulosa gaseosa interna de la esfera
+    if (r < R_globe) {
+        float gas = pow(clamp(1.0 - r / R_globe, 0.0, 1.0), 1.6) * 0.16;
+        finalColor += vec3(0.18, 0.08, 0.35) * gas;
     }
 
-    // =========================================================================
-    // LISTÓN 2: Cian Eléctrico / Azul Neón (Cruce inferior, 60 filamentos de luz)
-    // =========================================================================
-    float t2 = uTime * 0.38;
-    float baseWave2 = -0.32 - (dodgeX * 0.15)
-                    + cos(uv.x * 2.2 - t2) * 0.12
-                    + sin(uv.x * 1.5 + t2 * 0.5) * 0.07;
+    // 3. 16 Rayos y Arcos de Plasma Eléctrico
+    if (r >= R_core * 0.85 && r <= R_globe * 1.02) {
+        float rNorm = clamp((r - R_core) / (R_globe - R_core), 0.0, 1.0);
+        float envelope = sin(rNorm * 3.14159265);
 
-    float ribbonWidth2 = 0.12 + 0.045 * cos(uv.x * 1.7 - t2 * 0.7);
+        for (int i = 0; i < 16; ++i) {
+            float fi = float(i);
+            float baseAngle = (fi / 16.0) * 6.2831853;
+            float drift = sin(uTime * 0.40 + fi * 1.4) * 0.60 + cos(uTime * 0.22 - fi * 0.8) * 0.30;
+            float jumpStep = floor(uTime * 1.4 + fi * 0.75);
+            float jumpAngle = (hash11(jumpStep * 17.3) - 0.5) * 0.85;
+            float contactAngle = baseAngle + drift + jumpAngle;
 
-    for (int j = 0; j < 60; ++j) {
-        float fj = float(j) / 59.0;
-        float offset = (fj - 0.5) * ribbonWidth2;
-        
-        float phase = fj * 16.8;
-        float wobble = cos(uv.x * (3.8 + fj * 1.6) + phase - t2 * 1.0) * (0.015 * (1.0 - abs(fj - 0.5) * 0.5));
-        
-        float strandY = baseWave2 + offset + wobble;
-        float d = abs(uv.y - strandY);
-        
-        float core = max(0.0, 1.0 - d / 0.0011);
-        float bloom = 0.00060 / (d + 0.0018);
-        float intensity = core * 1.1 + bloom * 0.75;
-        
-        // Gradiente cian neón a azul eléctrico cobalto
-        vec3 col = mix(vec3(0.0, 0.95, 1.0), vec3(0.15, 0.50, 1.0), fj);
-        col += vec3(0.20, 0.40, 0.50) * (1.0 - abs(fj - 0.5) * 2.0);
+            float arcAngle = mix(baseAngle, contactAngle, rNorm);
+            arcAngle += electricDischarge(rNorm, fi, uTime) * envelope;
 
-        finalColor += col * (intensity * 0.10) * clearance;
+            // Distancia polar envuelta en [-pi, pi]
+            float dAngle = mod(theta - arcAngle + 3.14159265, 6.2831853) - 3.14159265;
+            float distToArc = r * abs(dAngle);
+
+            // Núcleo blanco incandescente y halo de plasma
+            float core = pow(max(0.0, 1.0 - distToArc / 0.0028), 1.5) * 2.2;
+            float glow = 0.0035 / (distToArc * distToArc * 350.0 + distToArc + 0.0030) * 1.2;
+            float flicker = 0.80 + 0.20 * sin(uTime * 24.0 + fi * 8.0);
+            float intensity = (core + glow) * flicker;
+
+            // Colores de los arcos: cian eléctrico, magenta tesla, ámbar solar
+            vec3 arcCol;
+            float m = mod(fi, 3.0);
+            if (m < 1.0) {
+                arcCol = vec3(0.10, 0.90, 1.00);
+            } else if (m < 2.0) {
+                arcCol = vec3(0.95, 0.20, 0.85);
+            } else {
+                arcCol = vec3(1.00, 0.75, 0.15);
+            }
+            arcCol = clamp(arcCol + vec3(core * 0.9), 0.0, 1.0);
+
+            finalColor += arcCol * intensity * 0.28;
+
+            // Chispa / nodo de contacto en la pared del cristal
+            vec2 contactPos = R_globe * vec2(cos(contactAngle), sin(contactAngle));
+            float dSpot = length(p - contactPos);
+            float spot = 0.0035 / (dSpot * dSpot * 350.0 + dSpot + 0.0025) * 0.60;
+            finalColor += arcCol * spot;
+        }
     }
 
-    // =========================================================================
-    // LISTÓN 3: Aurora Magenta / Púrpura Real (Superior, 60 filamentos de luz)
-    // =========================================================================
-    float t3 = uTime * 0.42;
-    float baseWave3 = 0.28 + (dodgeX * 0.19)
-                    + sin(uv.x * 2.3 + t3 * 0.8) * 0.13
-                    + cos(uv.x * 1.1 - t3 * 0.4) * 0.07;
+    // 4. Cristal de la Esfera (Borde Fresnel y Destellos Especulares 3D)
+    float dRim = abs(r - R_globe);
+    float rim = (0.0040 / (dRim + 0.0035)) * 0.45;
+    rim += pow(clamp(r / R_globe, 0.0, 1.0), 18.0) * 0.40;
+    finalColor += vec3(0.35, 0.75, 1.00) * rim;
 
-    float ribbonWidth3 = 0.13 + 0.048 * sin(uv.x * 1.9 - t3 * 0.6);
+    // Destello de luz especular en el cristal
+    vec2 specPos = p - vec2(-0.24, 0.24);
+    float spec = exp(-dot(specPos, specPos) * 32.0) * 0.40;
+    vec2 specPos2 = p - vec2(0.22, -0.22);
+    spec += exp(-dot(specPos2, specPos2) * 45.0) * 0.12;
+    finalColor += vec3(0.95, 0.98, 1.00) * spec;
 
-    for (int k = 0; k < 60; ++k) {
-        float fk = float(k) / 59.0;
-        float offset = (fk - 0.5) * ribbonWidth3;
-        
-        float phase = fk * 14.9;
-        float wobble = sin(uv.x * (3.5 + fk * 1.7) + phase + t3 * 0.9) * (0.015 * (1.0 - abs(fk - 0.5) * 0.5));
-        
-        float strandY = baseWave3 + offset + wobble;
-        float d = abs(uv.y - strandY);
-        
-        float core = max(0.0, 1.0 - d / 0.0011);
-        float bloom = 0.00065 / (d + 0.0018);
-        float intensity = core * 1.1 + bloom * 0.75;
-        
-        // Gradiente magenta neón a púrpura real
-        vec3 col = mix(vec3(1.0, 0.28, 0.95), vec3(0.60, 0.12, 1.0), fk);
-        col += vec3(0.40, 0.15, 0.45) * (1.0 - abs(fk - 0.5) * 2.0);
-
-        finalColor += col * (intensity * 0.10) * clearance;
+    // Desvanecimiento exterior hacia el negro puro
+    if (r > R_globe) {
+        float fade = max(0.0, 1.0 - (r - R_globe) / 0.025);
+        float outerGlow = 0.0025 / (r - R_globe + 0.010) * 0.12;
+        finalColor = finalColor * fade + vec3(0.35, 0.75, 1.00) * outerGlow;
     }
 
-    // Curva de tono / saturación cinematográfica
-    finalColor = pow(finalColor, vec3(0.92));
+    // 5. Aura de energía del núcleo central
+    float dCore = length(p * vec2(1.0, 1.35));
+    float coreAura = 0.006 / (dCore + 0.014) * 0.40;
+    finalColor += vec3(0.25, 0.75, 1.00) * coreAura;
+
+    // Máscara suave para preservar la nitidez del logotipo central
+    float logoClearance = smoothstep(0.12, 0.18, dCore);
+    finalColor *= (0.20 + 0.80 * logoClearance);
+
+    // Ajuste de contraste cinematográfico
+    finalColor = pow(max(finalColor, vec3(0.0)), vec3(0.88));
 
     fragColor = vec4(finalColor, 1.0) * qt_Opacity;
 }
