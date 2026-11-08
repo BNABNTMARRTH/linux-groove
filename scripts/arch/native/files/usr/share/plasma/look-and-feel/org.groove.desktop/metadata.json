@@ -1,4 +1,18 @@
 {
- "KPackageStructure": "Plasma/LookAndFeel",
- "KPlugin": {"Id": "org.groove.desktop", "Name": "Groove", "Description": "Groove sober native desktop", "Version": "0.4.1", "License": "MIT", "Authors": [{"Name": "Groove contributors"}]}
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Groove Contributors"
+            }
+        ],
+        "Description": "Linux Groove Look and Feel",
+        "Id": "org.groove.desktop",
+        "Name": "Groove",
+        "ServiceTypes": [
+            "Plasma/LookAndFeel"
+        ],
+        "Version": "1.0"
+    },
+    "X-Plasma-APIVersion": "2"
 }
