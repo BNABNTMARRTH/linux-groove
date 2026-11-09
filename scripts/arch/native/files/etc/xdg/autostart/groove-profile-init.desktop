@@ -1,9 +1,8 @@
 [Desktop Entry]
 Name=Groove Profile Initializer
 Comment=Aplica el perfil de optimizacion y efectos 3D de Linux Groove
-Exec=/usr/bin/groove-profile expressive
+Exec=sh -c "/usr/bin/groove-profile expressive; /usr/bin/kbuildsycoca6 --noincremental >/dev/null 2>&1 &"
 Terminal=false
 Type=Application
 NoDisplay=true
 X-KDE-autostart-phase=1
-

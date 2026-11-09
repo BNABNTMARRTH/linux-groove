@@ -44,6 +44,8 @@ pub fn is_critical_library(filename: &str) -> bool {
         "libwayland",
         "libEGL",
         "libGL",
+        "libdolphin",
+        "libkonsole",
     ];
     critical_prefixes
         .iter()

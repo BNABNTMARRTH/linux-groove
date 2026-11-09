@@ -1,0 +1,197 @@
+#!/usr/bin/env python3
+"""
+groove-latency-test: Herramienta de diagnostico y benchmarking de latencia
+de apertura de ventanas y aplicaciones para Linux Groove OS.
+"""
+
+import sys
+import os
+import time
+import subprocess
+import argparse
+import json
+
+def get_env():
+    env = os.environ.copy()
+    env["WAYLAND_DISPLAY"] = env.get("WAYLAND_DISPLAY", "wayland-1")
+    env["XDG_RUNTIME_DIR"] = env.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+    env["LANG"] = env.get("LANG", "es_MX.UTF-8")
+    return env
+
+def test_portal_latency():
+    print("--- [1/4] Evaluando Latencia de DBus y xdg-desktop-portal ---")
+    env = get_env()
+    
+    # 1. DBus Session Bus Ping
+    t0 = time.time()
+    try:
+        res = subprocess.run(
+            ["qdbus6", "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus.Peer.Ping"],
+            capture_output=True, env=env, timeout=3
+        )
+        dbus_ping = (time.time() - t0) * 1000.0
+        print(f"  * DBus Session Bus Ping: {dbus_ping:.2f} ms")
+    except Exception as e:
+        print(f"  * DBus Session Bus Ping ERROR: {e}")
+        dbus_ping = -1
+
+    # 2. Portal Desktop Ping
+    t0 = time.time()
+    try:
+        res = subprocess.run(
+            ["qdbus6", "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop", "org.freedesktop.DBus.Peer.Ping"],
+            capture_output=True, env=env, timeout=5
+        )
+        portal_ping = (time.time() - t0) * 1000.0
+        if portal_ping > 500:
+            status = "LENTO / TIMEOUT DETECTADO"
+        else:
+            status = "OPTIMO"
+        print(f"  * xdg-desktop-portal Ping: {portal_ping:.2f} ms ({status})")
+    except subprocess.TimeoutExpired:
+        portal_ping = 5000.0
+        print("  * xdg-desktop-portal Ping: TIMEOUT (> 5000 ms) - Conflicto de portales detectado!")
+    except Exception as e:
+        portal_ping = -1
+        print(f"  * xdg-desktop-portal Ping ERROR: {e}")
+
+    # 3. Verificar configuracion de portales
+    portal_conf_paths = [
+        "/etc/xdg/xdg-desktop-portal/kde-portals.conf",
+        "/usr/share/xdg-desktop-portal/kde-portals.conf",
+        "/etc/xdg/xdg-desktop-portal/portals.conf",
+        "/usr/share/xdg-desktop-portal/portals.conf"
+    ]
+    found_conf = None
+    for p in portal_conf_paths:
+        if os.path.isfile(p):
+            found_conf = p
+            break
+    
+    if found_conf:
+        print(f"  * Archivo de configuracion de portales activo: {found_conf}")
+    else:
+        print("  * ALERTA: No se encontro ningun archivo portals.conf o kde-portals.conf!")
+        print("    Esto causa que xdg-desktop-portal consulte backends en cascada generando esperas de 4 a 5 segundos.")
+
+    return {"dbus_ping_ms": dbus_ping, "portal_ping_ms": portal_ping, "portal_conf": found_conf}
+
+def test_sycoca_latency():
+    print("\n--- [2/4] Evaluando Estado de Cache KSycoca6 (Servicios y Mimetypes) ---")
+    env = get_env()
+    cache_dir = os.path.expanduser("~/.cache")
+    sycoca_files = []
+    if os.path.isdir(cache_dir):
+        sycoca_files = [f for f in os.listdir(cache_dir) if f.startswith("ksycoca6")]
+
+    if sycoca_files:
+        for f in sycoca_files:
+            fp = os.path.join(cache_dir, f)
+            sz = os.path.getsize(fp) / 1024.0
+            mtime = time.ctime(os.path.getmtime(fp))
+            print(f"  * Archivo de cache: {f} ({sz:.1f} KB, modificado: {mtime})")
+    else:
+        print("  * ALERTA: No existe cache ksycoca6 precompilada.")
+        print("    Cada aplicacion KDE reconstruira la base de datos en su primer inicio.")
+
+    # Medir tiempo de consulta sycoca
+    t0 = time.time()
+    try:
+        subprocess.run(["kbuildsycoca6", "--checkonly"], capture_output=True, env=env, timeout=5)
+        sycoca_check_ms = (time.time() - t0) * 1000.0
+        print(f"  * Verificacion de integridad sycoca: {sycoca_check_ms:.2f} ms")
+    except Exception as e:
+        print(f"  * kbuildsycoca6 error: {e}")
+        sycoca_check_ms = -1
+
+    return {"sycoca_files": sycoca_files, "sycoca_check_ms": sycoca_check_ms}
+
+def test_app_launch(app_name="dolphin"):
+    print(f"\n--- [3/4] Evaluando Latencia de Apertura de '{app_name}' ---")
+    env = get_env()
+
+    # Fase A: Enlace dinamico (ld.so)
+    t0 = time.time()
+    ld_env = env.copy()
+    ld_env["LD_DEBUG"] = "statistics"
+    try:
+        res = subprocess.run([app_name, "--version"], capture_output=True, env=ld_env, timeout=5, text=True)
+        ld_ms = (time.time() - t0) * 1000.0
+        print(f"  * Fase A (Carga de binario + bibliotecas compartidas): {ld_ms:.2f} ms")
+    except Exception as e:
+        print(f"  * Error evaluando version de {app_name}: {e}")
+        ld_ms = -1
+
+    # Fase B: Lanzamiento GUI completo
+    print(f"  * Lanzando proceso GUI de {app_name} para medir tiempo hasta inicializacion...")
+    t0 = time.time()
+    proc = subprocess.Popen(
+        [app_name],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env=env
+    )
+    pid = proc.pid
+    
+    # Monitorear hasta que el proceso alcance estado estable (poll/epoll)
+    startup_time = None
+    for i in range(50): # hasta 5 segundos
+        time.sleep(0.1)
+        elapsed = time.time() - t0
+        try:
+            with open(f"/proc/{pid}/wchan", "r") as f:
+                wchan = f.read().strip()
+            # Cuando entra en poll_schedule_timeout o do_sys_poll o epoll_wait esta listo para eventos
+            if any(k in wchan for k in ["poll", "epoll", "select"]):
+                startup_time = elapsed
+                break
+        except Exception:
+            break
+
+    # Terminar proceso de prueba
+    proc.terminate()
+    try:
+        proc.wait(timeout=1)
+    except Exception:
+        proc.kill()
+
+    if startup_time:
+        print(f"  * Fase B (Inicializacion completa de interfaz grafica): {startup_time * 1000.0:.2f} ms ({startup_time:.2f} s)")
+    else:
+        print("  * Fase B: Proceso supero el tiempo limite de 5.0 s o no entro en espera de eventos.")
+
+    return {"app": app_name, "ld_ms": ld_ms, "gui_startup_s": startup_time}
+
+def print_summary(portal_res, sycoca_res, app_res):
+    print("\n=======================================================")
+    print("RESUMEN DE DIAGNOSTICO DE LATENCIA - LINUX GROOVE OS")
+    print("=======================================================")
+    
+    issues = []
+    if portal_res.get("portal_ping_ms", 0) > 500 or not portal_res.get("portal_conf"):
+        issues.append("Cuello de botella en xdg-desktop-portal (falta kde-portals.conf o timeouts entre backends)")
+    if not sycoca_res.get("sycoca_files"):
+        issues.append("Caché ksycoca6 ausente o no precalentada")
+    if app_res.get("gui_startup_s") and app_res["gui_startup_s"] > 2.0:
+        issues.append(f"Apertura de {app_res['app']} lenta ({app_res['gui_startup_s']:.2f}s > 2.0s objetivo)")
+
+    if issues:
+        print("DIAGNOSTICO: Se identificaron los siguientes cuellos de botella:")
+        for idx, issue in enumerate(issues, 1):
+            print(f"  {idx}. {issue}")
+    else:
+        print("DIAGNOSTICO: Rendimiento de apertura optimo.")
+    print("=======================================================\n")
+
+def main():
+    parser = argparse.ArgumentParser(description="Test de latencia de apertura de ventanas Linux Groove OS")
+    parser.add_argument("--app", default="dolphin", help="Aplicacion a evaluar (default: dolphin)")
+    args = parser.parse_args()
+
+    portal_res = test_portal_latency()
+    sycoca_res = test_sycoca_latency()
+    app_res = test_app_launch(args.app)
+    print_summary(portal_res, sycoca_res, app_res)
+
+if __name__ == "__main__":
+    main()
