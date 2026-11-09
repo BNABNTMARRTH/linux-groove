@@ -41,6 +41,10 @@ chmod 644 \"\$ROOT/etc/systemd/system/\"*.service 2>/dev/null || true
 chmod 644 \"\$ROOT/usr/share/sddm/themes/breeze/Login.qml\" \"\$ROOT/usr/share/sddm/themes/breeze/theme.conf\" 2>/dev/null || true
 chmod 644 \"\$ROOT/etc/vconsole.conf\" \"\$ROOT/etc/X11/xorg.conf.d/00-keyboard.conf\" 2>/dev/null || true
 chmod 644 \"\$ROOT/etc/xdg/plasma-localerc\" \"\$ROOT/etc/skel/.config/plasma-localerc\" 2>/dev/null || true
+chmod 644 \"\$ROOT/etc/xdg/klaunchrc\" \"\$ROOT/etc/xdg/UserFeedbackrc\" 2>/dev/null || true
+chmod 644 \"\$ROOT/etc/xdg/xdg-desktop-portal/kde-portals.conf\" 2>/dev/null || true
+chmod 755 \"\$ROOT/usr/bin/groove-latency-test\" 2>/dev/null || true
+rm -f \"\$ROOT/etc/xdg/autostart/spice-vdagent.desktop\" 2>/dev/null || true
 chmod 644 \"\$ROOT/usr/share/color-schemes/Groove.colors\" 2>/dev/null || true
 find \"\$ROOT/usr/share/plasma/look-and-feel/org.groove.desktop\" -type d -exec chmod 755 {} + 2>/dev/null || true
 find \"\$ROOT/usr/share/plasma/look-and-feel/org.groove.desktop\" -type f -exec chmod 644 {} + 2>/dev/null || true
