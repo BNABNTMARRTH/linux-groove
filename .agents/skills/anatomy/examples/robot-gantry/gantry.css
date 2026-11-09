@@ -1,0 +1,194 @@
+/* ==========================================================================
+   ROBOT GANTRY // SKILL CREATE-ANATOMY
+   Portico Cartesiano X/Y/Z // Cero Emojis // Estandar Isometrico
+   ========================================================================== */
+
+.gantry-figure {
+  --gt-blend: screen;
+  --gt-lamp-off: #3a3a3a;
+  --gt-lamp-on: #00e5ff;
+  --gt-lamp-glow: rgba(0, 229, 255, 0.45);
+}
+
+[data-theme="light"] .gantry-figure {
+  --gt-blend: normal;
+  --gt-lamp-off: #c0c0c0;
+  --gt-lamp-on: #0284c7;
+  --gt-lamp-glow: rgba(2, 132, 199, 0.35);
+}
+
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 52px;
+  background: var(--anatomy-card);
+  border-bottom: 1px solid var(--anatomy-mid);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.brand-container {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--anatomy-mono);
+}
+
+.brand-bullet {
+  color: var(--anatomy-strong);
+  font-weight: 700;
+}
+
+.brand-title {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--anatomy-strong);
+  font-size: 0.85rem;
+}
+
+.brand-tag {
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  background: var(--anatomy-shade-2);
+  border: 1px solid var(--anatomy-mid);
+  border-radius: 3px;
+  color: var(--anatomy-text);
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-btn {
+  text-decoration: none;
+  font-size: 0.70rem;
+  color: var(--anatomy-muted);
+  padding: 4px 8px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  font-family: var(--anatomy-mono);
+  transition: all 0.15s ease;
+}
+
+.nav-btn:hover {
+  color: var(--anatomy-strong);
+  border-color: var(--anatomy-lo);
+  background: var(--anatomy-shade-1);
+}
+
+.nav-btn.active {
+  color: var(--anatomy-strong);
+  border-color: var(--anatomy-mid);
+  background: var(--anatomy-shade-2);
+  font-weight: 700;
+}
+
+.iso-page {
+  width: min(960px, 100% - 32px);
+  margin: 64px auto 80px;
+}
+
+.gantry-stage {
+  position: relative;
+  width: 100%;
+  cursor: crosshair;
+  user-select: none;
+}
+
+.gantry-back {
+  position: relative;
+  z-index: 1;
+}
+
+.gantry-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: var(--gt-blend);
+}
+
+.gantry-front {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.gantry-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--anatomy-mid);
+  font-family: var(--anatomy-mono);
+  font-size: 11px;
+}
+
+.gantry-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gantry-btn {
+  background: var(--anatomy-shade-1);
+  border: 1px solid var(--anatomy-mid);
+  color: var(--anatomy-strong);
+  font-family: var(--anatomy-mono);
+  font-size: 10.5px;
+  padding: 6px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.gantry-btn:hover {
+  background: var(--anatomy-shade-2);
+  border-color: var(--anatomy-hi);
+}
+
+.gantry-btn.active {
+  background: var(--anatomy-shade-3);
+  border-color: var(--anatomy-strong);
+  font-weight: 700;
+}
+
+.gantry-lamp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gt-lamp-off);
+  transition: all 0.2s ease;
+}
+
+.gantry-lamp.lit {
+  background: var(--gt-lamp-on);
+  box-shadow: 0 0 8px var(--gt-lamp-glow);
+}
+
+.gantry-readout-live {
+  color: var(--anatomy-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
