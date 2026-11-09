@@ -61,6 +61,10 @@ struct EngineState {
     active_lines: usize,
     smooth_mouse_x: f32,
     smooth_mouse_y: f32,
+    // Buffers prealocados para cumplir con la regla Zero-Allocation del Rust Wasm Book:
+    // Nunca alocar memoria dinamica (Vec::with_capacity) dentro del bucle de 60 FPS
+    target_pos_cache: Vec<Vec3>,
+    target_nrm_cache: Vec<Vec3>,
 }
 
 static mut ENGINE: Option<EngineState> = None;
@@ -90,6 +94,8 @@ pub extern "C" fn init_engine(count: usize) {
         active_lines: 0,
         smooth_mouse_x: 0.0,
         smooth_mouse_y: 0.0,
+        target_pos_cache: vec![Vec3::zero(); clamped_count],
+        target_nrm_cache: vec![Vec3::new(0.0, 1.0, 0.0); clamped_count],
     };
     unsafe {
         ENGINE = Some(state);
@@ -176,68 +182,66 @@ pub extern "C" fn update_scene(
         let mouse_active = mouse_norm_x.abs() > 0.01 || mouse_norm_y.abs() > 0.01;
 
         // Determinar coordenadas objetivo de los vertices y normales de pared
-        let (target_positions, target_normals): (Vec<Vec3>, Vec<Vec3>) = if engine.is_anatomy_mode {
-            // MODO ANATOMIA: Mano, Craneo o Corazon con normales reales de pared exterior
+        // ZERO ALLOCATION: Escribimos directamente en los buffers prealocados de EngineState
+        let count = engine.active_points;
+        if engine.is_anatomy_mode {
             if engine.morph_t > 0.001 {
-                let mut pts = Vec::with_capacity(engine.active_points);
-                let mut nrms = Vec::with_capacity(engine.active_points);
-                for i in 0..engine.active_points {
+                for i in 0..count {
                     let (p, n) = engine.anatomy.get_morph_target(i, engine.morph_t, engine.time);
-                    pts.push(p);
-                    nrms.push(n);
+                    engine.target_pos_cache[i] = p;
+                    engine.target_nrm_cache[i] = n;
                 }
-                (pts, nrms)
             } else {
-                let mut pts = Vec::with_capacity(engine.active_points);
-                let mut nrms = Vec::with_capacity(engine.active_points);
                 match engine.selected_anatomy {
                     0 => {
-                        // MANO ANIMADA: cinematica de 30 huesos con normales de piel rotadas
-                        for i in 0..engine.active_points {
+                        for i in 0..count {
                             let (p, n) = engine.anatomy.get_animated_hand_target(i, engine.time);
-                            pts.push(p);
-                            nrms.push(n);
+                            engine.target_pos_cache[i] = p;
+                            engine.target_nrm_cache[i] = n;
                         }
                     },
                     1 => {
-                        // CRANEO: despiece orbital con normales oseas
-                        for i in 0..engine.active_points {
+                        for i in 0..count {
                             let (p, n) = engine.anatomy.get_skull_target(i, deconstruct);
-                            pts.push(p);
-                            nrms.push(n);
+                            engine.target_pos_cache[i] = p;
+                            engine.target_nrm_cache[i] = n;
                         }
                     },
                     _ => {
-                        // CORAZON: sistole y diastole con normales miocardicas
-                        for i in 0..engine.active_points {
+                        for i in 0..count {
                             let (p, n) = engine.anatomy.get_pulsing_heart_target(i, engine.time);
-                            pts.push(p);
-                            nrms.push(n);
+                            engine.target_pos_cache[i] = p;
+                            engine.target_nrm_cache[i] = n;
                         }
                     }
                 }
-                (pts, nrms)
             }
         } else {
-            // MODO PRIMITIVAS: Esfera, Cubo o Dona
-            let pts = if engine.morph_t > 0.001 {
-                (0..engine.active_points)
-                    .map(|i| engine.geometry.get_morph_target(i, engine.morph_t))
-                    .collect()
-            } else {
-                match engine.selected_geom {
-                    0 => engine.geometry.sphere_targets.clone(),
-                    1 => engine.geometry.cube_targets.clone(),
-                    _ => engine.geometry.torus_targets.clone(),
+            if engine.morph_t > 0.001 {
+                for i in 0..count {
+                    let p = engine.geometry.get_morph_target(i, engine.morph_t);
+                    let n = p.normalize();
+                    engine.target_pos_cache[i] = p;
+                    engine.target_nrm_cache[i] = n;
                 }
-            };
-            let nrms = pts.iter().map(|p| p.normalize()).collect();
-            (pts, nrms)
-        };
+            } else {
+                let targets = match engine.selected_geom {
+                    0 => &engine.geometry.sphere_targets,
+                    1 => &engine.geometry.cube_targets,
+                    _ => &engine.geometry.torus_targets,
+                };
+                for i in 0..count {
+                    let p = targets[i % targets.len()];
+                    let n = p.normalize();
+                    engine.target_pos_cache[i] = p;
+                    engine.target_nrm_cache[i] = n;
+                }
+            }
+        }
 
         // Actualizar fisica de particulas con dispersion atomica y magnetismo
         engine.particles.update(
-            &target_positions,
+            &engine.target_pos_cache[..count],
             engine.time,
             dt,
             deconstruct,
@@ -261,7 +265,7 @@ pub extern "C" fn update_scene(
 
                 let (r, g, b, size_mult, alpha_mult) = if engine.is_anatomy_mode {
                     // Normal de pared rotada al espacio de vista para sombreado perfecto
-                    let normal = target_normals[i % target_normals.len()];
+                    let normal = engine.target_nrm_cache[i % count];
                     let eye_normal = engine.camera.rotate_vector(&normal);
 
                     let dot = (eye_normal.x * light_eye.x + eye_normal.y * light_eye.y + eye_normal.z * light_eye.z).max(0.0);
@@ -377,8 +381,8 @@ pub extern "C" fn update_scene(
 
                 for e in edges {
                     if ln_idx >= MAX_LINES { break; }
-                    let idx_a = (e.idx_a as usize) % target_positions.len();
-                    let idx_b = (e.idx_b as usize) % target_positions.len();
+                    let idx_a = (e.idx_a as usize) % count;
+                    let idx_b = (e.idx_b as usize) % count;
 
                     let p1 = &engine.particles.particles[idx_a].pos;
                     let p2 = &engine.particles.particles[idx_b].pos;

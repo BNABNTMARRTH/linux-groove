@@ -73,12 +73,17 @@ export async function createGroove3DEngine(canvasId, options = {}) {
     });
 
     let lastTime = performance.now();
+    // Cache permanente de strings CSS para eliminar el recolector de basura (Zero GC Pressure)
+    // Siguiendo el capitulo 'Interfacing Rust and JavaScript' del Rust Wasm Book
+    const colorCache = new Map();
 
     function renderLoop(now) {
         const dt = Math.min((now - lastTime) / 1000.0, 0.05);
         lastTime = now;
 
-        // 1. Invoca el motor matematico en Rust
+        const tWasmStart = performance.now();
+
+        // 1. Invoca el motor matematico en Rust (Zero-Allocation Tick)
         wasm.update_scene(
             width,
             height,
@@ -88,6 +93,8 @@ export async function createGroove3DEngine(canvasId, options = {}) {
             state.deconstruct,
             dt
         );
+
+        const tWasmDuration = performance.now() - tWasmStart;
 
         // 2. Acceso directo a la memoria lineal de Wasm (Zero-Copy)
         const memoryBuffer = wasm.memory.buffer;
@@ -134,29 +141,45 @@ export async function createGroove3DEngine(canvasId, options = {}) {
             ctx.stroke();
         }
 
-        // 4. Renderizado de Nube de Particulas (Point Cloud)
+        // 4. Renderizado Ultra-Rapido de Particulas (Zero GC con Cache Permanente)
         // Struct ProjectedPoint: 6 words (24 bytes)
         // [x, y, depth, size, alpha, r/g/b/_pad]
         if (pointsCount > 0) {
             const pointFloats = new Float32Array(memoryBuffer, pointsPtr, pointsCount * 6);
             const pointBytes = new Uint8Array(memoryBuffer, pointsPtr, pointsCount * 24);
 
+            let lastColorKey = -1;
+
             for (let i = 0; i < pointsCount; i++) {
                 const fBase = i * 6;
                 const bBase = i * 24;
 
+                const alpha = pointFloats[fBase + 4];
+                if (alpha <= 0.02) continue;
+
                 const x = pointFloats[fBase];
                 const y = pointFloats[fBase + 1];
                 const size = pointFloats[fBase + 3];
-                const alpha = pointFloats[fBase + 4];
-
-                if (alpha <= 0.02) continue;
 
                 const r = pointBytes[bBase + 20];
                 const g = pointBytes[bBase + 21];
                 const b = pointBytes[bBase + 22];
 
-                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                // Cuantizar alpha en 20 escalones y generar clave entera de 32 bits
+                const aIdx = (alpha * 20) | 0;
+                const colorKey = (aIdx << 24) | (r << 16) | (g << 8) | b;
+
+                // Solo actualizar ctx.fillStyle cuando el color cambia
+                if (colorKey !== lastColorKey) {
+                    let cssStr = colorCache.get(colorKey);
+                    if (!cssStr) {
+                        cssStr = `rgba(${r},${g},${b},${(aIdx * 0.05).toFixed(2)})`;
+                        colorCache.set(colorKey, cssStr);
+                    }
+                    ctx.fillStyle = cssStr;
+                    lastColorKey = colorKey;
+                }
+
                 ctx.fillRect(x - size * 0.5, y - size * 0.5, size, size);
             }
         }
