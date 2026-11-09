@@ -10,30 +10,30 @@ import { glScript } from "../../scripts/inline-kit.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const theme = process.argv.includes("--light") ? "light" : "dark";
 
-const WIDTH = 920;
-const HEIGHT = 680;
+const WIDTH = 800;
+const HEIGHT = 580;
 const AZIMUTH = 45;
 const ELEVATION = 32;
 
 // Placa Base
-const PLATE = { x: -140, y: -110, w: 280, d: 220, r: 8 };
+const PLATE = { x: -120, y: -90, w: 240, d: 180, r: 8 };
 const PLATE_H = 12;
-const FOOT_H = 6;
+const FOOT_H = 5;
 
-// Chasis Central Hexagonal del Robot
-const HEX_BODY = { x: -36, y: -28, w: 72, d: 56, r: 6 };
-const BODY_Z = 52;
-const BODY_H = 18;
+// Chasis Central
+const HEX_BODY = { x: -32, y: -24, w: 64, d: 48, r: 6 };
+const BODY_Z = 50;
+const BODY_H = 16;
 
 export const P = k.fitProjection(
   [
     ...k.boxCorners(PLATE, -PLATE_H - FOOT_H, 0),
-    [-110, -90, 80],
-    [110, 90, 80]
+    [-95, -75, 75],
+    [95, 75, 75]
   ],
   WIDTH,
   HEIGHT,
-  { pad: 26, azimuth: AZIMUTH, elevation: ELEVATION }
+  { pad: 14, azimuth: AZIMUTH, elevation: ELEVATION }
 );
 
 const at = (p) => k.iso(p, P);
@@ -42,12 +42,11 @@ const L = (d, style) => k.lineSvg(d, style);
 const D = (points, style) => k.dotsSvg(points, style);
 const byDepth = (points) => [...points].sort((a, b) => k.depthOf([a[0], a[1], 0], P) - k.depthOf([b[0], b[1], 0], P));
 
-// 1. Placa Base y Pistas de Prueba
 function buildBase() {
   const parts = [];
   parts.push(`<path class="iso-halo" d="${k.haloOf(PLATE, -PLATE_H - FOOT_H, PLATE_H, P)}"/>`);
 
-  for (const [x, y] of byDepth(k.corners(PLATE, 20))) {
+  for (const [x, y] of byDepth(k.corners(PLATE, 18))) {
     parts.push(S(k.cylinder(x, y, 8, -PLATE_H - FOOT_H, 2, P, 24), { tone: "lo" }));
     parts.push(S(k.cylinder(x, y, 6, -PLATE_H - FOOT_H + 2, FOOT_H - 2, P, 24), { tone: "mid" }));
   }
@@ -59,7 +58,7 @@ function buildBase() {
   parts.push(L(screws.map(([x, y]) => k.ring(x, y, 2.2, 0, P, 16)).join(""), { tone: "lo" }));
   parts.push(D(screws.map(([x, y]) => at([x, y, 0])), { size: 0.5 }));
 
-  const strip = { x: -120, y: PLATE.y + PLATE.d - 14, w: 240, d: 6, r: 1 };
+  const strip = { x: -105, y: PLATE.y + PLATE.d - 13, w: 210, d: 6, r: 1 };
   parts.push(S(k.slabOf(strip, 0, 0.6, P, 2), { tone: "lo", crease: "none" }));
   const ticks = k.topTicks(strip.x + 4, strip.x + strip.w - 4, 4, 5, strip.y + 0.8, 0.6, [2, 3.5], P);
   parts.push(L(ticks.minor, { tone: "lo" }), L(ticks.major, { tone: "mid" }));
@@ -67,82 +66,69 @@ function buildBase() {
   return parts.join("");
 }
 
-// 2. Chasis Central Hexagonal y Disipador Termico
 function buildChassis() {
   const parts = [];
 
-  // Plato inferior del chasis
   parts.push(S(k.slabOf(HEX_BODY, BODY_Z, BODY_H, P, 6, 1.2), { tone: "hi" }));
   parts.push(L(k.sideSeam(HEX_BODY, BODY_Z + 8, P, 6), { tone: "faint" }));
 
-  // Tornilleria perimetral de la tapa
   const screws = [
-    [HEX_BODY.x + 6, HEX_BODY.y + 6, BODY_Z + BODY_H],
-    [HEX_BODY.x + HEX_BODY.w - 6, HEX_BODY.y + 6, BODY_Z + BODY_H],
-    [HEX_BODY.x + 6, HEX_BODY.y + HEX_BODY.d - 6, BODY_Z + BODY_H],
-    [HEX_BODY.x + HEX_BODY.w - 6, HEX_BODY.y + HEX_BODY.d - 6, BODY_Z + BODY_H]
+    [HEX_BODY.x + 5, HEX_BODY.y + 5, BODY_Z + BODY_H],
+    [HEX_BODY.x + HEX_BODY.w - 5, HEX_BODY.y + 5, BODY_Z + BODY_H],
+    [HEX_BODY.x + 5, HEX_BODY.y + HEX_BODY.d - 5, BODY_Z + BODY_H],
+    [HEX_BODY.x + HEX_BODY.w - 5, HEX_BODY.y + HEX_BODY.d - 5, BODY_Z + BODY_H]
   ];
   parts.push(D(screws.map((pt) => at(pt)), { size: 0.55 }));
 
-  // Disipador térmico ranurado central con aletas de refrigeracion
-  const sink = { x: -16, y: -12, w: 32, d: 24, r: 2 };
-  parts.push(S(k.slabOf(sink, BODY_Z + BODY_H, 8, P, 2, 0.5), { tone: "lit" }));
-  for (let x = sink.x + 3; x <= sink.x + sink.w - 3; x += 3.5) {
-    const finA = [x, sink.y, BODY_Z + BODY_H + 8];
-    const finB = [x, sink.y + sink.d, BODY_Z + BODY_H + 8];
+  const sink = { x: -14, y: -10, w: 28, d: 20, r: 2 };
+  parts.push(S(k.slabOf(sink, BODY_Z + BODY_H, 7, P, 2, 0.5), { tone: "lit" }));
+  for (let x = sink.x + 2.5; x <= sink.x + sink.w - 2.5; x += 3.0) {
+    const finA = [x, sink.y, BODY_Z + BODY_H + 7];
+    const finB = [x, sink.y + sink.d, BODY_Z + BODY_H + 7];
     parts.push(L(k.segment(finA, finB, P), { tone: "lo" }));
   }
 
   return parts.join("");
 }
 
-// 3. 6 Patas Articuladas (18 Servomotores)
 function buildLegs() {
   const parts = [];
   const topZ = BODY_Z + 4;
 
-  // 6 Puntos de anclaje de patas en los costados del chasis
   const legBases = [
-    { idx: 0, x: HEX_BODY.x - 2, y: HEX_BODY.y + 8,  dirX: -1, dirY: -0.6 },
-    { idx: 1, x: HEX_BODY.x - 4, y: HEX_BODY.y + 28, dirX: -1, dirY: 0 },
-    { idx: 2, x: HEX_BODY.x - 2, y: HEX_BODY.y + 48, dirX: -1, dirY: 0.6 },
-    { idx: 3, x: HEX_BODY.x + HEX_BODY.w + 2, y: HEX_BODY.y + 8,  dirX: 1, dirY: -0.6 },
-    { idx: 4, x: HEX_BODY.x + HEX_BODY.w + 4, y: HEX_BODY.y + 28, dirX: 1, dirY: 0 },
-    { idx: 5, x: HEX_BODY.x + HEX_BODY.w + 2, y: HEX_BODY.y + 48, dirX: 1, dirY: 0.6 }
+    { idx: 0, x: HEX_BODY.x - 2, y: HEX_BODY.y + 6,  dirX: -1, dirY: -0.6 },
+    { idx: 1, x: HEX_BODY.x - 4, y: HEX_BODY.y + 24, dirX: -1, dirY: 0 },
+    { idx: 2, x: HEX_BODY.x - 2, y: HEX_BODY.y + 42, dirX: -1, dirY: 0.6 },
+    { idx: 3, x: HEX_BODY.x + HEX_BODY.w + 2, y: HEX_BODY.y + 6,  dirX: 1, dirY: -0.6 },
+    { idx: 4, x: HEX_BODY.x + HEX_BODY.w + 4, y: HEX_BODY.y + 24, dirX: 1, dirY: 0 },
+    { idx: 5, x: HEX_BODY.x + HEX_BODY.w + 2, y: HEX_BODY.y + 42, dirX: 1, dirY: 0.6 }
   ];
 
   legBases.forEach((lb) => {
     const { idx, x, y, dirX, dirY } = lb;
 
-    // Servo 1: Coxa (Giro horizontal)
-    const coxaEndX = x + dirX * 16;
-    const coxaEndY = y + dirY * 16;
+    const coxaEndX = x + dirX * 14;
+    const coxaEndY = y + dirY * 14;
 
-    // Servo 2: Fémur (Elevación)
-    const femurEndX = coxaEndX + dirX * 24;
-    const femurEndY = coxaEndY + dirY * 20;
-    const femurZ = topZ + 18;
+    const femurEndX = coxaEndX + dirX * 22;
+    const femurEndY = coxaEndY + dirY * 18;
+    const femurZ = topZ + 16;
 
-    // Servo 3: Tibia (Apoyo hacia el suelo)
-    const tibiaFootX = femurEndX + dirX * 22;
-    const tibiaFootY = femurEndY + dirY * 18;
+    const tibiaFootX = femurEndX + dirX * 20;
+    const tibiaFootY = femurEndY + dirY * 16;
     const footZ = 0;
 
     const legSvg = `
       <g class="hexapod-leg" data-leg="${idx}">
-        <!-- Articulacion Coxa -->
-        ${S(k.cylinder(x, y, 6.5, topZ - 4, 10, P, 16), { tone: "mid" })}
-        ${S(k.slabOf({ x: Math.min(x, coxaEndX) - 3, y: Math.min(y, coxaEndY) - 3, w: 14, d: 14, r: 2 }, topZ - 2, 8, P, 2), { tone: "hi" })}
+        ${S(k.cylinder(x, y, 6, topZ - 4, 10, P, 16), { tone: "mid" })}
+        ${S(k.slabOf({ x: Math.min(x, coxaEndX) - 2.5, y: Math.min(y, coxaEndY) - 2.5, w: 12, d: 12, r: 2 }, topZ - 2, 7, P, 2), { tone: "hi" })}
 
-        <!-- Articulacion Fémur -->
-        ${S(k.cylinder(coxaEndX, coxaEndY, 5.5, topZ, 12, P, 16), { tone: "mid" })}
-        ${S(k.slabOf({ x: Math.min(coxaEndX, femurEndX) - 2.5, y: Math.min(coxaEndY, femurEndY) - 2.5, w: 18, d: 16, r: 2 }, topZ + 4, 10, P, 2), { tone: "hi" })}
+        ${S(k.cylinder(coxaEndX, coxaEndY, 5, topZ, 11, P, 16), { tone: "mid" })}
+        ${S(k.slabOf({ x: Math.min(coxaEndX, femurEndX) - 2.5, y: Math.min(coxaEndY, femurEndY) - 2.5, w: 16, d: 14, r: 2 }, topZ + 4, 9, P, 2), { tone: "hi" })}
 
-        <!-- Articulacion Tibia y Pie Antideslizante -->
-        ${S(k.cylinder(femurEndX, femurEndY, 4.5, femurZ - 8, 10, P, 16), { tone: "mid" })}
+        ${S(k.cylinder(femurEndX, femurEndY, 4, femurZ - 7, 9, P, 16), { tone: "mid" })}
         ${L(k.segment([femurEndX, femurEndY, femurZ], [tibiaFootX, tibiaFootY, footZ + 4], P), { tone: "lit" })}
-        <!-- Pie esférico de goma -->
-        ${S(k.cylinder(tibiaFootX, tibiaFootY, 4, footZ, 4, P, 16), { tone: "lo" })}
+        ${S(k.cylinder(tibiaFootX, tibiaFootY, 3.8, footZ, 4, P, 16), { tone: "lo" })}
         ${D([at([tibiaFootX, tibiaFootY, footZ + 4])], { size: 0.5 })}
       </g>
     `;
@@ -153,32 +139,30 @@ function buildLegs() {
   return parts.join("");
 }
 
-// 4. Arnés Perimetral de Silicona con kit/tube.mjs
 function buildPowerHarness() {
   const routes = [
-    [[HEX_BODY.x - 2, HEX_BODY.y + 8, BODY_Z + 6], [HEX_BODY.x - 14, HEX_BODY.y + 8, BODY_Z + 12]],
-    [[HEX_BODY.x - 4, HEX_BODY.y + 28, BODY_Z + 6], [HEX_BODY.x - 16, HEX_BODY.y + 28, BODY_Z + 12]],
-    [[HEX_BODY.x - 2, HEX_BODY.y + 48, BODY_Z + 6], [HEX_BODY.x - 14, HEX_BODY.y + 48, BODY_Z + 12]],
-    [[HEX_BODY.x + HEX_BODY.w + 2, HEX_BODY.y + 8, BODY_Z + 6], [HEX_BODY.x + HEX_BODY.w + 14, HEX_BODY.y + 8, BODY_Z + 12]],
-    [[HEX_BODY.x + HEX_BODY.w + 4, HEX_BODY.y + 28, BODY_Z + 6], [HEX_BODY.x + HEX_BODY.w + 16, HEX_BODY.y + 28, BODY_Z + 12]],
-    [[HEX_BODY.x + HEX_BODY.w + 2, HEX_BODY.y + 48, BODY_Z + 6], [HEX_BODY.x + HEX_BODY.w + 14, HEX_BODY.y + 48, BODY_Z + 12]]
+    [[HEX_BODY.x - 2, HEX_BODY.y + 6, BODY_Z + 6], [HEX_BODY.x - 12, HEX_BODY.y + 6, BODY_Z + 12]],
+    [[HEX_BODY.x - 4, HEX_BODY.y + 24, BODY_Z + 6], [HEX_BODY.x - 14, HEX_BODY.y + 24, BODY_Z + 12]],
+    [[HEX_BODY.x - 2, HEX_BODY.y + 42, BODY_Z + 6], [HEX_BODY.x - 12, HEX_BODY.y + 42, BODY_Z + 12]],
+    [[HEX_BODY.x + HEX_BODY.w + 2, HEX_BODY.y + 6, BODY_Z + 6], [HEX_BODY.x + HEX_BODY.w + 12, HEX_BODY.y + 6, BODY_Z + 12]],
+    [[HEX_BODY.x + HEX_BODY.w + 4, HEX_BODY.y + 24, BODY_Z + 6], [HEX_BODY.x + HEX_BODY.w + 14, HEX_BODY.y + 24, BODY_Z + 12]],
+    [[HEX_BODY.x + HEX_BODY.w + 2, HEX_BODY.y + 42, BODY_Z + 6], [HEX_BODY.x + HEX_BODY.w + 12, HEX_BODY.y + 42, BODY_Z + 12]]
   ];
 
   const pieces = [];
   routes.forEach((rt) => {
-    pieces.push(...tubePieces(rt, 2.0, P, { rings: { count: 8, tone: "lo" } }));
+    pieces.push(...tubePieces(rt, 1.9, P, { rings: { count: 8, tone: "lo" } }));
   });
 
   const svgs = pieces.map((p) => tubeSvg(p, { tone: "mid" }));
 
-  // Bus de alimentacion central perimetral con data-flow
   const busPoints = [
-    [HEX_BODY.x - 8, HEX_BODY.y + 8, BODY_Z + 10],
-    [HEX_BODY.x - 10, HEX_BODY.y + 28, BODY_Z + 10],
-    [HEX_BODY.x - 8, HEX_BODY.y + 48, BODY_Z + 10],
-    [HEX_BODY.x + HEX_BODY.w + 8, HEX_BODY.y + 48, BODY_Z + 10],
-    [HEX_BODY.x + HEX_BODY.w + 10, HEX_BODY.y + 28, BODY_Z + 10],
-    [HEX_BODY.x + HEX_BODY.w + 8, HEX_BODY.y + 8, BODY_Z + 10]
+    [HEX_BODY.x - 7, HEX_BODY.y + 6, BODY_Z + 9],
+    [HEX_BODY.x - 9, HEX_BODY.y + 24, BODY_Z + 9],
+    [HEX_BODY.x - 7, HEX_BODY.y + 42, BODY_Z + 9],
+    [HEX_BODY.x + HEX_BODY.w + 7, HEX_BODY.y + 42, BODY_Z + 9],
+    [HEX_BODY.x + HEX_BODY.w + 9, HEX_BODY.y + 24, BODY_Z + 9],
+    [HEX_BODY.x + HEX_BODY.w + 7, HEX_BODY.y + 6, BODY_Z + 9]
   ];
   const d = busPoints.map((pt, i) => `${i ? "L" : "M"}${at(pt).join(" ")}`).join("");
   const flowSvg = `<path class="iso-line" data-tone="lit" data-flow="true" d="${d}" style="stroke-width: 1.2px;"/>`;
@@ -245,11 +229,12 @@ function build() {
   `;
 
   const figure = `
+    <script>if (window.self !== window.top) document.documentElement.classList.add('in-iframe');</script>
     <header class="top-nav">
       <div class="brand-container">
         <span class="brand-bullet">[+]</span>
         <span class="brand-title">LINUX GROOVE</span>
-        <span class="brand-tag">SKILL CREATE-ANATOMY // ROBOTICA 3D</span>
+        <span class="brand-tag">SKILL ANATOMY // ROBOTICA 3D</span>
       </div>
       <nav class="nav-links">
         <a href="index.html" class="nav-btn">[ Catalogo ]</a>
@@ -299,11 +284,11 @@ function build() {
   `;
 
   const page = k.pageHtml({
-    title: "Linux Groove - Robot Hexapodo Andador // Skill create-anatomy",
+    title: "Linux Groove - Robot Hexapodo Andador // Skill anatomy",
     theme,
     body: `<style>${CSS}</style>${figure}`,
     script: fullScript,
-    width: 980
+    width: 860
   });
 
   const outLocal = join(HERE, "robot-hexapod.html");
@@ -312,9 +297,7 @@ function build() {
   const outPublic = "/Volumes/HDEXTERNO/linux_groove/pruebas_web/public/robot_hexapod_walker.html";
   writeFileSync(outPublic, page);
 
-  console.log(`Compilacion exitosa con skill create-anatomy:`);
-  console.log(`- Local:  ${outLocal} (${(page.length / 1024).toFixed(1)} KB)`);
-  console.log(`- Public: ${outPublic}`);
+  console.log(`Compilacion exitosa con skill anatomy: ${outPublic}`);
 }
 
 build();

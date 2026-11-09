@@ -1,6 +1,5 @@
 /* ==========================================================================
-   ROBOT WELDER // SKILL CREATE-ANATOMY
-   Estilo de Instrumento Mecanico de Precision // Cero Emojis
+   ROBOT WELDER // SKILL ANATOMY
    ========================================================================== */
 
 .welder-figure {
@@ -19,7 +18,6 @@
   --w-accent: #0284c7;
 }
 
-/* Barra de Navegacion Superior */
 .top-nav {
   position: fixed;
   top: 0;
@@ -95,9 +93,8 @@
   font-weight: 700;
 }
 
-/* Escenario y Contenedor Principal */
 .iso-page {
-  width: min(960px, 100% - 32px);
+  width: min(880px, 100% - 32px);
   margin: 64px auto 80px;
 }
 
@@ -134,7 +131,6 @@
   z-index: 3;
 }
 
-/* Controles de Ingenieria en el Pie de la Placa */
 .welder-controls {
   display: flex;
   align-items: center;
@@ -196,4 +192,40 @@
   color: var(--anatomy-text);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
+}
+
+/* MODO EMBEBIDO EN IFRAME / MINIATURA DEL CATALOGO */
+html.in-iframe, html.in-iframe body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+html.in-iframe .top-nav {
+  display: none !important;
+}
+
+html.in-iframe .iso-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html.in-iframe .iso-figure {
+  margin: 0 !important;
+}
+
+html.in-iframe .iso-plate {
+  padding: 4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+html.in-iframe .iso-plate-corners,
+html.in-iframe .welder-controls,
+html.in-iframe .iso-legend {
+  display: none !important;
 }

@@ -1,6 +1,5 @@
 /* ==========================================================================
-   ROBOT HEXAPOD // SKILL CREATE-ANATOMY
-   Andador de 18 Servos // Cero Emojis // Estandar Isometrico
+   ROBOT HEXAPOD // SKILL ANATOMY
    ========================================================================== */
 
 .hexapod-figure {
@@ -93,7 +92,7 @@
 }
 
 .iso-page {
-  width: min(960px, 100% - 32px);
+  width: min(880px, 100% - 32px);
   margin: 64px auto 80px;
 }
 
@@ -195,4 +194,40 @@
   color: var(--anatomy-text);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
+}
+
+/* MODO EMBEBIDO EN IFRAME / MINIATURA DEL CATALOGO */
+html.in-iframe, html.in-iframe body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: transparent !important;
+}
+
+html.in-iframe .top-nav {
+  display: none !important;
+}
+
+html.in-iframe .iso-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html.in-iframe .iso-figure {
+  margin: 0 !important;
+}
+
+html.in-iframe .iso-plate {
+  padding: 4px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+html.in-iframe .iso-plate-corners,
+html.in-iframe .hexapod-controls,
+html.in-iframe .iso-legend {
+  display: none !important;
 }

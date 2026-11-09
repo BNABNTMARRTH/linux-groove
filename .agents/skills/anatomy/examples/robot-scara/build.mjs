@@ -10,35 +10,35 @@ import { glScript } from "../../scripts/inline-kit.mjs";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const theme = process.argv.includes("--light") ? "light" : "dark";
 
-const WIDTH = 920;
-const HEIGHT = 680;
+const WIDTH = 800;
+const HEIGHT = 580;
 const AZIMUTH = 40;
 const ELEVATION = 28;
 
-// Placa Base de Sala Limpia
-const PLATE = { x: -150, y: -110, w: 300, d: 220, r: 8 };
-const PLATE_H = 14;
-const FOOT_H = 6;
+// Placa Base
+const PLATE = { x: -120, y: -90, w: 240, d: 180, r: 8 };
+const PLATE_H = 12;
+const FOOT_H = 5;
 
-// Pedestal de la Columna SCARA
-const SCARA_BASE = [-80, -10];
-const BASE_R = 34;
-const COLUMN_H = 140;
+// Columna SCARA
+const SCARA_BASE = [-60, -10];
+const BASE_R = 30;
+const COLUMN_H = 130;
 
-// Platina de Oblea de Silicio de 300 mm
-const WAFER_CENTER = [45, 10];
-const WAFER_R = 52;
+// Oblea
+const WAFER_CENTER = [35, 8];
+const WAFER_R = 46;
 const WAFER_Z = 12;
 
 export const P = k.fitProjection(
   [
     ...k.boxCorners(PLATE, -PLATE_H - FOOT_H, 0),
-    [SCARA_BASE[0] - BASE_R, SCARA_BASE[1] - BASE_R, COLUMN_H + 30],
-    [WAFER_CENTER[0] + WAFER_R + 20, WAFER_CENTER[1] + WAFER_R + 20, 40]
+    [SCARA_BASE[0] - BASE_R, SCARA_BASE[1] - BASE_R, COLUMN_H + 25],
+    [WAFER_CENTER[0] + WAFER_R + 15, WAFER_CENTER[1] + WAFER_R + 15, 35]
   ],
   WIDTH,
   HEIGHT,
-  { pad: 26, azimuth: AZIMUTH, elevation: ELEVATION }
+  { pad: 14, azimuth: AZIMUTH, elevation: ELEVATION }
 );
 
 const at = (p) => k.iso(p, P);
@@ -47,106 +47,86 @@ const L = (d, style) => k.lineSvg(d, style);
 const D = (points, style) => k.dotsSvg(points, style);
 const byDepth = (points) => [...points].sort((a, b) => k.depthOf([a[0], a[1], 0], P) - k.depthOf([b[0], b[1], 0], P));
 
-// 1. Base y Mesa de Succion al Vacio
 function buildBase() {
   const parts = [];
   parts.push(`<path class="iso-halo" d="${k.haloOf(PLATE, -PLATE_H - FOOT_H, PLATE_H, P)}"/>`);
 
-  for (const [x, y] of byDepth(k.corners(PLATE, 22))) {
-    parts.push(S(k.cylinder(x, y, 9, -PLATE_H - FOOT_H, 2, P, 24), { tone: "lo" }));
-    parts.push(S(k.cylinder(x, y, 7, -PLATE_H - FOOT_H + 2, FOOT_H - 2, P, 24), { tone: "mid" }));
+  for (const [x, y] of byDepth(k.corners(PLATE, 18))) {
+    parts.push(S(k.cylinder(x, y, 8, -PLATE_H - FOOT_H, 2, P, 24), { tone: "lo" }));
+    parts.push(S(k.cylinder(x, y, 6, -PLATE_H - FOOT_H + 2, FOOT_H - 2, P, 24), { tone: "mid" }));
   }
 
   parts.push(S(k.slabOf(PLATE, -PLATE_H, PLATE_H, P, 8, 1.4), { tone: "mid" }));
-  parts.push(L(k.planOutline(k.insetPlan(PLATE, 6), 0, P), { tone: "lo" }));
+  parts.push(L(k.planOutline(k.insetPlan(PLATE, 5), 0, P), { tone: "lo" }));
 
-  const screws = k.corners(PLATE, 12);
-  parts.push(L(screws.map(([x, y]) => k.ring(x, y, 2.5, 0, P, 16)).join(""), { tone: "lo" }));
-  parts.push(D(screws.map(([x, y]) => at([x, y, 0])), { size: 0.55 }));
+  const screws = k.corners(PLATE, 10);
+  parts.push(L(screws.map(([x, y]) => k.ring(x, y, 2.2, 0, P, 16)).join(""), { tone: "lo" }));
+  parts.push(D(screws.map(([x, y]) => at([x, y, 0])), { size: 0.5 }));
 
-  // Regla milimétrica en el borde
-  const strip = { x: -130, y: PLATE.y + PLATE.d - 14, w: 260, d: 6, r: 1 };
+  const strip = { x: -105, y: PLATE.y + PLATE.d - 13, w: 210, d: 6, r: 1 };
   parts.push(S(k.slabOf(strip, 0, 0.6, P, 2), { tone: "lo", crease: "none" }));
-  const ticks = k.topTicks(strip.x + 4, strip.x + strip.w - 4, 4, 5, strip.y + 0.8, 0.6, [2, 3.8], P);
+  const ticks = k.topTicks(strip.x + 4, strip.x + strip.w - 4, 4, 5, strip.y + 0.8, 0.6, [2, 3.5], P);
   parts.push(L(ticks.minor, { tone: "lo" }), L(ticks.major, { tone: "mid" }));
 
   return parts.join("");
 }
 
-// 2. Platina de Oblea de Silicio (Wafer Stage 300mm)
 function buildWaferStage() {
   const parts = [];
   const [wx, wy] = WAFER_CENTER;
 
-  // Platina de vacío de aluminio anodizado
-  parts.push(S(k.cylinder(wx, wy, WAFER_R + 8, 0, WAFER_Z, P, 48, 1.0), { tone: "mid" }));
-  parts.push(L(k.sideArc(wx, wy, WAFER_R + 8, WAFER_Z - 3, P, 36), { tone: "faint" }));
+  parts.push(S(k.cylinder(wx, wy, WAFER_R + 6, 0, WAFER_Z, P, 44, 1.0), { tone: "mid" }));
+  parts.push(L(k.sideArc(wx, wy, WAFER_R + 6, WAFER_Z - 3, P, 32), { tone: "faint" }));
 
-  // Oblea de silicio pulida (Mirror Polish Silicon)
-  parts.push(S(k.cylinder(wx, wy, WAFER_R, WAFER_Z, 1.2, P, 48, 0.4), { tone: "lit" }));
+  parts.push(S(k.cylinder(wx, wy, WAFER_R, WAFER_Z, 1.2, P, 44, 0.4), { tone: "lit" }));
 
-  // Patrón fiducial concéntrico de microcircuitos
-  for (let r = 14; r <= WAFER_R - 8; r += 10) {
-    parts.push(L(k.ring(wx, wy, r, WAFER_Z + 1.2, P, 36), { tone: "faint" }));
+  for (let r = 12; r <= WAFER_R - 6; r += 9) {
+    parts.push(L(k.ring(wx, wy, r, WAFER_Z + 1.2, P, 32), { tone: "faint" }));
   }
 
-  // Muesca de orientación cristalográfica (Notch)
   const notchP = [wx + WAFER_R - 2, wy, WAFER_Z + 1.2];
-  parts.push(D([at(notchP)], { size: 0.6 }));
+  parts.push(D([at(notchP)], { size: 0.55 }));
 
   return parts.join("");
 }
 
-// 3. Columna Principal y Husillo Vertical
 function buildColumn() {
   const parts = [];
   const [bx, by] = SCARA_BASE;
 
-  // Brida de fijacion de columna
-  parts.push(S(k.cylinder(bx, by, BASE_R, 0, 14, P, 40, 1.0), { tone: "mid" }));
+  parts.push(S(k.cylinder(bx, by, BASE_R, 0, 12, P, 36, 1.0), { tone: "mid" }));
   const bDots = [];
   for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2;
-    bDots.push(at([bx + Math.cos(angle) * (BASE_R - 5), by + Math.sin(angle) * (BASE_R - 5), 14]));
+    bDots.push(at([bx + Math.cos(angle) * (BASE_R - 4), by + Math.sin(angle) * (BASE_R - 4), 12]));
   }
-  parts.push(D(bDots, { size: 0.55 }));
+  parts.push(D(bDots, { size: 0.5 }));
 
-  // Columna rigida de fundicion
-  parts.push(S(k.cylinder(bx, by, BASE_R - 8, 14, COLUMN_H - 14, P, 36), { tone: "mid" }));
-  parts.push(L(k.knurl(bx, by, BASE_R - 8, 24, COLUMN_H - 20, 24, P), { tone: "lo" }));
+  parts.push(S(k.cylinder(bx, by, BASE_R - 7, 12, COLUMN_H - 12, P, 32), { tone: "mid" }));
+  parts.push(L(k.knurl(bx, by, BASE_R - 7, 22, COLUMN_H - 18, 24, P), { tone: "lo" }));
 
-  // Tapa superior de la columna con rodamiento principal
-  parts.push(S(k.cylinder(bx, by, BASE_R - 4, COLUMN_H, 12, P, 36, 0.8), { tone: "hi" }));
+  parts.push(S(k.cylinder(bx, by, BASE_R - 4, COLUMN_H, 10, P, 32, 0.8), { tone: "hi" }));
 
   return parts.join("");
 }
 
-// 4. Brazos Articulados J1 y J2 del SCARA
 function buildScaraArms() {
   const [bx, by] = SCARA_BASE;
   const armZ = COLUMN_H + 4;
 
-  // Brazo J1 (Link 1)
   const arm1 = `
     <g class="scara-joint" data-scara-joint="j1">
-      <!-- Cuerpo del brazo 1 de aleacion maquinada -->
-      ${S(k.slabOf({ x: bx - 14, y: by - 12, w: 90, d: 24, r: 8 }, armZ, 16, P, 4, 1.0), { tone: "hi" })}
-      ${L(k.sideSeam({ x: bx - 14, y: by - 12, w: 90, d: 24, r: 8 }, armZ + 8, P, 4), { tone: "faint" })}
-      <!-- Articulacion intermedia J2 (Codo planar) -->
-      ${S(k.cylinder(bx + 76, by, 18, armZ + 2, 22, P, 28, 0.8), { tone: "mid" })}
-      ${D([at([bx + 76, by, armZ + 24])], { size: 0.65 })}
+      ${S(k.slabOf({ x: bx - 12, y: by - 10, w: 80, d: 20, r: 6 }, armZ, 14, P, 3, 0.8), { tone: "hi" })}
+      ${L(k.sideSeam({ x: bx - 12, y: by - 10, w: 80, d: 20, r: 6 }, armZ + 7, P, 3), { tone: "faint" })}
+      ${S(k.cylinder(bx + 68, by, 16, armZ + 2, 20, P, 24, 0.8), { tone: "mid" })}
+      ${D([at([bx + 68, by, armZ + 22])], { size: 0.6 })}
 
-      <!-- Brazo J2 (Link 2 / Antebrazo) -->
       <g class="scara-joint" data-scara-joint="j2">
-        ${S(k.slabOf({ x: bx + 70, y: by - 10, w: 85, d: 20, r: 6 }, armZ + 18, 14, P, 3, 0.8), { tone: "hi" })}
-        <!-- Eje Z Prismático y Cabezal Láser UV -->
-        ${S(k.cylinder(bx + 155, by, 12, armZ + 6, 45, P, 24, 0.8), { tone: "mid" })}
-        <!-- Eje estriado de bolas (Ball-spline) pulido -->
-        ${S(k.cylinder(bx + 155, by, 5, armZ - 25, 40, P, 18), { tone: "lit" })}
-        <!-- Cabezal optico del laser UV 405nm -->
-        ${S(k.cylinder(bx + 155, by, 7.5, armZ - 36, 12, P, 20), { tone: "hi" })}
-        <!-- Lente focal de cuarzo -->
-        ${S(k.cylinder(bx + 155, by, 3.2, armZ - 39, 3, P, 16), { tone: "lit" })}
+        ${S(k.slabOf({ x: bx + 62, y: by - 9, w: 75, d: 18, r: 5 }, armZ + 16, 12, P, 3, 0.8), { tone: "hi" })}
+        ${S(k.cylinder(bx + 138, by, 11, armZ + 6, 40, P, 22, 0.8), { tone: "mid" })}
+        ${S(k.cylinder(bx + 138, by, 4.5, armZ - 22, 36, P, 16), { tone: "lit" })}
+        ${S(k.cylinder(bx + 138, by, 7, armZ - 32, 10, P, 18), { tone: "hi" })}
+        ${S(k.cylinder(bx + 138, by, 3, armZ - 35, 3, P, 14), { tone: "lit" })}
       </g>
     </g>
   `;
@@ -154,7 +134,6 @@ function buildScaraArms() {
   return arm1;
 }
 
-// 5. Cadena Portacables Flexible de 24 Eslabones (Drag Chain)
 function buildDragChain() {
   const [bx, by] = SCARA_BASE;
   const startZ = COLUMN_H + 8;
@@ -163,26 +142,24 @@ function buildDragChain() {
   const count = 24;
   for (let i = 0; i < count; i++) {
     const t = i / (count - 1);
-    // Trayectoria curva paramétrica de la cadena
-    const lx = bx - 10 + t * 95 + Math.sin(t * Math.PI) * 16;
-    const ly = by + 18 + Math.sin(t * Math.PI * 1.2) * 22;
-    const lz = startZ + Math.sin(t * Math.PI) * 14;
+    const lx = bx - 8 + t * 85 + Math.sin(t * Math.PI) * 14;
+    const ly = by + 16 + Math.sin(t * Math.PI * 1.2) * 20;
+    const lz = startZ + Math.sin(t * Math.PI) * 12;
 
-    const linkSlab = k.slabOf({ x: lx, y: ly, w: 6.5, d: 8, r: 1.5 }, lz, 5.5, P, 1.5, 0.5);
+    const linkSlab = k.slabOf({ x: lx, y: ly, w: 6, d: 7.5, r: 1.5 }, lz, 5, P, 1.5, 0.5);
     links.push(`
       <g class="drag-link" data-link="${i}">
         ${S(linkSlab, { tone: i % 2 === 0 ? "hi" : "mid" })}
-        ${D([at([lx + 3.2, ly + 4, lz + 5.5])], { size: 0.35 })}
+        ${D([at([lx + 3, ly + 3.8, lz + 5])], { size: 0.35 })}
       </g>
     `);
   }
 
-  // Cable interno que pasa por dentro de la cadena con data-flow
   const cableRoute = [
-    [bx, by + 16, startZ],
-    [bx + 40, by + 34, startZ + 12],
-    [bx + 80, by + 24, startZ + 8],
-    [bx + 110, by + 12, startZ + 18]
+    [bx, by + 14, startZ],
+    [bx + 35, by + 30, startZ + 10],
+    [bx + 70, by + 22, startZ + 7],
+    [bx + 98, by + 10, startZ + 16]
   ];
   const pList = tubePieces(cableRoute, 2.2, P, {
     rings: { count: 16, tone: "lo" }
@@ -253,11 +230,12 @@ function build() {
   `;
 
   const figure = `
+    <script>if (window.self !== window.top) document.documentElement.classList.add('in-iframe');</script>
     <header class="top-nav">
       <div class="brand-container">
         <span class="brand-bullet">[+]</span>
         <span class="brand-title">LINUX GROOVE</span>
-        <span class="brand-tag">SKILL CREATE-ANATOMY // ROBOTICA 3D</span>
+        <span class="brand-tag">SKILL ANATOMY // ROBOTICA 3D</span>
       </div>
       <nav class="nav-links">
         <a href="index.html" class="nav-btn">[ Catalogo ]</a>
@@ -307,11 +285,11 @@ function build() {
   `;
 
   const page = k.pageHtml({
-    title: "Linux Groove - Robot SCARA Fotolitografia // Skill create-anatomy",
+    title: "Linux Groove - Robot SCARA Fotolitografia // Skill anatomy",
     theme,
     body: `<style>${CSS}</style>${figure}`,
     script: fullScript,
-    width: 980
+    width: 860
   });
 
   const outLocal = join(HERE, "robot-scara.html");
@@ -320,9 +298,7 @@ function build() {
   const outPublic = "/Volumes/HDEXTERNO/linux_groove/pruebas_web/public/robot_scara_circuit.html";
   writeFileSync(outPublic, page);
 
-  console.log(`Compilacion exitosa con skill create-anatomy:`);
-  console.log(`- Local:  ${outLocal} (${(page.length / 1024).toFixed(1)} KB)`);
-  console.log(`- Public: ${outPublic}`);
+  console.log(`Compilacion exitosa con skill anatomy: ${outPublic}`);
 }
 
 build();

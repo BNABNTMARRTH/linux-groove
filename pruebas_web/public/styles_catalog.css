@@ -387,10 +387,10 @@ header.catalog-header {
 .preview-viewport-wrapper {
   position: relative;
   width: 100%;
-  height: 240px;
-  background: #020408;
+  height: 260px;
+  background: #060913;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Indicador de carga placeholder */
@@ -427,18 +427,17 @@ header.catalog-header {
   to { transform: rotate(360deg); }
 }
 
-/* Micro-Viewport escalado con Iframe */
+/* Micro-Viewport escalado y centrado exactamente para Skill Anatomy */
 .preview-iframe {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 285.7%;
-  height: 285.7%;
-  transform: scale(0.35);
-  transform-origin: 0 0;
+  top: 50%;
+  left: 50%;
+  width: 800px;
+  height: 580px;
+  transform: translate(-50%, -50%) scale(0.46);
   border: none;
   pointer-events: none;
-  background: #000000;
+  background: transparent;
   opacity: 0;
   transition: opacity 0.5s ease;
   z-index: 2;
@@ -604,3 +603,4 @@ footer.catalog-footer {
     padding-bottom: 4px;
   }
 }
+
