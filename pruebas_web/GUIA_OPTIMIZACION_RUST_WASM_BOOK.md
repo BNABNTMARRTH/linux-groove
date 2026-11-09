@@ -240,3 +240,4 @@ Al compilar con `target = wasm32-unknown-unknown`, Rust produce instrucciones Wa
 1. **Estructuras Planas (`repr(C)`):** Mantener las estructuras proyectadas (`ProjectedPoint`, `ProjectedLine`) como bloques planos de memoria contigua alineada.
 2. **Reutilizar Buffers:** Si una funcion necesita espacio temporal para 8,192 puntos, ese espacio debe pertenecer al estado del motor y ser asignado unicamente durante `init_engine()`.
 3. **Cache de Representacion en el Front-End:** Nunca generar cadenas CSS en bucles por elemento dentro de `requestAnimationFrame()`. Usar enteros empaquetados o indices numericos.
+
