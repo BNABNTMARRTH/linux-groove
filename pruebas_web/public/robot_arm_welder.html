@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Brazo Robotico 6-DOF // Soldadura Plasma & IK</title>
+    <style>
+        :root {
+            --bg-page: #06090e;
+            --panel-bg: rgba(10, 15, 24, 0.85);
+            --border-neon: rgba(0, 240, 255, 0.35);
+            --cyan-neon: #00f0ff;
+            --orange-plasma: #ff7700;
+            --violet-arc: #7a5cff;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* BARRA DE NAVEGACION SUPERIOR */
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 54px;
+            background: rgba(6, 9, 14, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-neon);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 1000;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        .brand-bullet { color: var(--cyan-neon); font-weight: bold; }
+        .brand-title { font-weight: 800; letter-spacing: 0.15em; color: #ffffff; }
+        .brand-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: rgba(0, 240, 255, 0.12);
+            border: 1px solid var(--cyan-neon);
+            border-radius: 4px;
+            color: var(--cyan-neon);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            color: var(--cyan-neon);
+            border-color: var(--border-neon);
+            background: rgba(0, 240, 255, 0.08);
+        }
+
+        /* ESCENARIO PRINCIPAL */
+        .stage-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* CAPAS DE RENDER */
+        .layer-canvas, .layer-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .layer-canvas {
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .layer-svg {
+            z-index: 20;
+        }
+
+        /* ESTILOS DEL CABLEADO Y PULSOS */
+        .wire-cable {
+            fill: none;
+            stroke: #1e293b;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .wire-inner {
+            fill: none;
+            stroke: #0284c7;
+            stroke-width: 2.5;
+            stroke-dasharray: 6 12;
+            animation: flow-pulse 1.2s linear infinite;
+        }
+
+        .wire-power {
+            fill: none;
+            stroke: #ff9900;
+            stroke-width: 2.5;
+            stroke-dasharray: 4 16;
+            animation: flow-pulse-fast 0.6s linear infinite;
+        }
+
+        @keyframes flow-pulse {
+            to { stroke-dashoffset: -36; }
+        }
+
+        @keyframes flow-pulse-fast {
+            to { stroke-dashoffset: -40; }
+        }
+
+        /* HUD DE TELEMETRIA */
+        .hud-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-neon);
+            border-radius: 6px;
+            padding: 1rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            font-size: 0.75rem;
+        }
+
+        .hud-left {
+            top: 70px;
+            left: 20px;
+            width: 280px;
+        }
+
+        .hud-right {
+            top: 70px;
+            right: 20px;
+            width: 260px;
+        }
+
+        .hud-bottom {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            padding: 0.8rem 1.6rem;
+        }
+
+        .hud-title {
+            color: var(--cyan-neon);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+            padding-bottom: 4px;
+        }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+            color: var(--text-muted);
+        }
+
+        .hud-val {
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .ctrl-btn {
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--cyan-neon);
+            border: 1px solid var(--border-neon);
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .ctrl-btn:hover {
+            background: rgba(0, 240, 255, 0.25);
+            border-color: var(--cyan-neon);
+        }
+
+        .ctrl-btn.active {
+            background: var(--cyan-neon);
+            color: #050811;
+            font-weight: bold;
+        }
+
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVEGACION GLOBAL -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">ROBOTICA // 6-DOF & PLASMA</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Catalogo ]</a>
+            <a href="robot_arm_welder.html" class="nav-btn active">[ Rob: Brazo ]</a>
+            <a href="robot_cyberhand.html" class="nav-btn">[ Rob: Mano ]</a>
+            <a href="robot_scara_circuit.html" class="nav-btn">[ Rob: SCARA ]</a>
+            <a href="robot_hexapod_walker.html" class="nav-btn">[ Rob: Hexapodo ]</a>
+            <a href="robot_server_gantry.html" class="nav-btn">[ Rob: Gantry ]</a>
+            <a href="anatomy_scroll.html" class="nav-btn">[ Bio: Scroll ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+        </nav>
+    </header>
+
+    <!-- ESCENARIO PRINCIPAL -->
+    <main class="stage-container">
+        <div class="grid-bg"></div>
+
+        <!-- CANVAS WEBGL: ARCO DE PLASMA Y CHISPAS -->
+        <canvas id="plasma-canvas" class="layer-canvas"></canvas>
+
+        <!-- SVG ISOMETRICO: BRAZO ROBOTICO 6-DOF Y CABLEADO DINAMICO -->
+        <svg id="robot-svg" class="layer-svg" viewBox="0 0 1000 800">
+            <defs>
+                <filter id="glow-neon" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- Base y pedestal mecanico -->
+            <g id="pedestal" transform="translate(500, 680)">
+                <!-- Placa base de acero con tornillos -->
+                <ellipse cx="0" cy="0" rx="140" ry="45" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                <ellipse cx="0" cy="-10" rx="120" ry="38" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                <!-- Brida de rotacion theta_1 -->
+                <path d="M-60,-10 L-60,-45 C-60,-55 60,-55 60,-45 L60,-10 Z" fill="#334155" stroke="#64748b" stroke-width="2"/>
+                <ellipse cx="0" cy="-45" rx="60" ry="20" fill="#475569" stroke="#94a3b8" stroke-width="2"/>
+            </g>
+
+            <!-- Segmentos articulados del brazo (generados en tiempo real por IK) -->
+            <g id="arm-segments"></g>
+
+            <!-- Tuberias y arneses con flujos electricos continuos -->
+            <g id="cable-harnesses"></g>
+
+            <!-- Pieza de trabajo metalica a soldar -->
+            <g id="workpiece" transform="translate(680, 620)">
+                <path d="M-80,0 L80,-20 L120,10 L-40,30 Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                <path d="M-80,0 L-80,25 L-40,55 L-40,30 Z" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                <path d="M-40,30 L-40,55 L120,35 L120,10 Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                <!-- Costura de soldadura incandescente -->
+                <path d="M-60,5 L60,-15" stroke="#ff5500" stroke-width="4" stroke-linecap="round" filter="url(#glow-neon)"/>
+            </g>
+        </svg>
+
+        <!-- HUD LATERAL IZQUIERDO: CINEMATICA ARTICULAR -->
+        <div class="hud-panel hud-left">
+            <div class="hud-title">// CINEMATICA INVERSA 6-DOF</div>
+            <div class="hud-row"><span>EJE 1 (BASE YAW):</span><span class="hud-val" id="val-j1">0.0 deg</span></div>
+            <div class="hud-row"><span>EJE 2 (HOMBRO PITCH):</span><span class="hud-val" id="val-j2">-35.2 deg</span></div>
+            <div class="hud-row"><span>EJE 3 (CODO PITCH):</span><span class="hud-val" id="val-j3">62.8 deg</span></div>
+            <div class="hud-row"><span>EJE 4 (BRAZO ROLL):</span><span class="hud-val" id="val-j4">12.0 deg</span></div>
+            <div class="hud-row"><span>EJE 5 (MUNECA PITCH):</span><span class="hud-val" id="val-j5">-27.6 deg</span></div>
+            <div class="hud-row"><span>EJE 6 (TORCHA ROLL):</span><span class="hud-val" id="val-j6">45.0 deg</span></div>
+        </div>
+
+        <!-- HUD LATERAL DERECHO: TELEMETRIA DE PLASMA -->
+        <div class="hud-panel hud-right">
+            <div class="hud-title">// FUENTE DE PLASMA TIG</div>
+            <div class="hud-row"><span>CORRIENTE ARCO:</span><span class="hud-val" id="val-amps">240 A // PULSADO</span></div>
+            <div class="hud-row"><span>TENSION:</span><span class="hud-val">22.4 V</span></div>
+            <div class="hud-row"><span>FLUJO ARGON:</span><span class="hud-val">14.2 L/MIN</span></div>
+            <div class="hud-row"><span>TEMP. ARCO:</span><span class="hud-val" style="color: #ffaa00;">14,500 K</span></div>
+            <div class="hud-row"><span>ESTADO:</span><span class="hud-val" style="color: #00ffaa;" id="val-status">SOLDADURA ACTIVA</span></div>
+        </div>
+
+        <!-- BARRA INFERIOR DE CONTROL -->
+        <div class="hud-panel hud-bottom">
+            <button class="ctrl-btn active" id="btn-auto">[ Trayectoria Auto ]</button>
+            <button class="ctrl-btn" id="btn-plasma">[ Pulso Plasma: ON ]</button>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">// Mueve el cursor sobre el escenario para guiar la antorcha con cinemática inversa</span>
+        </div>
+    </main>
+
+    <!-- SCRIPT PROCEDURAL: CINEMATICA INVERSA, SHADER DE PLASMA Y FLUJOS ELECTRICOS -->
+    <script type="module">
+        const canvas = document.getElementById('plasma-canvas');
+        const gl = canvas.getContext('webgl');
+        const armGroup = document.getElementById('arm-segments');
+        const cableGroup = document.getElementById('cable-harnesses');
+
+        const valJ1 = document.getElementById('val-j1');
+        const valJ2 = document.getElementById('val-j2');
+        const valJ3 = document.getElementById('val-j3');
+        const valJ5 = document.getElementById('val-j5');
+        const valAmps = document.getElementById('val-amps');
+        const btnAuto = document.getElementById('btn-auto');
+        const btnPlasma = document.getElementById('btn-plasma');
+
+        let autoMode = true;
+        let plasmaActive = true;
+        let mouseX = 680, mouseY = 610;
+
+        btnAuto.addEventListener('click', () => {
+            autoMode = !autoMode;
+            btnAuto.classList.toggle('active', autoMode);
+        });
+
+        btnPlasma.addEventListener('click', () => {
+            plasmaActive = !plasmaActive;
+            btnPlasma.classList.toggle('active', plasmaActive);
+            btnPlasma.textContent = plasmaActive ? '[ Pulso Plasma: ON ]' : '[ Pulso Plasma: OFF ]';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!autoMode) {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = (e.clientX - rect.left) * (1000 / rect.width);
+                mouseY = (e.clientY - rect.top) * (800 / rect.height);
+            }
+        });
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // -------------------------------------------------------------
+        // SHADER WEBGL: ARCO DE PLASMA Y RELAMPAGO DE SOLDADURA
+        // -------------------------------------------------------------
+        const VS_SRC = `
+            attribute vec2 position;
+            void main() {
+                gl_Position = vec4(position, 0.0, 1.0);
+            }
+        `;
+
+        const FS_SRC = `
+            precision highp float;
+            uniform vec2 uResolution;
+            uniform vec2 uTorchPos;
+            uniform float uTime;
+            uniform float uActive;
+
+            float hash(vec2 p) {
+                return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+            }
+
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                vec2 u = f*f*(3.0-2.0*f);
+                return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                           mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+            }
+
+            void main() {
+                if (uActive < 0.5) {
+                    gl_FragColor = vec4(0.0);
+                    return;
+                }
+
+                vec2 uv = gl_FragCoord.xy;
+                vec2 target = vec2(uTorchPos.x, uResolution.y - uTorchPos.y);
+
+                float d = length(uv - target);
+                float flicker = 0.85 + 0.15 * sin(uTime * 120.0) + 0.08 * noise(vec2(uTime * 40.0, 0.0));
+
+                // Nucleo de plasma incandescente
+                float core = exp(-d * 0.12) * 2.8 * flicker;
+                // Manto ionizado azul/violeta
+                float halo = exp(-d * 0.025) * 0.85 * flicker;
+                // Resplandor difuso ambiental
+                float ambient = exp(-d * 0.006) * 0.25 * flicker;
+
+                vec3 colCore = vec3(1.0, 0.95, 0.9) * core;
+                vec3 colHalo = vec3(0.1, 0.5, 1.0) * halo;
+                vec3 colAmbient = vec3(0.4, 0.2, 0.9) * ambient;
+
+                // Rayo electrico sutil
+                vec2 diff = uv - target;
+                float angle = atan(diff.y, diff.x);
+                float ray = sin(angle * 8.0 + uTime * 30.0) * 0.5 + 0.5;
+                vec3 colRay = vec3(0.0, 0.9, 1.0) * ray * exp(-d * 0.02) * 0.6;
+
+                vec3 finalCol = colCore + colHalo + colAmbient + colRay;
+                float alpha = clamp(length(finalCol), 0.0, 0.95);
+
+                gl_FragColor = vec4(finalCol, alpha);
+            }
+        `;
+
+        function createShader(gl, type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, VS_SRC));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, FS_SRC));
+        gl.linkProgram(prog);
+
+        const posBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,  1, -1, -1,  1,
+            -1,  1,  1, -1,  1,  1
+        ]), gl.STATIC_DRAW);
+
+        const aPos = gl.getAttribLocation(prog, 'position');
+        const uRes = gl.getUniformLocation(prog, 'uResolution');
+        const uTorch = gl.getUniformLocation(prog, 'uTorchPos');
+        const uTime = gl.getUniformLocation(prog, 'uTime');
+        const uActive = gl.getUniformLocation(prog, 'uActive');
+
+        // -------------------------------------------------------------
+        // CINEMATICA INVERSA ANALITICA (IK) 2-LINK PLANAR CON CABEZAL
+        // -------------------------------------------------------------
+        const BASE_X = 500, BASE_Y = 635;
+        const L1 = 220; // Longitud Hombro a Codo
+        const L2 = 190; // Longitud Codo a Muneca
+        const L3 = 80;  // Longitud Muneca a Antorcha
+
+        let angle1 = -Math.PI * 0.35;
+        let angle2 = Math.PI * 0.65;
+        let angle3 = -Math.PI * 0.25;
+
+        let curX = 680, curY = 610;
+
+        function solveIK(targetX, targetY) {
+            // Posicion deseada de la muneca restando la longitud de la antorcha vertical
+            const wx = targetX;
+            const wy = targetY - L3;
+
+            const dx = wx - BASE_X;
+            const dy = wy - BASE_Y;
+            const dist = Math.min(Math.sqrt(dx * dx + dy * dy), L1 + L2 - 2);
+
+            // Ley de cosenos
+            const cosA2 = (dist * dist - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+            const a2 = Math.acos(Math.max(-1, Math.min(1, cosA2)));
+
+            const baseAngle = Math.atan2(dy, dx);
+            const a1 = baseAngle - Math.atan2(L2 * Math.sin(a2), L1 + L2 * Math.cos(a2));
+
+            return {
+                th1: a1,
+                th2: a2,
+                th3: -Math.PI * 0.5 - (a1 + a2)
+            };
+        }
+
+        // BUCLE PRINCIPAL DE ANIMACION PROCEDURAL
+        let time = 0;
+        function renderLoop() {
+            time += 0.016;
+
+            if (autoMode) {
+                // Costura sinusoidal de soldadura
+                curX = 660 + Math.sin(time * 2.0) * 80;
+                curY = 615 + Math.cos(time * 4.0) * 12;
+            } else {
+                curX += (mouseX - curX) * 0.1;
+                curY += (mouseY - curY) * 0.1;
+            }
+
+            const ik = solveIK(curX, curY);
+            angle1 += (ik.th1 - angle1) * 0.12;
+            angle2 += (ik.th2 - angle2) * 0.12;
+            angle3 += (ik.th3 - angle3) * 0.12;
+
+            // Coordenadas de las articulaciones
+            const shoulderX = BASE_X;
+            const shoulderY = BASE_Y;
+
+            const elbowX = shoulderX + Math.cos(angle1) * L1;
+            const elbowY = shoulderY + Math.sin(angle1) * L1;
+
+            const wristX = elbowX + Math.cos(angle1 + angle2) * L2;
+            const wristY = elbowY + Math.sin(angle1 + angle2) * L2;
+
+            const torchTipX = wristX + Math.cos(angle1 + angle2 + angle3) * L3;
+            const torchTipY = wristY + Math.sin(angle1 + angle2 + angle3) * L3;
+
+            // Actualizar HUD
+            valJ1.textContent = `${(Math.sin(time * 1.5) * 18).toFixed(1)} deg`;
+            valJ2.textContent = `${(angle1 * 180 / Math.PI).toFixed(1)} deg`;
+            valJ3.textContent = `${(angle2 * 180 / Math.PI).toFixed(1)} deg`;
+            valJ5.textContent = `${(angle3 * 180 / Math.PI).toFixed(1)} deg`;
+            valAmps.textContent = plasmaActive ? `${(230 + Math.sin(time * 30.0) * 15).toFixed(0)} A // PULSADO` : '0 A // STANDBY';
+
+            // Dibujar estructura del brazo en SVG
+            armGroup.innerHTML = `
+                <!-- Hombro giratorio -->
+                <circle cx="${shoulderX}" cy="${shoulderY}" r="38" fill="#1e293b" stroke="#00f0ff" stroke-width="2"/>
+                <circle cx="${shoulderX}" cy="${shoulderY}" r="18" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+
+                <!-- Eslabón 1: Brazo Principal -->
+                <line x1="${shoulderX}" y1="${shoulderY}" x2="${elbowX}" y2="${elbowY}" stroke="#0f172a" stroke-width="32" stroke-linecap="round"/>
+                <line x1="${shoulderX}" y1="${shoulderY}" x2="${elbowX}" y2="${elbowY}" stroke="#334155" stroke-width="24" stroke-linecap="round"/>
+                <line x1="${shoulderX}" y1="${shoulderY}" x2="${elbowX}" y2="${elbowY}" stroke="#475569" stroke-width="12" stroke-linecap="round"/>
+
+                <!-- Codo articulado -->
+                <circle cx="${elbowX}" cy="${elbowY}" r="28" fill="#1e293b" stroke="#00f0ff" stroke-width="2"/>
+                <circle cx="${elbowX}" cy="${elbowY}" r="12" fill="#0f172a" stroke="#64748b" stroke-width="2"/>
+
+                <!-- Eslabón 2: Antebrazo con ranura mecanica -->
+                <line x1="${elbowX}" y1="${elbowY}" x2="${wristX}" y2="${wristY}" stroke="#0f172a" stroke-width="24" stroke-linecap="round"/>
+                <line x1="${elbowX}" y1="${elbowY}" x2="${wristX}" y2="${wristY}" stroke="#334155" stroke-width="18" stroke-linecap="round"/>
+                <line x1="${elbowX}" y1="${elbowY}" x2="${wristX}" y2="${wristY}" stroke="#0284c7" stroke-width="4" stroke-linecap="round"/>
+
+                <!-- Muñeca esferica 3-DOF -->
+                <circle cx="${wristX}" cy="${wristY}" r="18" fill="#1e293b" stroke="#00f0ff" stroke-width="2"/>
+
+                <!-- Conjunto de antorcha de soldadura TIG -->
+                <line x1="${wristX}" y1="${wristY}" x2="${torchTipX}" y2="${torchTipY}" stroke="#475569" stroke-width="14" stroke-linecap="round"/>
+                <line x1="${wristX}" y1="${wristY}" x2="${torchTipX}" y2="${torchTipY}" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>
+                <!-- Boquilla ceramica rosada de alta temperatura -->
+                <circle cx="${torchTipX}" cy="${torchTipY - 6}" r="10" fill="#e11d48"/>
+                <!-- Electrodo de tungsteno -->
+                <line x1="${torchTipX}" y1="${torchTipY - 6}" x2="${torchTipX}" y2="${torchTipY}" stroke="#ffffff" stroke-width="3"/>
+            `;
+
+            // Dibujar mazo umbilical de cables con curvatura natural (Bezier procedural)
+            const midCableX1 = (shoulderX + elbowX) * 0.5 - 35;
+            const midCableY1 = (shoulderY + elbowY) * 0.5 + 20;
+
+            const midCableX2 = (elbowX + wristX) * 0.5 - 25;
+            const midCableY2 = (elbowY + wristY) * 0.5 + 15;
+
+            const dCable = `
+                M ${shoulderX - 25} ${shoulderY + 10}
+                Q ${midCableX1} ${midCableY1} ${elbowX - 18} ${elbowY + 8}
+                Q ${midCableX2} ${midCableY2} ${wristX - 12} ${wristY + 5}
+                L ${torchTipX - 8} ${torchTipY - 14}
+            `;
+
+            cableGroup.innerHTML = `
+                <!-- Cable exterior protector -->
+                <path d="${dCable}" class="wire-cable"/>
+                <!-- Linea de señal de alta velocidad con dashoffset -->
+                <path d="${dCable}" class="wire-inner"/>
+                <!-- Linea de potencia pulsada hacia la antorcha -->
+                <path d="${dCable}" class="wire-power"/>
+            `;
+
+            // RENDERIZADO WEBGL: Actualizar shader de plasma
+            if (gl) {
+                gl.useProgram(prog);
+                gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+                // Convertir coordenadas SVG (1000x800) a pixeles de pantalla
+                const rect = canvas.getBoundingClientRect();
+                const screenTorchX = (torchTipX / 1000) * canvas.width;
+                const screenTorchY = (torchTipY / 800) * canvas.height;
+
+                gl.uniform2f(uRes, canvas.width, canvas.height);
+                gl.uniform2f(uTorch, screenTorchX, screenTorchY);
+                gl.uniform1f(uTime, time);
+                gl.uniform1f(uActive, plasmaActive ? 1.0 : 0.0);
+
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        requestAnimationFrame(renderLoop);
+    </script>
+</body>
+</html>

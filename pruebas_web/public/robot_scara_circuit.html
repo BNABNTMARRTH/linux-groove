@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Robot SCARA // Cadena Portacables & Laser UV</title>
+    <style>
+        :root {
+            --bg-page: #06090e;
+            --panel-bg: rgba(10, 15, 24, 0.85);
+            --border-neon: rgba(0, 240, 255, 0.35);
+            --cyan-neon: #00f0ff;
+            --uv-laser: #a855f7;
+            --laser-glow: #c084fc;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-page); color: var(--text-main); font-family: var(--font-mono); overflow-x: hidden; min-height: 100vh; }
+
+        .top-nav {
+            position: fixed; top: 0; left: 0; width: 100%; height: 54px;
+            background: rgba(6, 9, 14, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-neon);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; z-index: 1000;
+        }
+
+        .brand-container { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+        .brand-bullet { color: var(--uv-laser); font-weight: bold; }
+        .brand-title { font-weight: 800; letter-spacing: 0.15em; color: #ffffff; }
+        .brand-tag {
+            font-size: 0.65rem; padding: 2px 6px; background: rgba(168, 85, 247, 0.12);
+            border: 1px solid var(--uv-laser); border-radius: 4px; color: var(--uv-laser);
+        }
+
+        .nav-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .nav-btn {
+            font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 8px;
+            border: 1px solid transparent; border-radius: 4px; transition: all 0.2s;
+        }
+        .nav-btn:hover, .nav-btn.active { color: var(--cyan-neon); border-color: var(--border-neon); background: rgba(0, 240, 255, 0.08); }
+
+        .stage-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .layer-canvas, .layer-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .layer-canvas { z-index: 10; pointer-events: none; }
+        .layer-svg { z-index: 20; }
+
+        /* FLUJO ELECTRICO DENTRO DE LA CADENA PORTACABLES */
+        .chain-wire {
+            fill: none;
+            stroke: #a855f7;
+            stroke-width: 2.5;
+            stroke-dasharray: 4 12;
+            animation: flow-pulse 0.8s linear infinite;
+        }
+
+        @keyframes flow-pulse { to { stroke-dashoffset: -32; } }
+
+        .hud-panel {
+            position: absolute; background: var(--panel-bg); border: 1px solid var(--border-neon);
+            border-radius: 6px; padding: 1rem; z-index: 100; backdrop-filter: blur(10px); font-size: 0.75rem;
+        }
+
+        .hud-left { top: 70px; left: 20px; width: 280px; }
+        .hud-right { top: 70px; right: 20px; width: 270px; }
+        .hud-bottom {
+            bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 1.2rem; align-items: center; padding: 0.8rem 1.6rem;
+        }
+
+        .hud-title {
+            color: var(--uv-laser); font-size: 0.75rem; letter-spacing: 0.1em;
+            margin-bottom: 0.5rem; border-bottom: 1px solid rgba(168, 85, 247, 0.2); padding-bottom: 4px;
+        }
+
+        .hud-row { display: flex; justify-content: space-between; margin: 6px 0; color: var(--text-muted); }
+        .hud-val { color: #ffffff; font-weight: bold; }
+
+        .ctrl-btn {
+            background: rgba(168, 85, 247, 0.1); color: var(--uv-laser); border: 1px solid rgba(168, 85, 247, 0.35);
+            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: rgba(168, 85, 247, 0.25); border-color: var(--uv-laser); }
+        .ctrl-btn.active { background: var(--uv-laser); color: #ffffff; font-weight: bold; }
+
+        .grid-bg {
+            position: absolute; inset: 0; background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(168, 85, 247, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(168, 85, 247, 0.03) 1px, transparent 1px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">ROBOTICA // SCARA & LASER UV</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Catalogo ]</a>
+            <a href="robot_arm_welder.html" class="nav-btn">[ Rob: Brazo ]</a>
+            <a href="robot_cyberhand.html" class="nav-btn">[ Rob: Mano ]</a>
+            <a href="robot_scara_circuit.html" class="nav-btn active">[ Rob: SCARA ]</a>
+            <a href="robot_hexapod_walker.html" class="nav-btn">[ Rob: Hexapodo ]</a>
+            <a href="robot_server_gantry.html" class="nav-btn">[ Rob: Gantry ]</a>
+            <a href="anatomy_scroll.html" class="nav-btn">[ Bio: Scroll ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+        </nav>
+    </header>
+
+    <main class="stage-container">
+        <div class="grid-bg"></div>
+
+        <!-- CANVAS WEBGL: HAZ LASER UV Y LUZ FLUORESCENTE -->
+        <canvas id="laser-canvas" class="layer-canvas"></canvas>
+
+        <!-- SVG ISOMETRICO: ROBOT SCARA, CADENA PORTACABLES Y OBLEA DE SILICIO -->
+        <svg id="scara-svg" class="layer-svg" viewBox="0 0 1000 800">
+            <!-- Mesa de trabajo y oblea de silicio de microchip -->
+            <g id="wafer-stage" transform="translate(680, 560)">
+                <ellipse cx="0" cy="0" rx="130" ry="45" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                <ellipse cx="0" cy="-6" rx="110" ry="38" fill="#1e293b" stroke="#00f0ff" stroke-width="1.5"/>
+                <!-- Reticula de microchips grabados -->
+                <ellipse cx="0" cy="-6" rx="85" ry="30" fill="#0284c7" opacity="0.3"/>
+            </g>
+
+            <!-- Columna y base fija del SCARA -->
+            <g id="base-pillar" transform="translate(350, 600)">
+                <ellipse cx="0" cy="0" rx="95" ry="32" fill="#0f172a" stroke="#475569" stroke-width="2"/>
+                <path d="M-60,0 L-60,-160 L60,-160 L60,0 Z" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+                <ellipse cx="0" cy="-160" rx="60" ry="20" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
+            </g>
+
+            <!-- Cadena portacables flexible (oruga articulada de 20 eslabones) -->
+            <g id="drag-chain"></g>
+
+            <!-- Brazos articulados SCARA J1 y J2 -->
+            <g id="scara-arms"></g>
+        </svg>
+
+        <!-- HUD LATERAL IZQUIERDO -->
+        <div class="hud-panel hud-left">
+            <div class="hud-title">// COORDENADAS CARTESIANAS SCARA</div>
+            <div class="hud-row"><span>POSICION X:</span><span class="hud-val" id="val-x">680.0 mm</span></div>
+            <div class="hud-row"><span>POSICION Y:</span><span class="hud-val" id="val-y">540.0 mm</span></div>
+            <div class="hud-row"><span>HUSILLO Z:</span><span class="hud-val" id="val-z">-24.5 mm</span></div>
+            <div class="hud-row"><span>VELOCIDAD:</span><span class="hud-val" id="val-spd">1,450 mm/s</span></div>
+            <div class="hud-row"><span>CICLO PICK/PLACE:</span><span class="hud-val">0.38 s // ALTA PRECISION</span></div>
+        </div>
+
+        <!-- HUD LATERAL DERECHO -->
+        <div class="hud-panel hud-right">
+            <div class="hud-title">// LASER UV FOTOLITOGRAFIA</div>
+            <div class="hud-row"><span>LONGITUD DE ONDA:</span><span class="hud-val" style="color: #c084fc;">405 nm // ULTRAVIOLETA</span></div>
+            <div class="hud-row"><span>POTENCIA OPTICA:</span><span class="hud-val" id="val-pwr">120 mW</span></div>
+            <div class="hud-row"><span>PULSO CADENA:</span><span class="hud-val">ACTIVO // 100 MB/S</span></div>
+            <div class="hud-row"><span>RESOLUCION FOCO:</span><span class="hud-val">0.8 micrones</span></div>
+            <div class="hud-row"><span>ESTADO:</span><span class="hud-val" style="color: #00ffaa;">GRABADO ACTIVO</span></div>
+        </div>
+
+        <!-- CONTROLES INFERIORES -->
+        <div class="hud-panel hud-bottom">
+            <button class="ctrl-btn active" id="btn-pattern">[ Patron Circular ]</button>
+            <button class="ctrl-btn" id="btn-laser">[ Laser: ON ]</button>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">// Mueve el raton para controlar el extremo efector del robot</span>
+        </div>
+    </main>
+
+    <!-- SCRIPT DE PROCEDIMIENTO Y SHADER WEBGL -->
+    <script type="module">
+        const canvas = document.getElementById('laser-canvas');
+        const gl = canvas.getContext('webgl');
+        const scaraArms = document.getElementById('scara-arms');
+        const dragChain = document.getElementById('drag-chain');
+
+        const valX = document.getElementById('val-x');
+        const valY = document.getElementById('val-y');
+        const valZ = document.getElementById('val-z');
+        const valSpd = document.getElementById('val-spd');
+        const btnPattern = document.getElementById('btn-pattern');
+        const btnLaser = document.getElementById('btn-laser');
+
+        let autoPattern = true;
+        let laserActive = true;
+        let mouseX = 680, mouseY = 540;
+
+        btnPattern.addEventListener('click', () => {
+            autoPattern = !autoPattern;
+            btnPattern.classList.toggle('active', autoPattern);
+        });
+
+        btnLaser.addEventListener('click', () => {
+            laserActive = !laserActive;
+            btnLaser.classList.toggle('active', laserActive);
+            btnLaser.textContent = laserActive ? '[ Laser: ON ]' : '[ Laser: OFF ]';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!autoPattern) {
+                const rect = canvas.getBoundingClientRect();
+                mouseX = (e.clientX - rect.left) * (1000 / rect.width);
+                mouseY = (e.clientY - rect.top) * (800 / rect.height);
+            }
+        });
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // -------------------------------------------------------------
+        // SHADER WEBGL: HAZ LASER UV COHERENTE Y PUNTO FLUORESCENTE
+        // -------------------------------------------------------------
+        const VS_SRC = `
+            attribute vec2 position;
+            void main() { gl_Position = vec4(position, 0.0, 1.0); }
+        `;
+
+        const FS_SRC = `
+            precision highp float;
+            uniform vec2 uResolution;
+            uniform vec2 uToolPos;
+            uniform vec2 uWaferPos;
+            uniform float uTime;
+            uniform float uActive;
+
+            void main() {
+                if (uActive < 0.5) {
+                    gl_FragColor = vec4(0.0);
+                    return;
+                }
+
+                vec2 uv = gl_FragCoord.xy;
+                vec2 pTool = vec2(uToolPos.x, uResolution.y - uToolPos.y);
+                vec2 pWafer = vec2(uWaferPos.x, uResolution.y - uWaferPos.y);
+
+                // Distancia al haz vertical (segmento entre herramienta y oblea)
+                vec2 ab = pWafer - pTool;
+                vec2 ap = uv - pTool;
+                float t = clamp(dot(ap, ab) / dot(ab, ab), 0.0, 1.0);
+                vec2 proj = pTool + t * ab;
+                float dBeam = length(uv - proj);
+
+                // Haz ultra fino coherente de 405 nm
+                float beamCore = exp(-dBeam * 0.8) * 3.5;
+                float beamGlow = exp(-dBeam * 0.08) * 0.85;
+
+                // Punto focal sobre la oblea con resplandor fluorescente
+                float dFocal = length(uv - pWafer);
+                float focalPulse = 0.85 + 0.15 * sin(uTime * 30.0);
+                float focalCore = exp(-dFocal * 0.15) * 4.0 * focalPulse;
+                float focalGlow = exp(-dFocal * 0.03) * 1.5 * focalPulse;
+
+                vec3 colViolet = vec3(0.66, 0.33, 0.98);
+                vec3 colWhite = vec3(0.95, 0.90, 1.0);
+
+                vec3 col = colViolet * (beamGlow + focalGlow) + colWhite * (beamCore + focalCore);
+                float alpha = clamp(length(col), 0.0, 0.95);
+
+                gl_FragColor = vec4(col, alpha);
+            }
+        `;
+
+        function createShader(gl, type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, VS_SRC));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, FS_SRC));
+        gl.linkProgram(prog);
+
+        const posBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+
+        const aPos = gl.getAttribLocation(prog, 'position');
+        const uRes = gl.getUniformLocation(prog, 'uResolution');
+        const uTool = gl.getUniformLocation(prog, 'uToolPos');
+        const uWafer = gl.getUniformLocation(prog, 'uWaferPos');
+        const uTime = gl.getUniformLocation(prog, 'uTime');
+        const uActive = gl.getUniformLocation(prog, 'uActive');
+
+        // -------------------------------------------------------------
+        // CINEMATICA DEL ROBOT SCARA Y CADENA PORTACABLES
+        // -------------------------------------------------------------
+        const BASE_X = 350, BASE_Y = 440;
+        const L1 = 180;
+        const L2 = 160;
+
+        let curX = 680, curY = 540;
+        let curZ = -20;
+
+        function solveSCARA(tx, ty) {
+            const dx = tx - BASE_X;
+            const dy = ty - BASE_Y;
+            const dist = Math.min(Math.sqrt(dx * dx + dy * dy), L1 + L2 - 1);
+
+            const cosA2 = (dist * dist - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+            const a2 = Math.acos(Math.max(-1, Math.min(1, cosA2)));
+
+            const baseAngle = Math.atan2(dy, dx);
+            const a1 = baseAngle - Math.atan2(L2 * Math.sin(a2), L1 + L2 * Math.cos(a2));
+
+            return { a1, a2 };
+        }
+
+        let time = 0;
+        function renderLoop() {
+            time += 0.016;
+
+            if (autoPattern) {
+                // Trayectoria de grabado de microchip en espiral/circulo
+                curX = 680 + Math.cos(time * 2.5) * 55;
+                curY = 554 + Math.sin(time * 2.5) * 20;
+                curZ = -15 + Math.sin(time * 5.0) * 10;
+            } else {
+                curX += (mouseX - curX) * 0.12;
+                curY += (mouseY - curY) * 0.12;
+            }
+
+            const { a1, a2 } = solveSCARA(curX, curY);
+
+            const elbowX = BASE_X + Math.cos(a1) * L1;
+            const elbowY = BASE_Y + Math.sin(a1) * L1;
+
+            const toolX = elbowX + Math.cos(a1 + a2) * L2;
+            const toolY = elbowY + Math.sin(a1 + a2) * L2;
+
+            valX.textContent = `${curX.toFixed(1)} mm`;
+            valY.textContent = `${curY.toFixed(1)} mm`;
+            valZ.textContent = `${curZ.toFixed(1)} mm`;
+            valSpd.textContent = `${(1200 + Math.sin(time * 8.0) * 250).toFixed(0)} mm/s`;
+
+            // Construir brazos SCARA
+            scaraArms.innerHTML = `
+                <!-- Brazo J1 -->
+                <line x1="${BASE_X}" y1="${BASE_Y}" x2="${elbowX}" y2="${elbowY}" stroke="#0f172a" stroke-width="40" stroke-linecap="round"/>
+                <line x1="${BASE_X}" y1="${BASE_Y}" x2="${elbowX}" y2="${elbowY}" stroke="#334155" stroke-width="32" stroke-linecap="round"/>
+                <circle cx="${BASE_X}" cy="${BASE_Y}" r="32" fill="#1e293b" stroke="#a855f7" stroke-width="2"/>
+
+                <!-- Brazo J2 -->
+                <line x1="${elbowX}" y1="${elbowY}" x2="${toolX}" y2="${toolY}" stroke="#0f172a" stroke-width="32" stroke-linecap="round"/>
+                <line x1="${elbowX}" y1="${elbowY}" x2="${toolX}" y2="${toolY}" stroke="#475569" stroke-width="24" stroke-linecap="round"/>
+                <circle cx="${elbowX}" cy="${elbowY}" r="24" fill="#1e293b" stroke="#a855f7" stroke-width="2"/>
+
+                <!-- Husillo de bolas estriado vertical Z -->
+                <rect x="${toolX - 8}" y="${toolY - 60 + curZ}" width="16" height="100" fill="#cbd5e1" stroke="#475569" stroke-width="2" rx="4"/>
+                <circle cx="${toolX}" cy="${toolY + 40 + curZ}" r="12" fill="#1e293b" stroke="#a855f7" stroke-width="2"/>
+            `;
+
+            // Cadena portacables en oruga que se arquea proceduralmente
+            const chainSteps = 16;
+            let chainD = `M ${BASE_X + 20} ${BASE_Y - 40} `;
+            let chainLinks = '';
+
+            const cX0 = BASE_X + 20, cY0 = BASE_Y - 40;
+            const cX1 = toolX - 10, cY1 = toolY - 50 + curZ;
+            const ctrlX = (cX0 + cX1) * 0.5 - 60;
+            const ctrlY = Math.min(cY0, cY1) - 60;
+
+            for (let i = 0; i <= chainSteps; i++) {
+                const t = i / chainSteps;
+                // Curva de Bezier cuadratica para la oruga
+                const px = (1 - t) * (1 - t) * cX0 + 2 * (1 - t) * t * ctrlX + t * t * cX1;
+                const py = (1 - t) * (1 - t) * cY0 + 2 * (1 - t) * t * ctrlY + t * t * cY1;
+
+                if (i === 0) chainD = `M ${px} ${py} `;
+                else chainD += `L ${px} ${py} `;
+
+                // Eslabones rigidos
+                chainLinks += `
+                    <rect x="${px - 6}" y="${py - 6}" width="12" height="12" fill="#1e293b" stroke="#475569" stroke-width="1.5" rx="2"/>
+                `;
+            }
+
+            dragChain.innerHTML = `
+                <!-- Trayectoria del cable interior con pulsos lumínicos -->
+                <path d="${chainD}" class="chain-wire"/>
+                ${chainLinks}
+            `;
+
+            // RENDERIZADO WEBGL: Haz Laser UV
+            if (gl) {
+                gl.useProgram(prog);
+                gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+                const screenToolX = (toolX / 1000) * canvas.width;
+                const screenToolY = ((toolY + 40 + curZ) / 800) * canvas.height;
+
+                const screenWaferX = (curX / 1000) * canvas.width;
+                const screenWaferY = (554 / 800) * canvas.height;
+
+                gl.uniform2f(uRes, canvas.width, canvas.height);
+                gl.uniform2f(uTool, screenToolX, screenToolY);
+                gl.uniform2f(uWafer, screenWaferX, screenWaferY);
+                gl.uniform1f(uTime, time);
+                gl.uniform1f(uActive, laserActive ? 1.0 : 0.0);
+
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        requestAnimationFrame(renderLoop);
+    </script>
+</body>
+</html>

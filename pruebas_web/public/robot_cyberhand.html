@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Mano Bionica // Red Sinaptica & Holograma</title>
+    <style>
+        :root {
+            --bg-page: #06090e;
+            --panel-bg: rgba(10, 15, 24, 0.85);
+            --border-neon: rgba(0, 240, 255, 0.35);
+            --cyan-neon: #00f0ff;
+            --emerald-neon: #00ffaa;
+            --amber-neon: #ffaa00;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 54px;
+            background: rgba(6, 9, 14, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-neon);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 1000;
+        }
+
+        .brand-container { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+        .brand-bullet { color: var(--emerald-neon); font-weight: bold; }
+        .brand-title { font-weight: 800; letter-spacing: 0.15em; color: #ffffff; }
+        .brand-tag {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            background: rgba(0, 255, 170, 0.12);
+            border: 1px solid var(--emerald-neon);
+            border-radius: 4px;
+            color: var(--emerald-neon);
+        }
+
+        .nav-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .nav-btn {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            color: var(--cyan-neon);
+            border-color: var(--border-neon);
+            background: rgba(0, 240, 255, 0.08);
+        }
+
+        .stage-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .layer-canvas, .layer-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .layer-canvas { z-index: 10; pointer-events: none; }
+        .layer-svg { z-index: 20; }
+
+        /* FLUJOS SINAPTICOS Y PULSOS */
+        .synapse-bus {
+            fill: none;
+            stroke: rgba(0, 255, 170, 0.2);
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        .synapse-pulse {
+            fill: none;
+            stroke: #00ffaa;
+            stroke-width: 2.5;
+            stroke-dasharray: 4 14;
+            animation: flow-pulse 0.9s linear infinite;
+        }
+
+        .synapse-optic {
+            fill: none;
+            stroke: #00f0ff;
+            stroke-width: 1.5;
+            stroke-dasharray: 2 10;
+            animation: flow-pulse-fast 0.5s linear infinite;
+        }
+
+        @keyframes flow-pulse { to { stroke-dashoffset: -36; } }
+        @keyframes flow-pulse-fast { to { stroke-dashoffset: -48; } }
+
+        /* HUD DE TELEMETRIA */
+        .hud-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-neon);
+            border-radius: 6px;
+            padding: 1rem;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            font-size: 0.75rem;
+        }
+
+        .hud-left { top: 70px; left: 20px; width: 280px; }
+        .hud-right { top: 70px; right: 20px; width: 270px; }
+        .hud-bottom {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1.2rem;
+            align-items: center;
+            padding: 0.8rem 1.6rem;
+        }
+
+        .hud-title {
+            color: var(--emerald-neon);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0, 255, 170, 0.2);
+            padding-bottom: 4px;
+        }
+
+        .hud-row { display: flex; justify-content: space-between; margin: 6px 0; color: var(--text-muted); }
+        .hud-val { color: #ffffff; font-weight: bold; }
+
+        .ctrl-btn {
+            background: rgba(0, 255, 170, 0.1);
+            color: var(--emerald-neon);
+            border: 1px solid rgba(0, 255, 170, 0.35);
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+
+        .ctrl-btn:hover { background: rgba(0, 255, 170, 0.25); border-color: var(--emerald-neon); }
+        .ctrl-btn.active { background: var(--emerald-neon); color: #050811; font-weight: bold; }
+
+        .grid-bg {
+            position: absolute;
+            inset: 0;
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(0, 255, 170, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 170, 0.03) 1px, transparent 1px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">ROBOTICA // MANO BIONICA</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Catalogo ]</a>
+            <a href="robot_arm_welder.html" class="nav-btn">[ Rob: Brazo ]</a>
+            <a href="robot_cyberhand.html" class="nav-btn active">[ Rob: Mano ]</a>
+            <a href="robot_scara_circuit.html" class="nav-btn">[ Rob: SCARA ]</a>
+            <a href="robot_hexapod_walker.html" class="nav-btn">[ Rob: Hexapodo ]</a>
+            <a href="robot_server_gantry.html" class="nav-btn">[ Rob: Gantry ]</a>
+            <a href="anatomy_scroll.html" class="nav-btn">[ Bio: Scroll ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+        </nav>
+    </header>
+
+    <main class="stage-container">
+        <div class="grid-bg"></div>
+
+        <!-- CANVAS WEBGL: CONO HOLOGRAFICO Y HUD VOLUMETRICO -->
+        <canvas id="holo-canvas" class="layer-canvas"></canvas>
+
+        <!-- SVG ISOMETRICO: MANO BIONICA Y TENDONES DE KEVLAR -->
+        <svg id="hand-svg" class="layer-svg" viewBox="0 0 1000 800">
+            <!-- Muneca y Antebrazo mecanico -->
+            <g id="forearm" transform="translate(500, 680)">
+                <path d="M-90,0 L90,0 L75,80 L-75,80 Z" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+                <ellipse cx="0" cy="0" rx="90" ry="24" fill="#1e293b" stroke="#00ffaa" stroke-width="2"/>
+                <circle cx="-50" cy="40" r="14" fill="#334155" stroke="#475569" stroke-width="2"/>
+                <circle cx="50" cy="40" r="14" fill="#334155" stroke="#475569" stroke-width="2"/>
+            </g>
+
+            <!-- Palma mecanica con lente holografica central -->
+            <g id="palm" transform="translate(500, 520)">
+                <path d="M-105,80 C-125,0 -110,-60 -80,-90 L80,-90 C110,-60 125,0 105,80 Z" fill="#1e293b" stroke="#475569" stroke-width="2.5"/>
+                <!-- Blindaje de titanio biselado -->
+                <path d="M-75,50 L-60,-65 L60,-65 L75,50 Z" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+                <!-- Lente emisora de holograma -->
+                <circle cx="0" cy="-10" r="32" fill="#0284c7" stroke="#00f0ff" stroke-width="3"/>
+                <circle cx="0" cy="-10" r="16" fill="#00f0ff" opacity="0.8"/>
+            </g>
+
+            <!-- 5 Dedos Articulados (Generados proceduralmente) -->
+            <g id="fingers-group"></g>
+
+            <!-- Pistas sinapticas de comunicacion -->
+            <g id="neural-tracks"></g>
+        </svg>
+
+        <!-- HUD LATERAL IZQUIERDO -->
+        <div class="hud-panel hud-left">
+            <div class="hud-title">// SENSORES HAPTICOS 14 FALANGES</div>
+            <div class="hud-row"><span>PULGAR (3 DOF):</span><span class="hud-val" id="val-f0">4.2 N // TACTIL</span></div>
+            <div class="hud-row"><span>INDICE (3 DOF):</span><span class="hud-val" id="val-f1">8.5 N // PRENSION</span></div>
+            <div class="hud-row"><span>MEDIO (3 DOF):</span><span class="hud-val" id="val-f2">7.9 N // CARGA</span></div>
+            <div class="hud-row"><span>ANULAR (3 DOF):</span><span class="hud-val" id="val-f3">6.1 N // EQUILIBRIO</span></div>
+            <div class="hud-row"><span>MENIQUE (2 DOF):</span><span class="hud-val" id="val-f4">3.4 N // GUIA</span></div>
+        </div>
+
+        <!-- HUD LATERAL DERECHO -->
+        <div class="hud-panel hud-right">
+            <div class="hud-title">// TELEMETRIA CIBERNETICA</div>
+            <div class="hud-row"><span>BUS SINAPTICO:</span><span class="hud-val">10.4 GBPS // OPTICO</span></div>
+            <div class="hud-row"><span>TENSION TENDONES:</span><span class="hud-val" id="val-tension">42.5 N</span></div>
+            <div class="hud-row"><span>TEMP. SERVOS:</span><span class="hud-val">34.8 C</span></div>
+            <div class="hud-row"><span>BATERIA NANO-CEL:</span><span class="hud-val" style="color: #00ffaa;">98.4%</span></div>
+            <div class="hud-row"><span>MODO ACTIVO:</span><span class="hud-val" style="color: #00f0ff;" id="val-mode">REPOSO ELASTICO</span></div>
+        </div>
+
+        <!-- CONTROLES INFERIORES -->
+        <div class="hud-panel hud-bottom">
+            <button class="ctrl-btn active" id="btn-rest">[ Reposo ]</button>
+            <button class="ctrl-btn" id="btn-pinch">[ Pinza Precision ]</button>
+            <button class="ctrl-btn" id="btn-fist">[ Puño de Fuerza ]</button>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">// Mueve el cursor para modular la apertura dinamica de la mano</span>
+        </div>
+    </main>
+
+    <!-- SCRIPT DE PROCEDIMIENTO Y SHADER WEBGL -->
+    <script type="module">
+        const canvas = document.getElementById('holo-canvas');
+        const gl = canvas.getContext('webgl');
+        const fingersGroup = document.getElementById('fingers-group');
+        const neuralTracks = document.getElementById('neural-tracks');
+
+        const valF0 = document.getElementById('val-f0');
+        const valF1 = document.getElementById('val-f1');
+        const valF2 = document.getElementById('val-f2');
+        const valTension = document.getElementById('val-tension');
+        const valMode = document.getElementById('val-mode');
+
+        const btnRest = document.getElementById('btn-rest');
+        const btnPinch = document.getElementById('btn-pinch');
+        const btnFist = document.getElementById('btn-fist');
+
+        let mode = 'rest';
+        let mouseT = 0.0;
+
+        btnRest.addEventListener('click', () => setMode('rest', btnRest));
+        btnPinch.addEventListener('click', () => setMode('pinch', btnPinch));
+        btnFist.addEventListener('click', () => setMode('fist', btnFist));
+
+        function setMode(newMode, btn) {
+            mode = newMode;
+            [btnRest, btnPinch, btnFist].forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            valMode.textContent = mode.toUpperCase();
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            mouseT = (e.clientY / window.innerHeight);
+        });
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // -------------------------------------------------------------
+        // SHADER WEBGL: CONO HOLOGRAFICO Y SCANLINES EN ESPACIO 3D
+        // -------------------------------------------------------------
+        const VS_SRC = `
+            attribute vec2 position;
+            void main() { gl_Position = vec4(position, 0.0, 1.0); }
+        `;
+
+        const FS_SRC = `
+            precision highp float;
+            uniform vec2 uResolution;
+            uniform vec2 uPalmPos;
+            uniform float uTime;
+
+            float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+            void main() {
+                vec2 uv = gl_FragCoord.xy;
+                vec2 center = vec2(uPalmPos.x, uResolution.y - uPalmPos.y);
+
+                vec2 delta = uv - center;
+                float distY = delta.y; // Altura sobre la palma hacia arriba
+                float distX = abs(delta.x);
+
+                if (distY < 0.0 || distY > 260.0) {
+                    gl_FragColor = vec4(0.0);
+                    return;
+                }
+
+                // Cono que se expande hacia arriba
+                float coneWidth = 32.0 + distY * 0.55;
+                if (distX > coneWidth) {
+                    gl_FragColor = vec4(0.0);
+                    return;
+                }
+
+                // Atenuacion y bordes suaves
+                float edge = 1.0 - smoothstep(coneWidth * 0.75, coneWidth, distX);
+                float fadeY = 1.0 - smoothstep(180.0, 260.0, distY);
+
+                // Lineas de escaneo holograficas (Scanlines)
+                float scan = sin(distY * 0.45 - uTime * 12.0) * 0.5 + 0.5;
+                // Anillos de telemetria concentricos proyectados en el aire
+                float rings = sin(length(vec2(distX * 1.5, distY - 140.0)) * 0.15 - uTime * 6.0) * 0.5 + 0.5;
+
+                float intensity = edge * fadeY * (0.25 + 0.35 * scan + 0.40 * rings);
+
+                vec3 holoCyan = vec3(0.0, 0.95, 1.0);
+                vec3 holoWhite = vec3(0.85, 1.0, 0.95);
+
+                vec3 col = mix(holoCyan, holoWhite, rings * 0.6) * intensity;
+                gl_FragColor = vec4(col, intensity * 0.85);
+            }
+        `;
+
+        function createShader(gl, type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, VS_SRC));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, FS_SRC));
+        gl.linkProgram(prog);
+
+        const posBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+
+        const aPos = gl.getAttribLocation(prog, 'position');
+        const uRes = gl.getUniformLocation(prog, 'uResolution');
+        const uPalm = gl.getUniformLocation(prog, 'uPalmPos');
+        const uTime = gl.getUniformLocation(prog, 'uTime');
+
+        // -------------------------------------------------------------
+        // GEOMETRIA Y CINEMATICA DE LAS 14 FALANGES DE LA MANO
+        // -------------------------------------------------------------
+        const FINGER_BASES = [
+            { id: 'thumb',  bx: -85, by: 460, angle: -0.65, lengths: [48, 38, 32] },
+            { id: 'index',  bx: -58, by: 430, angle: -0.15, lengths: [55, 42, 34] },
+            { id: 'middle', bx: -12, by: 420, angle:  0.02, lengths: [62, 46, 36] },
+            { id: 'ring',   bx:  36, by: 430, angle:  0.15, lengths: [54, 40, 32] },
+            { id: 'pinky',  bx:  78, by: 450, angle:  0.32, lengths: [44, 32, 26] },
+        ];
+
+        let flexGoals = [0.1, 0.1, 0.1, 0.1, 0.1];
+        let currentFlex = [0.1, 0.1, 0.1, 0.1, 0.1];
+
+        let time = 0;
+        function renderLoop() {
+            time += 0.016;
+
+            // Determinar objetivos segun el modo
+            if (mode === 'rest') {
+                const breathing = Math.sin(time * 2.0) * 0.08;
+                flexGoals = [0.15 + breathing, 0.18 + breathing, 0.16 + breathing, 0.14 + breathing, 0.12 + breathing];
+            } else if (mode === 'pinch') {
+                flexGoals = [0.75, 0.85, 0.15, 0.10, 0.05];
+            } else if (mode === 'fist') {
+                flexGoals = [0.92, 0.95, 0.96, 0.94, 0.90];
+            }
+
+            for (let i = 0; i < 5; i++) {
+                currentFlex[i] += (flexGoals[i] - currentFlex[i]) * 0.14;
+            }
+
+            valTension.textContent = `${(15.0 + currentFlex[1] * 45.0).toFixed(1)} N`;
+            valF0.textContent = `${(currentFlex[0] * 12.0).toFixed(1)} N // TACTIL`;
+            valF1.textContent = `${(currentFlex[1] * 18.0).toFixed(1)} N // PRENSION`;
+            valF2.textContent = `${(currentFlex[2] * 16.5).toFixed(1)} N // CARGA`;
+
+            // Construir representacion SVG de las falanges
+            let fingersHtml = '';
+            let tracksHtml = '';
+
+            FINGER_BASES.forEach((f, idx) => {
+                const flex = currentFlex[idx];
+                const baseAngle = -Math.PI * 0.5 + f.angle;
+
+                let startX = 500 + f.bx;
+                let startY = f.by;
+
+                let curAngle = baseAngle;
+                let pathPoints = [[startX, startY]];
+
+                // Cada dedo posee 3 falanges articuladas
+                for (let j = 0; j < 3; j++) {
+                    const len = f.lengths[j];
+                    // La curvatura se acumula en cada articulacion
+                    curAngle += (j === 0 ? flex * 0.45 : flex * 0.65);
+
+                    const nextX = startX + Math.cos(curAngle) * len;
+                    const nextY = startY + Math.sin(curAngle) * len;
+
+                    const width = 16 - j * 3;
+
+                    // Hueso / solido de falange
+                    fingersHtml += `
+                        <line x1="${startX}" y1="${startY}" x2="${nextX}" y2="${nextY}" stroke="#0f172a" stroke-width="${width + 4}" stroke-linecap="round"/>
+                        <line x1="${startX}" y1="${startY}" x2="${nextX}" y2="${nextY}" stroke="#334155" stroke-width="${width}" stroke-linecap="round"/>
+                        <circle cx="${startX}" cy="${startY}" r="${width * 0.5 + 2}" fill="#0284c7" stroke="#00f0ff" stroke-width="1.5"/>
+                    `;
+
+                    // Yema de contacto suave en la ultima falange
+                    if (j === 2) {
+                        fingersHtml += `
+                            <circle cx="${nextX}" cy="${nextY}" r="${width * 0.5 + 3}" fill="#00ffaa" opacity="0.8"/>
+                        `;
+                    }
+
+                    startX = nextX;
+                    startY = nextY;
+                    pathPoints.push([startX, startY]);
+                }
+
+                // Pistas sinapticas de fibra optica que viajan por el dorso
+                const palmCenter = [500, 510];
+                const dSyn = `M ${palmCenter[0]} ${palmCenter[1]} Q ${500 + f.bx * 0.6} 460 ${pathPoints[0][0]} ${pathPoints[0][1]} L ${pathPoints[1][0]} ${pathPoints[1][1]}`;
+
+                tracksHtml += `
+                    <path d="${dSyn}" class="synapse-bus"/>
+                    <path d="${dSyn}" class="synapse-pulse"/>
+                    <path d="${dSyn}" class="synapse-optic"/>
+                `;
+            });
+
+            fingersGroup.innerHTML = fingersHtml;
+            neuralTracks.innerHTML = tracksHtml;
+
+            // RENDERIZADO WEBGL: Cono Holografico
+            if (gl) {
+                gl.useProgram(prog);
+                gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+                const screenPalmX = (500 / 1000) * canvas.width;
+                const screenPalmY = (510 / 800) * canvas.height;
+
+                gl.uniform2f(uRes, canvas.width, canvas.height);
+                gl.uniform2f(uPalm, screenPalmX, screenPalmY);
+                gl.uniform1f(uTime, time);
+
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        requestAnimationFrame(renderLoop);
+    </script>
+</body>
+</html>

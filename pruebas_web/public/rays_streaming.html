@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Pixel Streaming & CSS Scroll-Driven</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (SIN JS, SIN EMOJIS) -->
+    <header style="position: fixed; top: 0; left: 0; width: 100%; height: 60px; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; background: rgba(5, 7, 15, 0.75); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); box-sizing: border-box;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; font-family: monospace;">
+            <span style="color: #00f0ff; font-weight: 700;">[+]</span>
+            <span style="font-weight: 800; letter-spacing: 0.15em; color: #ffffff;">LINUX GROOVE</span>
+            <span style="font-size: 0.65rem; padding: 2px 6px; background: rgba(0, 240, 255, 0.15); border: 1px solid #00f0ff; border-radius: 4px; color: #00f0ff;">ELECTRIC RAYS</span>
+        </div>
+        <nav class="nav-links" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
+            <a href="index.html" class="nav-btn">[ Catalogo ]</a>
+            <a href="robot_arm_welder.html" class="nav-btn">[ Robotica ]</a>
+            <a href="rays_streaming.html" class="nav-btn active">[ Rayos ]</a>
+            <a href="labyrinth.html" class="nav-btn">[ Laberinto ]</a>
+            <a href="city.html" class="nav-btn">[ Ciudad ]</a>
+            <a href="objects_mouse.html" class="nav-btn">[ 3D: Primitivas ]</a>
+            <a href="anatomy_inspect.html" class="nav-btn">[ 3D: Bio ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+            <a href="machine_dial.html" class="nav-btn">[ Maq: Comparador ]</a>
+            <a href="machine_ripple.html" class="nav-btn">[ Maq: Ondas ]</a>
+        </nav>
+    </header>
+
+    <!-- CAPA DE STREAMING NATIVO EN TIEMPO REAL DESDE EL MOTOR EN RUST (CERO JS) -->
+    <div class="stream-viewport">
+        <img class="electric-stream" src="/stream" alt="Linux Groove Electric Rays Stream">
+        <div class="stream-vignette"></div>
+        <div class="grid-ambient-overlay"></div>
+    </div>
+
+    <!-- CONTENIDO SEMÁNTICO Y NARRATIVO QUE GUÍA EL SCROLL-DRIVEN -->
+    <main class="content-container">
+
+        <!-- SECCIÓN 1: HERO -->
+        <section class="story-section" id="hero">
+            <div class="glass-card">
+                <span class="badge">Linux Groove Engine</span>
+                <h1>Rayos Eléctricos Procedurales</h1>
+                <p>Renderizados en el servidor y transmitidos a 60 FPS mediante un motor nativo en <strong>Rust</strong>. Tu navegador recibe video continuo usando HTML5 nativo y modula los efectos al 100% en CSS.</p>
+                <div class="scroll-cue">↓ Desplaza hacia abajo para interactuar</div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: ACELERACIÓN Y DESPLIEGUE -->
+        <section class="story-section" id="acceleration">
+            <div class="glass-card">
+                <span class="badge">Soberanía de Rendimiento</span>
+                <h2>Pixel Streaming a 60 FPS</h2>
+                <p>El stream de píxeles corre con latencia de microsegundos en el servidor. Al hacer scroll, la especificación moderna <strong>CSS Scroll-Driven Animations</strong> deforma y amplifica la escena en el silicio de tu GPU.</p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: HYPERDRIVE -->
+        <section class="story-section" id="hyperdrive">
+            <div class="glass-card">
+                <span class="badge">Zero JavaScript Architecture</span>
+                <h2>Cero Líneas de JavaScript</h2>
+                <p>Ni una sola etiqueta <code>&lt;script&gt;</code> en el cliente. La rotación, escala, filtrado de color de alta frecuencia y máscaras radiales se ejecutan íntegramente en el compositor CSS del navegador.</p>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 4: VISIÓN Y FUTURO -->
+        <section class="story-section" id="vision">
+            <div class="glass-card">
+                <span class="badge">El Futuro de la Web</span>
+                <h2>Potencia Nativa de Linux</h2>
+                <p>Unificando la solidez y velocidad extrema del Kernel Linux con Rust y la elegancia visual de los shaders de Qt 6 en cualquier pantalla del mundo.</p>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
+

@@ -1,81 +1,810 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Linux Groove - Pixel Streaming & CSS Scroll-Driven</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GROOVE NEXUS // Catalogo de Sistemas 3D y Motores Procedurales</title>
+  <link rel="stylesheet" href="styles_catalog.css">
 </head>
 <body>
 
-    <!-- BARRA DE NAVEGACION SUPERIOR (SIN JS, SIN EMOJIS) -->
-    <header style="position: fixed; top: 0; left: 0; width: 100%; height: 60px; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; background: rgba(5, 7, 15, 0.75); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid rgba(0, 240, 255, 0.15); box-sizing: border-box;">
-        <div style="display: flex; align-items: center; gap: 0.6rem; font-family: monospace;">
-            <span style="color: #00f0ff; font-weight: 700;">[+]</span>
-            <span style="font-weight: 800; letter-spacing: 0.15em; color: #ffffff;">LINUX GROOVE</span>
-            <span style="font-size: 0.65rem; padding: 2px 6px; background: rgba(0, 240, 255, 0.15); border: 1px solid #00f0ff; border-radius: 4px; color: #00f0ff;">ELECTRIC RAYS</span>
+  <!-- Barra de Progreso de Scroll -->
+  <div id="scroll-progress-bar"></div>
+
+  <!-- Cabecera y HUD Superior -->
+  <header class="catalog-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <div class="brand-logo-hex">GX</div>
+        <div class="brand-titles">
+          <h1>Groove Nexus</h1>
+          <div class="subtitle">Catalogo Tecnico // Sistemas 3D &amp; Motores Procedurales</div>
         </div>
-        <nav class="nav-links" style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-            <a href="index.html" class="nav-btn active">[ Rayos ]</a>
-            <a href="labyrinth.html" class="nav-btn">[ Laberinto ]</a>
-            <a href="city.html" class="nav-btn">[ Ciudad ]</a>
-            <a href="objects_mouse.html" class="nav-btn">[ 3D: Primitivas ]</a>
-            <a href="anatomy_inspect.html" class="nav-btn">[ 3D: Bio ]</a>
-            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
-            <a href="machine_dial.html" class="nav-btn">[ Maq: Comparador ]</a>
-            <a href="machine_ripple.html" class="nav-btn">[ Maq: Ondas ]</a>
-        </nav>
-    </header>
+      </div>
 
-    <!-- CAPA DE STREAMING NATIVO EN TIEMPO REAL DESDE EL MOTOR EN RUST (CERO JS) -->
-    <div class="stream-viewport">
-        <img class="electric-stream" src="/stream" alt="Linux Groove Electric Rays Stream">
-        <div class="stream-vignette"></div>
-        <div class="grid-ambient-overlay"></div>
+      <!-- Telemetria en Tiempo Real -->
+      <div class="hud-telemetry">
+        <div class="telemetry-item">
+          <span class="telemetry-label">FPS:</span>
+          <span class="telemetry-value live" id="telemetry-fps">60 FPS</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Modulos Activos:</span>
+          <span class="telemetry-value" id="telemetry-active-count">0</span>
+          <span class="telemetry-label">/ 21</span>
+        </div>
+        <div class="telemetry-item">
+          <span class="telemetry-label">Scroll:</span>
+          <span class="telemetry-value" id="telemetry-scroll">0%</span>
+        </div>
+      </div>
+
+      <!-- Filtro de Categorias -->
+      <nav class="category-filter-nav">
+        <button class="filter-btn active" data-category="all">[ Todos ]</button>
+        <button class="filter-btn" data-category="robotics">[ Robotica ]</button>
+        <button class="filter-btn" data-category="machines">[ Maquinas ]</button>
+        <button class="filter-btn" data-category="biowasm">[ Bio-Wasm ]</button>
+        <button class="filter-btn" data-category="objects3d">[ 3D Wasm ]</button>
+        <button class="filter-btn" data-category="rays">[ Rayos &amp; Redes ]</button>
+        <button class="filter-btn" data-category="nav">[ Laberinto ]</button>
+      </nav>
     </div>
+  </header>
 
-    <!-- CONTENIDO SEMÁNTICO Y NARRATIVO QUE GUÍA EL SCROLL-DRIVEN -->
-    <main class="content-container">
+  <!-- Seccion Hero -->
+  <section class="catalog-hero">
+    <div class="hero-box">
+      <div class="hero-tag">Entorno de Ingenieria Visual &bull; Alto Rendimiento</div>
+      <h2 class="hero-headline">Sistemas Graficos Procedurales, Robotica y Shaders Nativos</h2>
+      <p class="hero-desc">
+        Catalogo interactivo con virtualizacion por micro-viewports en tiempo real. Cada modulo opera de forma autonoma mediante WebGL nativo, SVG isometrico parametrico, cinematica inversa analitica y nucleos computacionales en Rust WebAssembly a 60 FPS sin dependencias pesadas.
+      </p>
+      <div class="hero-stats-row">
+        <div class="stat-pill"><span class="k">Arquitectura:</span> <span class="v">Zero-Copy Linear Memory</span></div>
+        <div class="stat-pill"><span class="k">Cinematica:</span> <span class="v">Analitica 6-DOF &amp; Trípode</span></div>
+        <div class="stat-pill"><span class="k">Cableado:</span> <span class="v">Dashoffset &amp; Pulse-Flow</span></div>
+        <div class="stat-pill"><span class="k">Pipeline Shaders:</span> <span class="v">Plasma, Holograma, Laser UV, Heat Shimmer, Criogenia</span></div>
+      </div>
+    </div>
+  </section>
 
-        <!-- SECCIÓN 1: HERO -->
-        <section class="story-section" id="hero">
-            <div class="glass-card">
-                <span class="badge">Linux Groove Engine</span>
-                <h1>Rayos Eléctricos Procedurales</h1>
-                <p>Renderizados en el servidor y transmitidos a 60 FPS mediante un motor nativo en <strong>Rust</strong>. Tu navegador recibe video continuo usando HTML5 nativo y modula los efectos al 100% en CSS.</p>
-                <div class="scroll-cue">↓ Desplaza hacia abajo para interactuar</div>
+  <!-- Contenedor Principal del Catalogo -->
+  <main class="catalog-container">
+
+    <!-- ======================================================================
+         CATEGORIA 1: ROBOTICA & ARTICULACIONES 3D (5 MODULOS)
+         ====================================================================== -->
+    <section class="category-section" data-category="robotics">
+      <div class="category-header">
+        <div class="category-title-group">
+          <span class="category-code">SEC-01</span>
+          <h3 class="category-title">Robotica &amp; Articulaciones 3D</h3>
+        </div>
+        <span class="category-count">5 Modulos</span>
+      </div>
+
+      <div class="cards-grid">
+
+        <!-- ROB-01: Brazo Soldador 6-DOF -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">ROB-01 // SOLDADOR 6-DOF</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
             </div>
-        </section>
-
-        <!-- SECCIÓN 2: ACELERACIÓN Y DESPLIEGUE -->
-        <section class="story-section" id="acceleration">
-            <div class="glass-card">
-                <span class="badge">Soberanía de Rendimiento</span>
-                <h2>Pixel Streaming a 60 FPS</h2>
-                <p>El stream de píxeles corre con latencia de microsegundos en el servidor. Al hacer scroll, la especificación moderna <strong>CSS Scroll-Driven Animations</strong> deforma y amplifica la escena en el silicio de tu GPU.</p>
+            <iframe class="preview-iframe" data-src="robot_arm_welder.html" src="about:blank" title="Brazo Soldador 6-DOF"></iframe>
+            <div class="preview-overlay-action">
+              <a href="robot_arm_welder.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
             </div>
-        </section>
-
-        <!-- SECCIÓN 3: HYPERDRIVE -->
-        <section class="story-section" id="hyperdrive">
-            <div class="glass-card">
-                <span class="badge">Zero JavaScript Architecture</span>
-                <h2>Cero Líneas de JavaScript</h2>
-                <p>Ni una sola etiqueta <code>&lt;script&gt;</code> en el cliente. La rotación, escala, filtrado de color de alta frecuencia y máscaras radiales se ejecutan íntegramente en el compositor CSS del navegador.</p>
+          </div>
+          <div class="card-info-body">
+            <a href="robot_arm_welder.html" class="card-title-link">Brazo Robotico Soldador Orbital 6-DOF</a>
+            <p class="card-description">
+              Cinematica analitica inversa interactiva con cursor, manguera umbilical multicapa con pulsos de corriente, antorcha de soldadura TIG y shader WebGL de plasma arc con chispas balisticas.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">IK Analitica 6-DOF</span>
+              <span class="tech-badge shader">WebGL Plasma Arc</span>
+              <span class="tech-badge cables">Umbilical Pulse-Flow</span>
             </div>
-        </section>
+          </div>
+        </article>
 
-        <!-- SECCIÓN 4: VISIÓN Y FUTURO -->
-        <section class="story-section" id="vision">
-            <div class="glass-card">
-                <span class="badge">El Futuro de la Web</span>
-                <h2>Potencia Nativa de Linux</h2>
-                <p>Unificando la solidez y velocidad extrema del Kernel Linux con Rust y la elegancia visual de los shaders de Qt 6 en cualquier pantalla del mundo.</p>
+        <!-- ROB-02: Mano Bionica CyberHand -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">ROB-02 // CYBERHAND 14-FALANGES</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
             </div>
-        </section>
+            <iframe class="preview-iframe" data-src="robot_cyberhand.html" src="about:blank" title="Mano Bionica CyberHand"></iframe>
+            <div class="preview-overlay-action">
+              <a href="robot_cyberhand.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="robot_cyberhand.html" class="card-title-link">Mano Bionica CyberHand de 14 Falanges</a>
+            <p class="card-description">
+              Estructura biomecanica con 5 dedos articulados y 14 falanges independientes. Rutas dorsales de datos luminosos, tendones de Kevlar y proyector holografico cónico con reticula tactica.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">14 Falanges Libres</span>
+              <span class="tech-badge shader">WebGL Hologram HUD</span>
+              <span class="tech-badge cables">Bus Dorsal de Datos</span>
+            </div>
+          </div>
+        </article>
 
-    </main>
+        <!-- ROB-03: SCARA & Cadena Portacables -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">ROB-03 // SCARA FOTOLITOGRAFIA</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="robot_scara_circuit.html" src="about:blank" title="Robot SCARA"></iframe>
+            <div class="preview-overlay-action">
+              <a href="robot_scara_circuit.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="robot_scara_circuit.html" class="card-title-link">Manipulador SCARA con Cadena Portacables</a>
+            <p class="card-description">
+              Brazo planar de alta precision para salas limpias con oruga flexible de 24 eslabones articulados, platina de oblea de silicio de 300mm y shader de haz laser UV de 405nm.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Cinematica Planar</span>
+              <span class="tech-badge shader">WebGL Laser UV 405nm</span>
+              <span class="tech-badge cables">Drag Chain 24 Links</span>
+            </div>
+          </div>
+        </article>
 
+        <!-- ROB-04: Hexapodo Andador 18 Servos -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">ROB-04 // HEXAPODO ANDADOR</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="robot_hexapod_walker.html" src="about:blank" title="Hexapodo Andador"></iframe>
+            <div class="preview-overlay-action">
+              <a href="robot_hexapod_walker.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="robot_hexapod_walker.html" class="card-title-link">Robot Hexapodo de Marcha Continua</a>
+            <p class="card-description">
+              Chasis central con 6 patas articuladas (coxa, femur, tibia) y 18 servos sincronizados en marcha de trípode con arnes flexible de alimentacion y shader de refraccion termica por conveccion.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Gait Tripode 18-DOF</span>
+              <span class="tech-badge shader">WebGL Heat Shimmer</span>
+              <span class="tech-badge cables">Silicon Power Harness</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- ROB-05: Portico Cartesiano de Servidores -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">ROB-05 // PORTICO CARTESIANO X/Y/Z</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="robot_server_gantry.html" src="about:blank" title="Portico Cartesiano"></iframe>
+            <div class="preview-overlay-action">
+              <a href="robot_server_gantry.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="robot_server_gantry.html" class="card-title-link">Grua Portico Cartesiana X/Y/Z</a>
+            <p class="card-description">
+              Estructura industrial de rieles ortogonales sobre pasillo de racks de servidores, feston catenario de fibra optica suspendido con oscilacion dinamica y shader criogenico con chispas de estatica.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Interpolacion Cartesiana</span>
+              <span class="tech-badge shader">WebGL Cryo Mist</span>
+              <span class="tech-badge cables">Feston Catenario Optico</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         CATEGORIA 2: MAQUINAS TERMICAS & CIRCUITOS (4 MODULOS)
+         ====================================================================== -->
+    <section class="category-section" data-category="machines">
+      <div class="category-header">
+        <div class="category-title-group">
+          <span class="category-code">SEC-02</span>
+          <h3 class="category-title">Maquinas Termicas &amp; Circuitos</h3>
+        </div>
+        <span class="category-count">4 Modulos</span>
+      </div>
+
+      <div class="cards-grid">
+
+        <!-- MAC-01: Motor de Cohete -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">MAC-01 // PROPULSION CRIOGENICA</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="machine_rocket.html" src="about:blank" title="Motor de Cohete"></iframe>
+            <div class="preview-overlay-action">
+              <a href="machine_rocket.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="machine_rocket.html" class="card-title-link">Motor de Cohete Criogenico</a>
+            <p class="card-description">
+              Corte isometrico de tobera regenerativa con turbobomba, inyectores coaxiales, formacion de rombos de choque Mach y shader WebGL de plasma turbulento reactivo al acelerador.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Tobera Regenerativa</span>
+              <span class="tech-badge shader">WebGL Rocket Flame</span>
+              <span class="tech-badge">Ecuacion Nozzle</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- MAC-02: Cuadrante Micrometrico -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">MAC-02 // INSTRUMENTACION MECANICA</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="machine_dial.html" src="about:blank" title="Cuadrante Micrometrico"></iframe>
+            <div class="preview-overlay-action">
+              <a href="machine_dial.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="machine_dial.html" class="card-title-link">Cuadrante Micrometrico de Precision</a>
+            <p class="card-description">
+              Mecanismo relojero con engranajes planetarios acoplados, resorte helicoidal antagonista, aguja balanceada e indicacion analogica de tolerancia micrometrica.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Tren de Engranajes</span>
+              <span class="tech-badge">Resorte de Bourdon</span>
+              <span class="tech-badge">Precision Submilimetrica</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- MAC-03: Tanque Ondulatorio Ripple -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">MAC-03 // HIDRODINAMICA DE ONDAS</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="machine_ripple.html" src="about:blank" title="Tanque Ondulatorio"></iframe>
+            <div class="preview-overlay-action">
+              <a href="machine_ripple.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="machine_ripple.html" class="card-title-link">Dispersor Ondulatorio de Fluidos</a>
+            <p class="card-description">
+              Simulador de propagacion en medio elastico con difraccion en ranuras, reflexion amortiguada en bordes perimetrales e interferencia constructiva de ondas de superficie.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Ecuacion de Onda 2D</span>
+              <span class="tech-badge">Amortiguamiento Viscoso</span>
+              <span class="tech-badge">Mapeo de Fase</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- MAC-04: Metrópolis Isométrica -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">MAC-04 // METROPOLIS PROCEDURAL</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="machine_city.html" src="about:blank" title="Ciudad Isométrica"></iframe>
+            <div class="preview-overlay-action">
+              <a href="machine_city.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="machine_city.html" class="card-title-link">Metrópolis Isométrica Procedural</a>
+            <p class="card-description">
+              Generacion modular de rascacielos con texturas de fachadas tecnicas, distribucion de iluminacion nocturna y flujo vehicular continuo a lo largo de autopistas elevadas.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">SVG Isometrico</span>
+              <span class="tech-badge">Trafico Procedural</span>
+              <span class="tech-badge">Oclusion Painter's</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         CATEGORIA 3: BIO-WASM // MODELADO ANATOMICO (4 MODULOS)
+         ====================================================================== -->
+    <section class="category-section" data-category="biowasm">
+      <div class="category-header">
+        <div class="category-title-group">
+          <span class="category-code">SEC-03</span>
+          <h3 class="category-title">Bio-Wasm // Modelado Anatomico</h3>
+        </div>
+        <span class="category-count">4 Modulos</span>
+      </div>
+
+      <div class="cards-grid">
+
+        <!-- BIO-01: Anatomia por Scroll -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">BIO-01 // SCROLL VOLUMETRICO</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="anatomy_scroll.html" src="about:blank" title="Anatomia Scroll"></iframe>
+            <div class="preview-overlay-action">
+              <a href="anatomy_scroll.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="anatomy_scroll.html" class="card-title-link">Navegacion Anatomica por Scroll</a>
+            <p class="card-description">
+              Exploracion volumetrica guiada por desplazamiento de pagina con revelacion gradual de camaras cardiacas, miocardio y trayectorias de vascularizacion coronaria.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Rust Wasm Engine</span>
+              <span class="tech-badge">Scroll-Driven</span>
+              <span class="tech-badge">Sombreado Eye-Space</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- BIO-02: Inspeccion Orbital 360 -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">BIO-02 // INSPECCION ORBITAL</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="anatomy_inspect.html" src="about:blank" title="Anatomia Inspeccion"></iframe>
+            <div class="preview-overlay-action">
+              <a href="anatomy_inspect.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="anatomy_inspect.html" class="card-title-link">Inspeccion Orbital 360 Grados</a>
+            <p class="card-description">
+              Control orbital libre con proyeccion de densidad celular, inspeccion de auriculas y ventriculos con renderizado de particulas volumétricas de alta fidelidad.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Rust Wasm Core</span>
+              <span class="tech-badge">Orbit Controls</span>
+              <span class="tech-badge">Translucidez Adaptativa</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- BIO-03: Deconstruccion Explosiva -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">BIO-03 // DESPIECE EXPLOSIVO</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="anatomy_deconstruct.html" src="about:blank" title="Deconstruccion Anatomica"></iframe>
+            <div class="preview-overlay-action">
+              <a href="anatomy_deconstruct.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="anatomy_deconstruct.html" class="card-title-link">Deconstruccion Explosiva de Organo</a>
+            <p class="card-description">
+              Separacion cinematica axial de capas anatomicas mediante deslizador de despiece con retorno elastico e identificacion diferencial de tejidos por gradiente de color.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Separacion Vectorial</span>
+              <span class="tech-badge">Interpolacion Elastica</span>
+              <span class="tech-badge">Densidad de Malla</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- BIO-04: Ingesta de Moldes GLB -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">BIO-04 // INGESTA DE MOLDES GLB</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="anatomy_glb.html" src="about:blank" title="Anatomia GLB"></iframe>
+            <div class="preview-overlay-action">
+              <a href="anatomy_glb.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="anatomy_glb.html" class="card-title-link">Voxelizacion de Moldes GLB Poligonales</a>
+            <p class="card-description">
+              Extraccion de geometrias binarias glTF/GLB, conversion instantanea a campos de particulas en memoria lineal compartida de Rust Wasm y animacion pulsante.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Parser glTF/GLB</span>
+              <span class="tech-badge">Linear Memory Zero-Copy</span>
+              <span class="tech-badge">Muestreo Superficial</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         CATEGORIA 4: 3D WASM & OBJETOS PROCEDURALES (3 MODULOS)
+         ====================================================================== -->
+    <section class="category-section" data-category="objects3d">
+      <div class="category-header">
+        <div class="category-title-group">
+          <span class="category-code">SEC-04</span>
+          <h3 class="category-title">3D Wasm &amp; Objetos Procedurales</h3>
+        </div>
+        <span class="category-count">3 Modulos</span>
+      </div>
+
+      <div class="cards-grid">
+
+        <!-- OBJ-01: Reactivo por Cursor -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">OBJ-01 // FISICA DE CURSOR</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="objects_mouse.html" src="about:blank" title="Objetos Mouse"></iframe>
+            <div class="preview-overlay-action">
+              <a href="objects_mouse.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="objects_mouse.html" class="card-title-link">Manipulacion 3D Reactiva a Cursor</a>
+            <p class="card-description">
+              Rotacion continua con inercia y amortiguacion angular de solidos platonicos con calculo de normales en tiempo real en espacio de vista (Eye-Space).
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Rust Wasm SIMD</span>
+              <span class="tech-badge">Inercia Angular</span>
+              <span class="tech-badge">Buffer 32-bit</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- OBJ-02: Deformacion por Scroll -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">OBJ-02 // MORFOLOGIA POR SCROLL</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="objects_scroll.html" src="about:blank" title="Objetos Scroll"></iframe>
+            <div class="preview-overlay-action">
+              <a href="objects_scroll.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="objects_scroll.html" class="card-title-link">Deformacion Morfologica por Scroll</a>
+            <p class="card-description">
+              Transformacion continua de geometrias poliédricas complejas vinculadas a la posicion de desplazamiento con proyeccion isometrica acelerada por hardware.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Interpolador Morfico</span>
+              <span class="tech-badge">Scroll Sync</span>
+              <span class="tech-badge">Zero GC Pressure</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- OBJ-03: Deconstruccion Fractal -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">OBJ-03 // DESPIECE FRACTAL</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="objects_deconstruct.html" src="about:blank" title="Objetos Deconstruccion"></iframe>
+            <div class="preview-overlay-action">
+              <a href="objects_deconstruct.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="objects_deconstruct.html" class="card-title-link">Deconstruccion Fractal de Cuerpos 3D</a>
+            <p class="card-description">
+              Fragmentacion poligonal en multiples subcomponentes con dispersion espacial controlada, calculo de centros de gravedad y reensamblaje sincronizado.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Matrices de Inercia</span>
+              <span class="tech-badge">Dispersion 3D</span>
+              <span class="tech-badge">Zero-Allocation Loop</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         CATEGORIA 5: RAYOS & REDES BIOELECTRICAS (4 MODULOS)
+         ====================================================================== -->
+    <section class="category-section" data-category="rays">
+      <div class="category-header">
+        <div class="category-title-group">
+          <span class="category-code">SEC-05</span>
+          <h3 class="category-title">Rayos &amp; Redes Bioelectricas</h3>
+        </div>
+        <span class="category-count">4 Modulos</span>
+      </div>
+
+      <div class="cards-grid">
+
+        <!-- RAY-01: Streaming Binario de Rayos -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">RAY-01 // STREAMING BINARIO RUST</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="rays_streaming.html" src="about:blank" title="Streaming Rayos"></iframe>
+            <div class="preview-overlay-action">
+              <a href="rays_streaming.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="rays_streaming.html" class="card-title-link">Streaming de Descargas Electricas</a>
+            <p class="card-description">
+              Recepcion continua de buffers binarios sintetizados en Rust a traves de WebSockets o SSE con renderizado Canvas acelerado y cero bloqueo de hilo principal.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge wasm">Rust Binary Stream</span>
+              <span class="tech-badge">Canvas 2D Ultra-Fast</span>
+              <span class="tech-badge">60 FPS Streaming</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RAY-02: Bobina de Tesla -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">RAY-02 // ARCO VOLTAICO TESLA</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="rays_tesla.html" src="about:blank" title="Bobina de Tesla"></iframe>
+            <div class="preview-overlay-action">
+              <a href="rays_tesla.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="rays_tesla.html" class="card-title-link">Descargas Voltaicas Tipo Tesla</a>
+            <p class="card-description">
+              Generacion de rayos de ruptura dielectrica con bifurcaciones fractales, fluctuacion estocastica del arco principal y disipacion atmosferica de alta tension.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Ruptura Dielectrica</span>
+              <span class="tech-badge">Bifurcacion Fractal</span>
+              <span class="tech-badge">Glow Post-Processing</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RAY-03: Tormenta Atmosférica -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">RAY-03 // TORMENTA ATMOSFERICA</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="rays_storm.html" src="about:blank" title="Tormenta Atmosférica"></iframe>
+            <div class="preview-overlay-action">
+              <a href="rays_storm.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="rays_storm.html" class="card-title-link">Tormenta Electrica Atmosferica</a>
+            <p class="card-description">
+              Simulacion de descargas de nube a tierra con ramificacion progresiva de lideres escalonados y relampagos de retorno con iluminacion volumetrica difusa.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Lider Escalonado</span>
+              <span class="tech-badge">Flash Atmosferico</span>
+              <span class="tech-badge">Persistencia Fosforica</span>
+            </div>
+          </div>
+        </article>
+
+        <!-- RAY-04: Red Bioeléctrica Sináptica -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">RAY-04 // SINAPSIS BIOELECTRICA</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="rays_synapse.html" src="about:blank" title="Red Sinaptica"></iframe>
+            <div class="preview-overlay-action">
+              <a href="rays_synapse.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="rays_synapse.html" class="card-title-link">Red Bioelectrica y Potencial Sinaptico</a>
+            <p class="card-description">
+              Propagacion de potenciales de accion a lo largo de dendritas y axones neuronales con disparo coordinado de neurotransmisores y transistores biologicos.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Potenciales de Accion</span>
+              <span class="tech-badge cables">Dendritas &amp; Axones</span>
+              <span class="tech-badge">Disparo Sinaptico</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         CATEGORIA 6: NAVEGACION & LABERINTOS (1 MODULO)
+         ====================================================================== -->
+    <section class="category-section" data-category="nav">
+      <div class="category-header">
+        <div class="category-title-group">
+          <span class="category-code">SEC-06</span>
+          <h3 class="category-title">Navegacion &amp; Laberintos</h3>
+        </div>
+        <span class="category-count">1 Modulo</span>
+      </div>
+
+      <div class="cards-grid">
+
+        <!-- NAV-01: Laberinto Procedural -->
+        <article class="project-card">
+          <div class="card-header-bar">
+            <span class="card-tag-id">NAV-01 // LABERINTO PROCEDURAL</span>
+            <span class="card-status-badge virtualized">EN ESPERA</span>
+          </div>
+          <div class="preview-viewport-wrapper">
+            <div class="preview-placeholder">
+              <div class="loader-spinner"></div>
+              <span>Inicializando Micro-Viewport...</span>
+            </div>
+            <iframe class="preview-iframe" data-src="labyrinth.html" src="about:blank" title="Laberinto"></iframe>
+            <div class="preview-overlay-action">
+              <a href="labyrinth.html" class="btn-open-preview" target="_blank">[ Abrir Modulo &nearr; ]</a>
+            </div>
+          </div>
+          <div class="card-info-body">
+            <a href="labyrinth.html" class="card-title-link">Generador de Laberinto y Recorrido</a>
+            <p class="card-description">
+              Generacion algoritmica de pasajes ortogonales mediante arbol de expansion minimo, resolucion de caminos y exploracion interactiva en primera persona.
+            </p>
+            <div class="card-tech-badges">
+              <span class="tech-badge">Algoritmo Arbol Expansion</span>
+              <span class="tech-badge">Pathfinding A*</span>
+              <span class="tech-badge">Perspectiva 3D</span>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Pie de Pagina -->
+  <footer class="catalog-footer">
+    <div class="footer-inner">
+      <div>GROOVE NEXUS // MOTOR INTEGRADO DE VISUALIZACION 3D, WASM Y ROBOTICA</div>
+      <div class="footer-nav-links">
+        <a href="#scroll-progress-bar">[ Inicio ]</a>
+        <a href="robot_arm_welder.html">[ Soldador 6-DOF ]</a>
+        <a href="robot_cyberhand.html">[ CyberHand ]</a>
+        <a href="robot_scara_circuit.html">[ SCARA ]</a>
+        <a href="robot_hexapod_walker.html">[ Hexapodo ]</a>
+        <a href="robot_server_gantry.html">[ Portico ]</a>
+        <a href="machine_rocket.html">[ Cohete ]</a>
+        <a href="anatomy_scroll.html">[ Anatomia ]</a>
+        <a href="rays_streaming.html">[ Rayos Streaming ]</a>
+      </div>
+      <div>Desarrollado con estandares nativos de alto rendimiento. Cero dependencias pesadas. 60 FPS estables.</div>
+    </div>
+  </footer>
+
+  <!-- Motor de Virtualizacion y Telemetria -->
+  <script src="catalog_engine.js"></script>
 </body>
 </html>
-

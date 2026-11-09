@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Robot Hexapodo // Marcha Tripode & Refraccion Termica</title>
+    <style>
+        :root {
+            --bg-page: #06090e;
+            --panel-bg: rgba(10, 15, 24, 0.85);
+            --border-neon: rgba(0, 240, 255, 0.35);
+            --cyan-neon: #00f0ff;
+            --amber-thermal: #ff9900;
+            --red-thermal: #ef4444;
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-page); color: var(--text-main); font-family: var(--font-mono); overflow-x: hidden; min-height: 100vh; }
+
+        .top-nav {
+            position: fixed; top: 0; left: 0; width: 100%; height: 54px;
+            background: rgba(6, 9, 14, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-neon);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem; z-index: 1000;
+        }
+
+        .brand-container { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+        .brand-bullet { color: var(--amber-thermal); font-weight: bold; }
+        .brand-title { font-weight: 800; letter-spacing: 0.15em; color: #ffffff; }
+        .brand-tag {
+            font-size: 0.65rem; padding: 2px 6px; background: rgba(255, 153, 0, 0.12);
+            border: 1px solid var(--amber-thermal); border-radius: 4px; color: var(--amber-thermal);
+        }
+
+        .nav-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .nav-btn {
+            font-size: 0.75rem; color: var(--text-muted); text-decoration: none; padding: 4px 8px;
+            border: 1px solid transparent; border-radius: 4px; transition: all 0.2s;
+        }
+        .nav-btn:hover, .nav-btn.active { color: var(--cyan-neon); border-color: var(--border-neon); background: rgba(0, 240, 255, 0.08); }
+
+        .stage-container { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .layer-canvas, .layer-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .layer-canvas { z-index: 10; pointer-events: none; }
+        .layer-svg { z-index: 20; }
+
+        /* PULSOS EN LOS ARNESES DE LAS PATAS */
+        .power-bus { fill: none; stroke: #334155; stroke-width: 4; stroke-linecap: round; }
+        .power-pulse {
+            fill: none; stroke: #ff9900; stroke-width: 2.5; stroke-dasharray: 4 12;
+            animation: flow-pulse 0.7s linear infinite;
+        }
+
+        @keyframes flow-pulse { to { stroke-dashoffset: -32; } }
+
+        .hud-panel {
+            position: absolute; background: var(--panel-bg); border: 1px solid var(--border-neon);
+            border-radius: 6px; padding: 1rem; z-index: 100; backdrop-filter: blur(10px); font-size: 0.75rem;
+        }
+
+        .hud-left { top: 70px; left: 20px; width: 280px; }
+        .hud-right { top: 70px; right: 20px; width: 270px; }
+        .hud-bottom {
+            bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 1.2rem; align-items: center; padding: 0.8rem 1.6rem;
+        }
+
+        .hud-title {
+            color: var(--amber-thermal); font-size: 0.75rem; letter-spacing: 0.1em;
+            margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 153, 0, 0.2); padding-bottom: 4px;
+        }
+
+        .hud-row { display: flex; justify-content: space-between; margin: 6px 0; color: var(--text-muted); }
+        .hud-val { color: #ffffff; font-weight: bold; }
+
+        .ctrl-btn {
+            background: rgba(255, 153, 0, 0.1); color: var(--amber-thermal); border: 1px solid rgba(255, 153, 0, 0.35);
+            padding: 6px 14px; border-radius: 4px; cursor: pointer; font-family: var(--font-mono); font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: rgba(255, 153, 0, 0.25); border-color: var(--amber-thermal); }
+        .ctrl-btn.active { background: var(--amber-thermal); color: #050811; font-weight: bold; }
+
+        .grid-bg {
+            position: absolute; inset: 0; background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 153, 0, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 153, 0, 0.03) 1px, transparent 1px);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">ROBOTICA // HEXAPODO PROCEDURAL</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Catalogo ]</a>
+            <a href="robot_arm_welder.html" class="nav-btn">[ Rob: Brazo ]</a>
+            <a href="robot_cyberhand.html" class="nav-btn">[ Rob: Mano ]</a>
+            <a href="robot_scara_circuit.html" class="nav-btn">[ Rob: SCARA ]</a>
+            <a href="robot_hexapod_walker.html" class="nav-btn active">[ Rob: Hexapodo ]</a>
+            <a href="robot_server_gantry.html" class="nav-btn">[ Rob: Gantry ]</a>
+            <a href="anatomy_scroll.html" class="nav-btn">[ Bio: Scroll ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maq: Cohete ]</a>
+        </nav>
+    </header>
+
+    <main class="stage-container">
+        <div class="grid-bg"></div>
+
+        <!-- CANVAS WEBGL: REFRACCION TERMICA Y CONVECCION OPTICA -->
+        <canvas id="thermal-canvas" class="layer-canvas"></canvas>
+
+        <!-- SVG ISOMETRICO: ROBOT HEXAPODO BIOMIMETICO CON 18 SERVOS -->
+        <svg id="hexapod-svg" class="layer-svg" viewBox="0 0 1000 800">
+            <!-- Sombra de contacto en el suelo -->
+            <ellipse id="ground-shadow" cx="500" cy="500" rx="200" ry="85" fill="#020617" opacity="0.6"/>
+
+            <!-- 6 Patas Articuladas (Coxa, Femur, Tibia) -->
+            <g id="legs-group"></g>
+
+            <!-- Chasis central con aletas disipadoras de calor -->
+            <g id="chassis" transform="translate(500, 480)">
+                <path d="M-80,-40 L80,-40 L110,0 L80,40 L-80,40 L-110,0 Z" fill="#0f172a" stroke="#334155" stroke-width="2.5"/>
+                <path d="M-60,-25 L60,-25 L85,0 L60,25 L-60,25 L-85,0 Z" fill="#1e293b" stroke="#ffaa00" stroke-width="1.5"/>
+                <!-- Aletas de refrigeracion termica -->
+                <line x1="-40" y1="-15" x2="40" y2="-15" stroke="#475569" stroke-width="3"/>
+                <line x1="-50" y1="0" x2="50" y2="0" stroke="#475569" stroke-width="3"/>
+                <line x1="-40" y1="15" x2="40" y2="15" stroke="#475569" stroke-width="3"/>
+                <!-- Nucleo energetico -->
+                <circle cx="0" cy="0" r="14" fill="#ff7700" opacity="0.8"/>
+            </g>
+
+            <!-- Arneses electricos de distribucion -->
+            <g id="cable-bus"></g>
+        </svg>
+
+        <!-- HUD LATERAL IZQUIERDO -->
+        <div class="hud-panel hud-left">
+            <div class="hud-title">// CINEMATICA DE MARCHA TRIPODE</div>
+            <div class="hud-row"><span>FASE MARCHA:</span><span class="hud-val" id="val-gait">TRIPODE A (1,3,5)</span></div>
+            <div class="hud-row"><span>FRECUENCIA PASO:</span><span class="hud-val">1.25 HZ // 60 RPM</span></div>
+            <div class="hud-row"><span>DESPEJE DEL SUELO:</span><span class="hud-val">35 mm // CICLOIDAL</span></div>
+            <div class="hud-row"><span>SERVOMOTORES:</span><span class="hud-val">18 ACTIVOS (BUS CAN)</span></div>
+            <div class="hud-row"><span>ESTABILIDAD:</span><span class="hud-val" style="color: #00ffaa;">100% // ESTATICA</span></div>
+        </div>
+
+        <!-- HUD LATERAL DERECHO -->
+        <div class="hud-panel hud-right">
+            <div class="hud-title">// TELEMETRIA TERMICA IR</div>
+            <div class="hud-row"><span>TEMP. CHASIS:</span><span class="hud-val" style="color: #ff9900;">58.4 C</span></div>
+            <div class="hud-row"><span>TEMP. SERVOS FEMUR:</span><span class="hud-val" style="color: #ef4444;">68.2 C // ALTO TORQUE</span></div>
+            <div class="hud-row"><span>DISIPACION CONVECTIVA:</span><span class="hud-val">42 W</span></div>
+            <div class="hud-row"><span>BATERIA LiPo 6S:</span><span class="hud-val">22.8 V // 88%</span></div>
+            <div class="hud-row"><span>SHIMMER SHADER:</span><span class="hud-val" style="color: #00f0ff;">ACTIVO // FBM 3D</span></div>
+        </div>
+
+        <!-- CONTROLES INFERIORES -->
+        <div class="hud-panel hud-bottom">
+            <button class="ctrl-btn active" id="btn-walk">[ Marcha Continua ]</button>
+            <button class="ctrl-btn" id="btn-speed">[ Velocidad: 1.0x ]</button>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">// Animacion biomecanica de 18 articulaciones con ondas de calor en WebGL</span>
+        </div>
+    </main>
+
+    <!-- SCRIPT DE MARCHA Y SHADER DE DISTORSION TERMICA -->
+    <script type="module">
+        const canvas = document.getElementById('thermal-canvas');
+        const gl = canvas.getContext('webgl');
+        const legsGroup = document.getElementById('legs-group');
+        const cableBus = document.getElementById('cable-bus');
+
+        const valGait = document.getElementById('val-gait');
+        const btnWalk = document.getElementById('btn-walk');
+        const btnSpeed = document.getElementById('btn-speed');
+
+        let walking = true;
+        let speed = 1.0;
+
+        btnWalk.addEventListener('click', () => {
+            walking = !walking;
+            btnWalk.classList.toggle('active', walking);
+        });
+
+        btnSpeed.addEventListener('click', () => {
+            speed = speed === 1.0 ? 1.75 : (speed === 1.75 ? 0.5 : 1.0);
+            btnSpeed.textContent = `[ Velocidad: ${speed.toFixed(1)}x ]`;
+        });
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gl) gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // -------------------------------------------------------------
+        // SHADER WEBGL: DISTORSION TERMICA POR CONVECCION (HEAT SHIMMER)
+        // -------------------------------------------------------------
+        const VS_SRC = `
+            attribute vec2 position;
+            void main() { gl_Position = vec4(position, 0.0, 1.0); }
+        `;
+
+        const FS_SRC = `
+            precision highp float;
+            uniform vec2 uResolution;
+            uniform vec2 uCenter;
+            uniform float uTime;
+
+            float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+
+            float noise(vec2 p) {
+                vec2 i = floor(p);
+                vec2 f = fract(p);
+                vec2 u = f*f*(3.0-2.0*f);
+                return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+                           mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+            }
+
+            void main() {
+                vec2 uv = gl_FragCoord.xy;
+                vec2 center = vec2(uCenter.x, uResolution.y - uCenter.y);
+
+                float d = length(uv - center);
+                if (d > 220.0) {
+                    gl_FragColor = vec4(0.0);
+                    return;
+                }
+
+                // Ondulacion turbulenta ascendente por calor
+                vec2 heatUv = uv * 0.025 + vec2(0.0, -uTime * 3.5);
+                float n = noise(heatUv) * 0.6 + noise(heatUv * 2.2) * 0.4;
+
+                float envelope = exp(-pow(d / 140.0, 2.0));
+                float shimmer = n * envelope;
+
+                vec3 colThermal = vec3(1.0, 0.55, 0.1) * shimmer * 0.65;
+                vec3 colCore = vec3(1.0, 0.25, 0.05) * exp(-pow(d / 70.0, 2.0)) * 0.35;
+
+                vec3 col = colThermal + colCore;
+                gl_FragColor = vec4(col, clamp(shimmer * 0.45, 0.0, 0.5));
+            }
+        `;
+
+        function createShader(gl, type, src) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src);
+            gl.compileShader(s);
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, VS_SRC));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, FS_SRC));
+        gl.linkProgram(prog);
+
+        const posBuf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+
+        const aPos = gl.getAttribLocation(prog, 'position');
+        const uRes = gl.getUniformLocation(prog, 'uResolution');
+        const uCenter = gl.getUniformLocation(prog, 'uCenter');
+        const uTime = gl.getUniformLocation(prog, 'uTime');
+
+        // -------------------------------------------------------------
+        // MARCHA EN TRIPODE DE 6 PATAS (18 SERVOMOTORES)
+        // -------------------------------------------------------------
+        const LEG_ANCHORS = [
+            // Lado izquierdo (patas 0, 1, 2)
+            { side: -1, bx: -60, by: -30, restAngle: -2.3 },
+            { side: -1, bx: -90, by:   0, restAngle: -3.14 },
+            { side: -1, bx: -60, by:  30, restAngle:  2.3 },
+            // Lado derecho (patas 3, 4, 5)
+            { side:  1, bx:  60, by: -30, restAngle: -0.84 },
+            { side:  1, bx:  90, by:   0, restAngle:  0.0 },
+            { side:  1, bx:  60, by:  30, restAngle:  0.84 },
+        ];
+
+        let time = 0;
+        function renderLoop() {
+            if (walking) time += 0.02 * speed;
+
+            const isTripodA = Math.sin(time * 3.5) > 0;
+            valGait.textContent = isTripodA ? 'TRIPODE A (0, 2, 4)' : 'TRIPODE B (1, 3, 5)';
+
+            let legsHtml = '';
+            let cablesHtml = '';
+
+            const CHASSIS_X = 500, CHASSIS_Y = 480;
+
+            LEG_ANCHORS.forEach((leg, i) => {
+                // Tripode A: patas 0, 2, 4 en fase; Tripode B: patas 1, 3, 5 en antifase
+                const phaseOffset = (i % 2 === 0) ? 0 : Math.PI;
+                const phase = time * 3.5 + phaseOffset;
+
+                // Elevacion cicloidal del pie en fase de vuelo
+                const isFlight = Math.sin(phase) > 0;
+                const footLift = isFlight ? Math.sin(phase) * 35 : 0;
+                const footSwing = Math.cos(phase) * 24;
+
+                const coxaStartX = CHASSIS_X + leg.bx;
+                const coxaStartY = CHASSIS_Y + leg.by;
+
+                // 1. Coxa (rotacion yaw en plano horizontal)
+                const coxaLen = 35;
+                const coxaAngle = leg.restAngle + footSwing * 0.015;
+                const coxaEndX = coxaStartX + Math.cos(coxaAngle) * coxaLen;
+                const coxaEndY = coxaStartY + Math.sin(coxaAngle) * coxaLen * 0.45;
+
+                // 2. Femur (elevacion pitch)
+                const femurLen = 65;
+                const femurAngle = leg.side < 0 ? Math.PI * 0.8 : Math.PI * 0.2;
+                const femurEndX = coxaEndX + Math.cos(femurAngle) * femurLen;
+                const femurEndY = coxaEndY + Math.sin(femurAngle) * femurLen - footLift * 0.5;
+
+                // 3. Tibia (descenso hacia el suelo)
+                const tibiaLen = 85;
+                const tibiaAngle = leg.side < 0 ? Math.PI * 0.45 : Math.PI * 0.55;
+                const footX = femurEndX + Math.cos(tibiaAngle) * tibiaLen;
+                const footY = femurEndY + Math.sin(tibiaAngle) * tibiaLen;
+
+                legsHtml += `
+                    <!-- Coxa -->
+                    <line x1="${coxaStartX}" y1="${coxaStartY}" x2="${coxaEndX}" y2="${coxaEndY}" stroke="#0f172a" stroke-width="20" stroke-linecap="round"/>
+                    <line x1="${coxaStartX}" y1="${coxaStartY}" x2="${coxaEndX}" y2="${coxaEndY}" stroke="#334155" stroke-width="14" stroke-linecap="round"/>
+                    <circle cx="${coxaStartX}" cy="${coxaStartY}" r="12" fill="#1e293b" stroke="#ffaa00" stroke-width="2"/>
+
+                    <!-- Femur -->
+                    <line x1="${coxaEndX}" y1="${coxaEndY}" x2="${femurEndX}" y2="${femurEndY}" stroke="#0f172a" stroke-width="16" stroke-linecap="round"/>
+                    <line x1="${coxaEndX}" y1="${coxaEndY}" x2="${femurEndX}" y2="${femurEndY}" stroke="#475569" stroke-width="10" stroke-linecap="round"/>
+                    <circle cx="${coxaEndX}" cy="${coxaEndY}" r="9" fill="#1e293b" stroke="#00f0ff" stroke-width="1.5"/>
+
+                    <!-- Tibia -->
+                    <line x1="${femurEndX}" y1="${femurEndY}" x2="${footX}" y2="${footY}" stroke="#0f172a" stroke-width="12" stroke-linecap="round"/>
+                    <line x1="${femurEndX}" y1="${femurEndY}" x2="${footX}" y2="${footY}" stroke="#64748b" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="${femurEndX}" cy="${femurEndY}" r="8" fill="#1e293b" stroke="#ffaa00" stroke-width="1.5"/>
+
+                    <!-- Pie de goma / sensor de contacto -->
+                    <circle cx="${footX}" cy="${footY}" r="${isFlight ? 6 : 8}" fill="${isFlight ? '#ffaa00' : '#00ffaa'}"/>
+                `;
+
+                // Cableado de energia hacia cada pata
+                const dCable = `M ${CHASSIS_X} ${CHASSIS_Y} Q ${coxaStartX} ${coxaStartY - 10} ${coxaEndX} ${coxaEndY}`;
+                cablesHtml += `
+                    <path d="${dCable}" class="power-bus"/>
+                    <path d="${dCable}" class="power-pulse"/>
+                `;
+            });
+
+            legsGroup.innerHTML = legsHtml;
+            cableBus.innerHTML = cablesHtml;
+
+            // RENDERIZADO WEBGL: Shader de distorsion termica
+            if (gl) {
+                gl.useProgram(prog);
+                gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+                gl.enableVertexAttribArray(aPos);
+                gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+                const screenCenterX = (CHASSIS_X / 1000) * canvas.width;
+                const screenCenterY = (CHASSIS_Y / 800) * canvas.height;
+
+                gl.uniform2f(uRes, canvas.width, canvas.height);
+                gl.uniform2f(uCenter, screenCenterX, screenCenterY);
+                gl.uniform1f(uTime, time);
+
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+                gl.drawArrays(gl.TRIANGLES, 0, 6);
+            }
+
+            requestAnimationFrame(renderLoop);
+        }
+
+        requestAnimationFrame(renderLoop);
+    </script>
+</body>
+</html>
