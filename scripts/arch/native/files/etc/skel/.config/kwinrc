@@ -17,7 +17,7 @@ BorderlessMaximizedWindows=false
 [Compositing]
 AnimationSpeed=1
 DirectScanout=true
-LatencyPolicy=Low
+LatencyPolicy=ExtremelyLow
 
 [Effect-wobblywindows]
 Drag=85

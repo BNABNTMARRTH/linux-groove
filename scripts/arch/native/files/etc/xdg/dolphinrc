@@ -1,0 +1,12 @@
+[General]
+BrowseThroughArchives=false
+RememberOpenedTabs=false
+ShowToolTips=false
+Version=202
+
+[PreviewSettings]
+Plugins=
+
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=22

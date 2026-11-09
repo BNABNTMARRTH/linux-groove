@@ -1,10 +1,11 @@
 [General]
 ColorScheme=Groove
 font=Inter,11,-1,5,50,0,0,0,0,0
+SystemdApplicationLaunch=false
 
 [Icons]
 Theme=breeze-dark
 
 [KDE]
 widgetStyle=Breeze
-AnimationDurationFactor=0.15
+AnimationDurationFactor=0
