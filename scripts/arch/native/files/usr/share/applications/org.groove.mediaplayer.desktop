@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Groove Media Player
+GenericName=Reproductor Multimedia Groove
+Comment=Reproductor acústico reactivo con reloj monotónico MPRIS2 y ecualizador visual
+Exec=plasmawindowed org.groove.mediaplayer
+Icon=multimedia-player
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Player;Qt;KDE;
+StartupNotify=true
+

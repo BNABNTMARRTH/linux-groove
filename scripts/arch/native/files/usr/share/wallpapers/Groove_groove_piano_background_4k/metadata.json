@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_groove_piano_background_4k",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Groove Piano Background 4K"
+    }
+}

@@ -4,9 +4,9 @@ ButtonsOnLeft=XIA
 ButtonsOnRight=
 
 [Plugins]
-blurEnabled=false
-wobblywindowsEnabled=false
-cubeEnabled=false
+blurEnabled=true
+wobblywindowsEnabled=true
+cubeEnabled=true
 dialogparentEnabled=true
 dimscreenEnabled=false
 diminactiveEnabled=false
@@ -15,9 +15,9 @@ diminactiveEnabled=false
 BorderlessMaximizedWindows=false
 
 [Compositing]
-AnimationSpeed=0
+AnimationSpeed=1
 DirectScanout=true
-LatencyPolicy=ExtremelyLow
+LatencyPolicy=Low
 
 [Effect-wobblywindows]
 Drag=85
@@ -27,3 +27,8 @@ Stiffness=15
 [Effect-blur]
 BlurStrength=3
 NoiseStrength=0
+
+[NightColor]
+Active=false
+Mode=Constant
+NightTemperature=6500

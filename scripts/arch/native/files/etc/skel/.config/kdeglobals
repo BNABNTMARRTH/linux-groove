@@ -7,4 +7,4 @@ Theme=breeze-dark
 
 [KDE]
 widgetStyle=Breeze
-AnimationDurationFactor=0.25
+AnimationDurationFactor=0.15

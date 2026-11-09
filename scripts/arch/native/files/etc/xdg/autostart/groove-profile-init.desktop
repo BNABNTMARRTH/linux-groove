@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Groove Profile Initializer
+Comment=Aplica el perfil de optimizacion y efectos 3D de Linux Groove
+Exec=/usr/bin/groove-profile expressive
+Terminal=false
+Type=Application
+NoDisplay=true
+X-KDE-autostart-phase=1
+

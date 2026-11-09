@@ -8,7 +8,8 @@ blurEnabled=true
 wobblywindowsEnabled=true
 cubeEnabled=true
 dialogparentEnabled=true
-dimscreenEnabled=true
+dimscreenEnabled=false
+diminactiveEnabled=false
 
 [Windows]
 BorderlessMaximizedWindows=false
@@ -16,7 +17,7 @@ BorderlessMaximizedWindows=false
 [Compositing]
 AnimationSpeed=1
 DirectScanout=true
-LatencyPolicy=ExtremelyLow
+LatencyPolicy=Low
 
 [Effect-wobblywindows]
 Drag=85
@@ -26,3 +27,8 @@ Stiffness=15
 [Effect-blur]
 BlurStrength=3
 NoiseStrength=0
+
+[NightColor]
+Active=false
+Mode=Constant
+NightTemperature=6500

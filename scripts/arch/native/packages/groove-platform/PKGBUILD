@@ -1,5 +1,5 @@
 pkgname=groove-platform
-pkgver=0.4.1
+pkgver=0.4.2
 pkgrel=1
 pkgdesc='Native Groove defaults, session integration and diagnostics'
 arch=('aarch64')
@@ -10,4 +10,19 @@ source=('groove-platform.tar')
 sha256sums=('@PAYLOAD_SHA256@')
 package() {
   cp -a "$srcdir/payload/." "$pkgdir/"
+  
+  # Normalizar permisos de todo el payload para evitar errores de lectura
+  find "$pkgdir" -type d -exec chmod 755 {} +
+  find "$pkgdir" -type f -exec chmod 644 {} +
+  
+  # Restaurar permisos ejecutables en binarios y bibliotecas dinamicas
+  [ -d "$pkgdir/usr/bin" ] && find "$pkgdir/usr/bin" -type f -exec chmod 755 {} +
+  [ -d "$pkgdir/usr/lib" ] && find "$pkgdir/usr/lib" -type f -name "*.so*" -exec chmod 755 {} +
+  [ -d "$pkgdir/etc/skel/Desktop" ] && find "$pkgdir/etc/skel/Desktop" -type f -exec chmod 755 {} +
+  
+  # Permisos obligatorios para sudoers
+  if [ -d "$pkgdir/etc/sudoers.d" ]; then
+    chmod 0750 "$pkgdir/etc/sudoers.d"
+    chmod 0440 "$pkgdir/etc/sudoers.d/"* 2>/dev/null || true
+  fi
 }

@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_Trio_de_Jazz_en_Edicion_Neon",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Tri\u0301O De Jazz En Edicio\u0301N Neo\u0301N"
+    }
+}

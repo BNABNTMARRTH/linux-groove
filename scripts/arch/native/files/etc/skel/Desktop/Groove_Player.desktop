@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Groove Media Player
+GenericName=Reproductor Multimedia Groove
+Comment=Reproductor multimedia propio de Linux Groove
+Exec=plasmawindowed org.groove.mediaplayer
+Icon=multimedia-player
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Player;
+StartupNotify=true
+

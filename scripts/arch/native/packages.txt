@@ -40,6 +40,7 @@ libinput
 qemu-guest-agent
 spice-vdagent
 flatpak
+fuse2
 podman
 distrobox
 firefox
@@ -49,6 +50,7 @@ noto-fonts
 noto-fonts-emoji
 python
 git
+wget
 curl
 jq
 rsync
@@ -58,4 +60,6 @@ mtools
 squashfs-tools
 xorriso
 openssl
+openssh
 libarchive
+discover

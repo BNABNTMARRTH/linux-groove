@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_Emblema_de_onda_con_teclas_de_piano",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Emblema De Onda Con Teclas De Piano"
+    }
+}

@@ -1,5 +1,5 @@
 # Historias de Usuario (User Stories & Gherkin Scenarios)
-## Linux Groove OS — "The Blue Note Edition"
+## Linux Groove OS — "Blue Note Edition"
 
 ---
 

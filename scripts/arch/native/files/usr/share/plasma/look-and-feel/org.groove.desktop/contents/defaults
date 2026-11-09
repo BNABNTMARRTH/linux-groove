@@ -6,10 +6,15 @@ widgetStyle=Breeze
 Theme=breeze-dark
 [plasmarc][Theme]
 name=breeze-dark
+[plasmarc][Wallpapers]
+defaultWallpaperTheme=Groove_Neon_Master
+defaultFile=/usr/share/wallpapers/Groove_Neon_Master/contents/images/1920x1080.png
+defaultWidth=1920
+defaultHeight=1080
 [kwinrc][org.kde.kdecoration2]
 library=org.kde.breeze
 ButtonsOnLeft=XIA
 ButtonsOnRight=
 [ksplashrc][KSplash]
 Engine=KSplashQML
-Theme=org.groove.desktop
+Theme=org.groove.labyrinth.desktop

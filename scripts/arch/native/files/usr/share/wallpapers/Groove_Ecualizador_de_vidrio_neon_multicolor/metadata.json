@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_Ecualizador_de_vidrio_neon_multicolor",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Ecualizador De Vidrio Neo\u0301N Multicolor"
+    }
+}

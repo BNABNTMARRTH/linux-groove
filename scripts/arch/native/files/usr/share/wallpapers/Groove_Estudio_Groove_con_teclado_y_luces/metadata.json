@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_Estudio_Groove_con_teclado_y_luces",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Estudio Groove Con Teclado Y Luces"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_Groove_Piano_Keys_Neon_Wave",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Groove Piano Keys Neon Wave"
+    }
+}

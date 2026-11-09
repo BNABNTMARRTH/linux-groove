@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Como Instalar Programas
+Comment=Guia completa para instalar software desde internet en Linux Groove
+Exec=kate /usr/share/doc/groove/GUIA_INSTALACION_PROGRAMAS.md
+Icon=system-software-install
+Terminal=false
+Categories=Documentation;
+

@@ -18,5 +18,5 @@ if (panels().length === 0) {
     dock.lengthMode = "fit";
     const tasks = dock.addWidget("org.kde.plasma.icontasks");
     tasks.currentConfigGroup = ["General"];
-    tasks.writeConfig("launchers", ["applications:org.kde.dolphin.desktop", "applications:org.kde.konsole.desktop", "applications:firefox.desktop", "applications:systemsettings.desktop"]);
+    tasks.writeConfig("launchers", ["applications:org.kde.dolphin.desktop", "applications:org.kde.konsole.desktop", "applications:firefox.desktop", "applications:org.groove.mediaplayer.desktop", "applications:org.kde.discover.desktop", "applications:systemsettings.desktop"]);
 }

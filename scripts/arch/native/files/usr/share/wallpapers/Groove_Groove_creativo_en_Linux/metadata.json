@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "groove@linuxgroove.org",
+                "Name": "Linux Groove Creative"
+            }
+        ],
+        "Id": "Groove_Groove_creativo_en_Linux",
+        "License": "CC-BY-SA-4.0",
+        "Name": "Groove Groove Creativo En Linux"
+    }
+}

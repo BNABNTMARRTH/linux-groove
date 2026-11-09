@@ -39,5 +39,8 @@ cp "$TOOLCHAIN/etc/pacman.d/mirrorlist" "$ROOT/etc/pacman.d/mirrorlist"
 arch-chroot "$ROOT" pacman-key --init
 arch-chroot "$ROOT" pacman-key --populate archlinuxarm
 sed -i 's/^SigLevel.*/SigLevel = Required DatabaseOptional/' "$ROOT/etc/pacman.conf"
+sed -i 's/^CheckSpace/#CheckSpace/' "$ROOT/etc/pacman.conf"
+sed -i 's/^#LocalFileSigLevel.*/LocalFileSigLevel = Optional TrustAll/' "$ROOT/etc/pacman.conf"
+sed -i '/\[aur\]/,+1d' "$ROOT/etc/pacman.conf"
 chroot "$ROOT" pacman -Q > "$ROOT/usr/share/groove-package-manifest.txt"
 (cd "$CACHE"; sha256sum *.pkg.tar.* > SHA256SUMS)
