@@ -339,3 +339,4 @@ sequenceDiagram
 ---
 
 *Linux Groove Gaming Engine Architecture — Diseñado para máxima velocidad, belleza visual y soberanía de rendimiento.*
+

@@ -208,3 +208,4 @@ Para explicaciones profundas, revisa los archivos en `references/`:
 - [Patron Zero-Allocation Tick en Rust](./references/zero_allocation_tick.md)
 - [Cache de Colorimetria Zero GC en Canvas 2D](./references/canvas_zero_gc.md)
 - [Configuracion de Compilacion y Tamano Binario](./references/binary_shrinking.md)
+

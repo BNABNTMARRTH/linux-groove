@@ -4,18 +4,17 @@ ButtonsOnLeft=XIA
 ButtonsOnRight=
 
 [Plugins]
-blurEnabled=false
-wobblywindowsEnabled=false
-cubeEnabled=false
+blurEnabled=true
+wobblywindowsEnabled=true
+cubeEnabled=true
 dialogparentEnabled=true
-dimscreenEnabled=false
-diminactiveEnabled=false
+dimscreenEnabled=true
 
 [Windows]
 BorderlessMaximizedWindows=false
 
 [Compositing]
-AnimationSpeed=0
+AnimationSpeed=1
 DirectScanout=true
 LatencyPolicy=ExtremelyLow
 

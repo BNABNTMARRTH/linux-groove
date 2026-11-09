@@ -49,3 +49,4 @@ pub fn update_scene(engine: &mut EngineState) {
 ```
 
 Resultado: **Exactamente 0 bytes de alocacion en el heap de Wasm por cuadro**.
+

@@ -69,3 +69,4 @@ for (let i = 0; i < count; i++) {
 ```
 
 Este patron permite leer posiciones flotantes y canales de color en bytes sin ninguna copia de memoria intermedia.
+

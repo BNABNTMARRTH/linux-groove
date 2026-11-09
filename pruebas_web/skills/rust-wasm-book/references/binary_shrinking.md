@@ -37,3 +37,4 @@ Para no inflar el ejecutable Wasm:
 1. No incrustar modelos o geometrias pesadas superiores a 500 KB mediante `include_bytes!()`.
 2. Mantener el `.wasm` con solo la logica de computo (~50 - 100 KB).
 3. Cargar binarios de datos o modelos en paralelo con `fetch('modelo.bin')` o `WebAssembly.instantiateStreaming`.
+

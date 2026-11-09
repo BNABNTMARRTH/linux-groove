@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Groove - Reactor Tokamak // Confinamiento Toroidal</title>
+    <link rel="stylesheet" href="styles_rays_fusion.css">
+</head>
+<body>
+
+    <!-- BARRA DE NAVEGACION SUPERIOR (SIN JS, SIN EMOJIS) -->
+    <header class="top-nav">
+        <div class="brand-container">
+            <span class="brand-bullet">[+]</span>
+            <span class="brand-title">LINUX GROOVE</span>
+            <span class="brand-tag">TOKAMAK FUSION</span>
+        </div>
+        <nav class="nav-links">
+            <a href="index.html" class="nav-btn">[ Catalogo ]</a>
+            <a href="rays_streaming.html" class="nav-btn">[ Rayos ]</a>
+            <a href="rays_fusion.html" class="nav-btn active">[ Fusion ]</a>
+            <a href="rays_singularity.html" class="nav-btn">[ Singularidad ]</a>
+            <a href="rays_collider.html" class="nav-btn">[ Colisionador ]</a>
+            <a href="robot_arm_welder.html" class="nav-btn">[ Robotica ]</a>
+            <a href="machine_rocket.html" class="nav-btn">[ Maquinas ]</a>
+        </nav>
+    </header>
+
+    <!-- CAPA DE STREAMING NATIVO EN TIEMPO REAL DESDE EL MOTOR EN RUST (CERO JS) -->
+    <div class="stream-viewport">
+        <img class="fusion-stream" src="/stream_fusion" alt="Linux Groove Tokamak Fusion Stream">
+        <div class="stream-vignette"></div>
+        <div class="grid-ambient-overlay"></div>
+    </div>
+
+    <!-- CONTENIDO SEMANTICO Y NARRATIVO QUE GUIA EL SCROLL-DRIVEN -->
+    <main class="content-container">
+
+        <!-- SECCION 1: HERO -->
+        <section class="story-section" id="hero">
+            <div class="glass-card">
+                <span class="badge">Linux Groove Engine</span>
+                <h1>Reactor de Fusión Tokamak</h1>
+                <p>Plasma supercalentado a más de 150 millones de grados Celsius confinado en una cámara toroidal de vacío mediante intensos campos magnéticos helicoidales. Renderizado en el servidor a 60 FPS con <strong>Rust y Rayon</strong>.</p>
+                <div class="scroll-cue">↓ Desplaza hacia abajo para interactuar</div>
+            </div>
+        </section>
+
+        <!-- SECCION 2: CONFINAMIENTO MAGNETICO -->
+        <section class="story-section" id="magnetic">
+            <div class="glass-card">
+                <span class="badge">Confinamiento Toroidal</span>
+                <h2>Superficies de Flujo Magnético</h2>
+                <p>El flujo de plasma obedece a las ecuaciones de Grad-Shafranov con factor de seguridad <code>q = 3.2</code>. Al hacer scroll, la cámara navega hacia el eje magnético y modula la turbulencia térmica sin una sola línea de JavaScript en tu navegador.</p>
+            </div>
+        </section>
+
+        <!-- SECCION 3: MHD & CERO JAVASCRIPT -->
+        <section class="story-section" id="mhd-plasma">
+            <div class="glass-card">
+                <span class="badge">Zero JavaScript Architecture</span>
+                <h2>Turbulencia MHD a 60 FPS</h2>
+                <p>Ondas magnetohidrodinámicas de Alfvén y filamentos helicoidales calculados en paralelo sobre los núcleos de la CPU del servidor. Tu compositor CSS procesa las rotaciones, contraste e ignición óptica en el silicio de la GPU.</p>
+            </div>
+        </section>
+
+        <!-- SECCION 4: SOBERANIA -->
+        <section class="story-section" id="sovereignty">
+            <div class="glass-card">
+                <span class="badge">Soberanía Tecnológica</span>
+                <h2>Poder Computacional Soberano</h2>
+                <p>Unificando la solidez matemática de los kernels de Linux con Rust para simular la energía del futuro en cualquier pantalla del mundo sin descargas pesadas de scripts ni frameworks.</p>
+            </div>
+        </section>
+
+    </main>
+
+</body>
+</html>
+

@@ -1,37 +1,45 @@
 /**
- * ROBOT HEXAPOD // LIVE CONTROLLER & CONVECTIVE HEAT SHIMMER SHADER
- * Skill: create-anatomy (Anatomy Isometric Kit)
- * Cero Emojis // 60 FPS // Marcha Tripode Dinámica
+ * ROBOT HEXAPODO 18-DOF // LIVE CONTROLLER & MARCHA DE TRIPODE 3D
+ * Skill: anatomy (Anatomy Isometric Kit - wheresryan22/anatomy)
+ * Cero Emojis // 60 FPS // Marcha Continua Cohesiva sin Partes Flotantes
  */
 
 (function () {
   'use strict';
 
   const DATA = window.__HEXAPOD_DATA__ || {};
-  const W = DATA.W || 920;
-  const H = DATA.H || 680;
+  const W = DATA.W || 800;
+  const H = DATA.H || 580;
+  const P = DATA.P;
+  const chassisZ = DATA.CHASSIS_Z || 34;
+  const chassisH = DATA.CHASSIS_H || 16;
+
+  const CFG = {
+    CHASSIS_Z: chassisZ,
+    CHASSIS_H: chassisH
+  };
 
   const stage = document.querySelector('.hexapod-stage');
   const canvas = document.querySelector('.hexapod-canvas');
+  const kinematicsGroup = document.getElementById('hexapodKinematicsGroup');
   const readoutEl = document.querySelector('[data-readout]');
   const liveEl = document.querySelector('[data-live-status]');
-  const btnWalk = document.querySelector('[data-hexapod-walk]');
-  const btnHeat = document.querySelector('[data-hexapod-heat]');
+  const btnWalk = document.querySelector('[data-walk-toggle]');
+  const btnShimmer = document.querySelector('[data-shimmer-toggle]');
   const lampEl = document.querySelector('.hexapod-lamp');
 
-  const legs = [];
-  for (let i = 0; i < 6; i++) {
-    legs.push(document.querySelector(`[data-leg="${i}"]`));
-  }
+  if (!stage || !kinematicsGroup || !P) return;
 
   let isWalking = true;
-  let isHeatActive = true;
+  let isShimmerActive = true;
   let time = 0;
-  let gaitSpeed = 1.0;
 
-  // WebGL para Distorsion Termica por Conveccion (Heat Shimmer)
+  // WebGL Heat Shimmer Shader
   let gl = null;
   let shaderProgram = null;
+  let uTimeLoc = null;
+  let uShimmerAlphaLoc = null;
+  let quadBuffer = null;
 
   if (canvas) {
     canvas.width = W;
@@ -56,34 +64,29 @@
     precision mediump float;
     varying vec2 vUv;
     uniform float uTime;
-    uniform float uIntensity;
+    uniform float uShimmerAlpha;
 
     void main() {
-      if (uIntensity <= 0.01) discard;
+      if (uShimmerAlpha <= 0.01) discard;
 
-      // Columna de aire caliente ascendente sobre el disipador central
-      vec2 center = vec2(0.50, 0.48);
+      vec2 center = vec2(0.50, 0.52);
       vec2 d = vUv - center;
+      float dist = length(d * vec2(1.0, 1.8));
 
-      float colMask = smoothstep(0.25, 0.02, abs(d.x)) * smoothstep(0.35, 0.0, -d.y) * smoothstep(-0.1, 0.1, d.y + 0.1);
+      float plume = smoothstep(0.24, 0.02, dist);
 
-      // Turbulencia ondulatoria de conveccion
-      float wave = sin(d.y * 45.0 - uTime * 7.0) * cos(d.x * 35.0 + uTime * 4.0);
-      float shimmer = wave * colMask * uIntensity;
+      float heat1 = sin(vUv.y * 90.0 - uTime * 7.0 + vUv.x * 20.0);
+      float heat2 = cos(vUv.x * 70.0 + uTime * 5.0 - vUv.y * 30.0);
+      float shimmer = (heat1 * heat2) * 0.5 + 0.5;
 
-      // Tinte ambar infrarrojo muy tenue
-      vec3 heatColor = vec3(1.0, 0.72, 0.2);
-      float alpha = clamp(abs(shimmer) * 0.35, 0.0, 0.45);
+      vec3 thermalColor = vec3(1.0, 0.65, 0.15);
+      float alpha = plume * shimmer * 0.32 * uShimmerAlpha;
 
-      gl_FragColor = vec4(heatColor * alpha, alpha);
+      gl_FragColor = vec4(thermalColor * alpha, alpha);
     }
   `;
 
-  let uTimeLoc = null;
-  let uIntensityLoc = null;
-  let quadBuffer = null;
-
-  function initShaders() {
+  function initGL() {
     if (!gl) return;
     const vs = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vs, vsSource);
@@ -99,7 +102,7 @@
     gl.linkProgram(shaderProgram);
 
     uTimeLoc = gl.getUniformLocation(shaderProgram, 'uTime');
-    uIntensityLoc = gl.getUniformLocation(shaderProgram, 'uIntensity');
+    uShimmerAlphaLoc = gl.getUniformLocation(shaderProgram, 'uShimmerAlpha');
 
     const quadVerts = new Float32Array([
       -1, -1,
@@ -117,52 +120,42 @@
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
   }
-  initShaders();
+  initGL();
 
+  // Controles
   if (btnWalk) {
     btnWalk.addEventListener('click', function () {
       isWalking = !isWalking;
       btnWalk.classList.toggle('active', isWalking);
-    });
-  }
-
-  if (btnHeat) {
-    btnHeat.addEventListener('click', function () {
-      isHeatActive = !isHeatActive;
-      btnHeat.classList.toggle('active', isHeatActive);
-      if (lampEl) {
-        lampEl.classList.toggle('lit', isHeatActive);
+      if (liveEl) {
+        liveEl.textContent = isWalking ? 'MARCHA CONTINUA TRIPODE' : 'HEXAPODO EN ESPERA (STANDBY)';
       }
     });
   }
 
-  function loop() {
-    time += 0.035 * (isWalking ? gaitSpeed : 0.0);
-
-    // Marcha de trípode: Grupo A (patas 0, 2, 4) y Grupo B (patas 1, 3, 5)
-    legs.forEach(function (legEl, index) {
-      if (!legEl) return;
-      const isGroupA = (index % 2 === 0);
-      const phase = isGroupA ? time : time + Math.PI;
-
-      const lift = Math.max(0, Math.sin(phase)) * 8.0;
-      const swing = Math.cos(phase) * 12.0;
-
-      legEl.setAttribute('transform', `translate(0, ${(-lift).toFixed(1)}) rotate(${swing.toFixed(1)} 0 0)`);
+  if (btnShimmer) {
+    btnShimmer.addEventListener('click', function () {
+      isShimmerActive = !isShimmerActive;
+      btnShimmer.classList.toggle('active', isShimmerActive);
+      if (lampEl) lampEl.classList.toggle('lit', isShimmerActive);
     });
+  }
 
-    // Telemetria
-    const currentDraw = isWalking ? (4.2 + Math.sin(time * 3) * 0.8).toFixed(1) : '0.8';
-    const cpuTemp = (54.5 + Math.sin(time) * 2.2).toFixed(1);
+  function loop() {
+    time += 0.025;
+
+    if (typeof renderHexapodMechanism === 'function') {
+      const state = renderHexapodMechanism(time, isWalking, P, k, G, CFG);
+      kinematicsGroup.innerHTML = state.svg;
+    }
+
+    const currentA = isWalking ? (4.6 + Math.sin(time * 6.0) * 0.5).toFixed(1) : '1.2';
+    const tempC = isWalking ? (54.5 + Math.sin(time * 0.4) * 1.8).toFixed(1) : '38.0';
 
     if (readoutEl) {
-      readoutEl.textContent = `18 SERVOS · TRIPOD GAIT · CORRIENTE ${currentDraw} A · TEMP DISIPADOR ${cpuTemp} °C`;
-    }
-    if (liveEl) {
-      liveEl.textContent = isWalking ? 'MARCHA CONTINUA TRIPODE' : 'EN ESPERA (STANDBY)';
+      readoutEl.textContent = `18 SERVOS · TRIPOD GAIT · CORRIENTE ${currentA} A · TEMP DISIPADOR ${tempC} °C`;
     }
 
-    // WebGL
     if (gl && shaderProgram) {
       gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0);
@@ -170,7 +163,7 @@
 
       gl.useProgram(shaderProgram);
       gl.uniform1f(uTimeLoc, time);
-      gl.uniform1f(uIntensityLoc, isHeatActive ? 1.0 : 0.0);
+      gl.uniform1f(uShimmerAlphaLoc, isShimmerActive ? 1.0 : 0.0);
 
       const posLoc = gl.getAttribLocation(shaderProgram, 'aPosition');
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
@@ -185,4 +178,3 @@
 
   requestAnimationFrame(loop);
 })();
-

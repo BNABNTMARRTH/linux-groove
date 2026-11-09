@@ -22,6 +22,10 @@ struct AppState {
     tesla_stream: broadcast::Sender<Bytes>,
     storm_stream: broadcast::Sender<Bytes>,
     synapse_stream: broadcast::Sender<Bytes>,
+    fusion_stream: broadcast::Sender<Bytes>,
+    singularity_stream: broadcast::Sender<Bytes>,
+    collider_stream: broadcast::Sender<Bytes>,
+    cosmos_stream: broadcast::Sender<Bytes>,
     filmstrip_bytes: Bytes,
 }
 
@@ -52,6 +56,10 @@ async fn main() {
     let (tx_tesla, _rx_tesla) = broadcast::channel::<Bytes>(16);
     let (tx_storm, _rx_storm) = broadcast::channel::<Bytes>(16);
     let (tx_synapse, _rx_synapse) = broadcast::channel::<Bytes>(16);
+    let (tx_fusion, _rx_fusion) = broadcast::channel::<Bytes>(16);
+    let (tx_singularity, _rx_sing) = broadcast::channel::<Bytes>(16);
+    let (tx_collider, _rx_coll) = broadcast::channel::<Bytes>(16);
+    let (tx_cosmos, _rx_cosmos) = broadcast::channel::<Bytes>(16);
 
     let state = Arc::new(AppState {
         electric_stream: tx_electric.clone(),
@@ -60,6 +68,10 @@ async fn main() {
         tesla_stream: tx_tesla.clone(),
         storm_stream: tx_storm.clone(),
         synapse_stream: tx_synapse.clone(),
+        fusion_stream: tx_fusion.clone(),
+        singularity_stream: tx_singularity.clone(),
+        collider_stream: tx_collider.clone(),
+        cosmos_stream: tx_cosmos.clone(),
         filmstrip_bytes,
     });
 
@@ -231,6 +243,118 @@ async fn main() {
         })
         .expect("Error al iniciar subproceso de sinapsis");
 
+    // Subproceso dedicado 7: Reactor Tokamak de Fusion Magnetica (60 FPS)
+    let tx_fusion_render = tx_fusion.clone();
+    std::thread::Builder::new()
+        .name("fusion-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.026;
+
+                let jpeg_bytes = render_tokamak_fusion_parallel(time, width, height);
+                let _ = tx_fusion_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de fusion");
+
+    // Subproceso dedicado 8: Horizonte de Sucesos y Agujero Negro Kerr (60 FPS)
+    let tx_sing_render = tx_singularity.clone();
+    std::thread::Builder::new()
+        .name("singularity-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.024;
+
+                let jpeg_bytes = render_singularity_accretion_parallel(time, width, height);
+                let _ = tx_sing_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de singularidad");
+
+    // Subproceso dedicado 9: Colisionador Cuantico de Particulas (60 FPS)
+    let tx_coll_render = tx_collider.clone();
+    std::thread::Builder::new()
+        .name("collider-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.025;
+
+                let jpeg_bytes = render_quantum_collider_parallel(time, width, height);
+                let _ = tx_coll_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de colisionador");
+
+    // Subproceso dedicado 10: Cosmos Celestial, Constelaciones y Planetas (60 FPS)
+    let tx_cosmos_render = tx_cosmos.clone();
+    std::thread::Builder::new()
+        .name("cosmos-render-worker".to_string())
+        .spawn(move || {
+            let width = 640;
+            let height = 360;
+            let frame_target = Duration::from_micros(16_666);
+            let mut next_frame = std::time::Instant::now();
+            let mut time: f32 = 0.0;
+
+            loop {
+                next_frame += frame_target;
+                time += 0.025;
+
+                let jpeg_bytes = render_cosmos_celestial_parallel(time, width, height);
+                let _ = tx_cosmos_render.send(jpeg_bytes);
+
+                let now = std::time::Instant::now();
+                if now < next_frame {
+                    std::thread::sleep(next_frame - now);
+                } else {
+                    next_frame = now;
+                }
+            }
+        })
+        .expect("Error al iniciar subproceso de cosmos");
+
     // Servidor HTTP Axum para servir páginas, filmstrip y flujos MJPEG
     let public_dir = std::env::var("GROOVE_PUBLIC_DIR").unwrap_or_else(|_| "../public".to_string());
     println!(">> Sirviendo contenido estatico desde: {}", public_dir);
@@ -242,6 +366,18 @@ async fn main() {
         .route("/stream_tesla", get(stream_tesla_handler))
         .route("/stream_storm", get(stream_storm_handler))
         .route("/stream_synapse", get(stream_synapse_handler))
+        .route("/stream_fusion", get(stream_fusion_handler))
+        .route("/stream_singularity", get(stream_singularity_handler))
+        .route("/stream_collider", get(stream_collider_handler))
+        .route("/stream_cosmos", get(stream_cosmos_handler))
+        .route("/preview_rays.jpg", get(preview_rays_handler))
+        .route("/preview_tesla.jpg", get(preview_tesla_handler))
+        .route("/preview_storm.jpg", get(preview_storm_handler))
+        .route("/preview_synapse.jpg", get(preview_synapse_handler))
+        .route("/preview_fusion.jpg", get(preview_fusion_handler))
+        .route("/preview_singularity.jpg", get(preview_singularity_handler))
+        .route("/preview_collider.jpg", get(preview_collider_handler))
+        .route("/preview_cosmos.jpg", get(preview_cosmos_handler))
         .route("/labyrinth_filmstrip.jpg", get(filmstrip_handler))
         .fallback_service(ServeDir::new(public_dir))
         .layer(CorsLayer::permissive())
@@ -309,6 +445,60 @@ async fn stream_storm_handler(State(state): State<Arc<AppState>>) -> impl IntoRe
 /// Handler HTTP para streaming continuo de Red Sinaptica Cuantica
 async fn stream_synapse_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     build_mjpeg_response(state.synapse_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Reactor Tokamak de Fusion
+async fn stream_fusion_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.fusion_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Horizonte de Sucesos y Singularidad Kerr
+async fn stream_singularity_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.singularity_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Colisionador Cuantico de Particulas
+async fn stream_collider_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.collider_stream.subscribe())
+}
+
+/// Handler HTTP para streaming continuo de Cosmos Celestial, Constelaciones y Planetas
+async fn stream_cosmos_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    build_mjpeg_response(state.cosmos_stream.subscribe())
+}
+
+/// Handlers HTTP para vistas previas instantáneas en JPEG (0 sockets retenidos, 0 latencia)
+async fn preview_rays_handler() -> impl IntoResponse {
+    let bytes = render_electric_rays_parallel(1.5, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_tesla_handler() -> impl IntoResponse {
+    let bytes = render_tesla_coil_parallel(1.5, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_storm_handler() -> impl IntoResponse {
+    let bytes = render_lightning_storm_parallel(2.0, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_synapse_handler() -> impl IntoResponse {
+    let bytes = render_synaptic_lattice_parallel(1.0, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_fusion_handler() -> impl IntoResponse {
+    let bytes = render_tokamak_fusion_parallel(1.2, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_singularity_handler() -> impl IntoResponse {
+    let bytes = render_singularity_accretion_parallel(0.8, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_collider_handler() -> impl IntoResponse {
+    let bytes = render_quantum_collider_parallel(1.4, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
+}
+async fn preview_cosmos_handler() -> impl IntoResponse {
+    let bytes = render_cosmos_celestial_parallel(0.6, 640, 360);
+    ([(header::CONTENT_TYPE, "image/jpeg"), (header::CACHE_CONTROL, "public, max-age=300")], bytes)
 }
 
 /// Construye una respuesta HTTP multipart/x-mixed-replace para reproducción MJPEG sin JavaScript
@@ -1155,6 +1345,509 @@ pub fn render_synaptic_lattice_parallel(time: f32, width: usize, height: usize) 
                 row[px_idx] = (red.min(1.0) * 255.0) as u8;
                 row[px_idx + 1] = (green.min(1.0) * 255.0) as u8;
                 row[px_idx + 2] = (blue.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 7: Reactor Tokamak de Fusion Magnetica (Confinamiento Toroidal)
+// =========================================================================
+
+pub fn render_tokamak_fusion_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let col_core = [1.0f32, 0.92, 0.65];
+    let col_plasma = [0.95f32, 0.18, 0.65];
+    let col_magnetic = [0.15f32, 0.45, 1.0];
+    let col_divertor = [0.0f32, 0.95, 0.85];
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (0.5 - (y as f32) * inv_h) * 2.0;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * 2.0 * aspect;
+
+                let r_major = 0.68;
+                let elong = 1.35;
+                let dx = uv_x.abs() - r_major;
+                let dy = uv_y / elong;
+                let r_torus = (dx * dx + dy * dy).sqrt();
+                let theta = dy.atan2(dx);
+
+                let core_glow = 0.024 / (r_torus * r_torus * 55.0 + r_torus * 3.0 + 0.008);
+                let core_disc = (1.0 - r_torus / 0.14).max(0.0).powi(2) * 1.6;
+
+                let q_factor = 3.2;
+                let dir_x = if uv_x >= 0.0 { 1.0 } else { -1.0 };
+                let helix_phase = theta * q_factor - time * 3.8 * dir_x;
+                let helix_filaments = (helix_phase.sin() * 0.5 + 0.5).powi(4);
+
+                let mhd_turb = 0.06 * (r_torus * 32.0 - time * 8.0 + theta * 4.0).sin()
+                    + 0.03 * (r_torus * 64.0 + time * 14.0).cos();
+                let dist_sheath = (r_torus - 0.28 + mhd_turb).abs();
+                let sheath_glow = 0.012 / (dist_sheath * dist_sheath * 70.0 + dist_sheath * 4.0 + 0.01);
+
+                let divertor_mask = if uv_y < -0.45 {
+                    ((-uv_y - 0.45) * 4.0).min(1.0) * (0.015 / ((uv_x.abs() - 0.55).powi(2) * 40.0 + 0.01))
+                } else {
+                    0.0
+                };
+
+                let flux_rings = ((r_torus * 45.0 - time * 2.0).sin().abs()).powi(8) * 0.35 * (1.0 - r_torus * 0.8).max(0.0);
+
+                let r_val = col_core[0] * (core_glow + core_disc)
+                    + col_plasma[0] * (sheath_glow + helix_filaments * 0.8)
+                    + col_magnetic[0] * flux_rings
+                    + col_divertor[0] * divertor_mask;
+                let g_val = col_core[1] * (core_glow + core_disc)
+                    + col_plasma[1] * (sheath_glow + helix_filaments * 0.5)
+                    + col_magnetic[1] * flux_rings
+                    + col_divertor[1] * divertor_mask * 1.1;
+                let b_val = col_core[2] * (core_glow * 0.8)
+                    + col_plasma[2] * (sheath_glow + helix_filaments * 0.9)
+                    + col_magnetic[2] * flux_rings * 1.4
+                    + col_divertor[2] * divertor_mask * 1.2;
+
+                let px_idx = x * 3;
+                row[px_idx] = (r_val.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (g_val.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (b_val.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 8: Horizonte de Sucesos y Singularidad Kerr Relativista
+// Geodesicas diagonales, lazo de lente gravitacional y beaming Doppler asimetrico
+// =========================================================================
+
+pub fn render_singularity_accretion_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let col_cyan = [0.0f32, 0.95, 1.0];
+    let col_cobalt = [0.12f32, 0.40, 1.0];
+    let col_gold = [1.0f32, 0.76, 0.12];
+    let col_white = [1.0f32, 0.98, 0.95];
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (y as f32) * inv_h - 0.5;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * aspect;
+
+                let mut r_acc = 0.0f32;
+                let mut g_acc = 0.0f32;
+                let mut b_acc = 0.0f32;
+
+                // Centro focal del pozo gravitacional
+                let focal_x = 0.06f32;
+                let focal_y = -0.04f32;
+                let dx = uv_x - focal_x;
+                let dy = uv_y - focal_y;
+                let r_focal = (dx * dx + dy * dy).sqrt();
+                let theta = dy.atan2(dx);
+
+                // 1. HAZ GEODESICO DIAGONAL PRINCIPAL (Corte transversal inclinado con deflexion)
+                let u_diag = uv_x * 0.85 + uv_y * 1.15;
+                let v_diag = -uv_x * 1.15 + uv_y * 0.85;
+
+                let deflection = 0.14 / (r_focal * 10.0 + 0.35) * (theta + time * 1.6).sin();
+                let diag_dist = (v_diag - 0.12 * (u_diag * 6.0 + time * 2.8).sin() - deflection).abs();
+
+                let doppler_diag = (1.2 - u_diag * 0.55).clamp(0.4, 2.0);
+                let glow_diag = (0.013 / (diag_dist * diag_dist * 52.0 + diag_dist * 3.8 + 0.006)) * doppler_diag;
+                let core_diag = (1.0 - diag_dist / 0.032).max(0.0).powi(2) * 1.7 * doppler_diag;
+
+                r_acc += col_cyan[0] * glow_diag + col_white[0] * core_diag;
+                g_acc += col_cyan[1] * glow_diag + col_white[1] * core_diag;
+                b_acc += col_cyan[2] * glow_diag + col_white[2] * core_diag;
+
+                // 2. LAZO ORBITAL DE LENTE GRAVITACIONAL (Gravitational Lensing Photon Loop)
+                let r_ring_target = 0.22 + 0.05 * (theta * 2.0 - time * 2.2).sin() + 0.03 * (theta * 4.0 + time * 1.5).cos();
+                let ring_dist = (r_focal - r_ring_target).abs();
+                let doppler_ring = (1.0 + (theta - 0.7).cos() * 0.65).clamp(0.3, 2.1);
+
+                let glow_ring = (0.011 / (ring_dist * ring_dist * 60.0 + ring_dist * 4.2 + 0.005)) * doppler_ring;
+                let core_ring = (1.0 - ring_dist / 0.026).max(0.0).powi(2) * 1.8 * doppler_ring;
+
+                r_acc += col_gold[0] * glow_ring + col_white[0] * core_ring;
+                g_acc += col_gold[1] * glow_ring + col_white[1] * core_ring;
+                b_acc += col_gold[2] * glow_ring + col_white[2] * core_ring;
+
+                // 3. SEGUNDO HAZ DIAGONAL OPUESTO (Chorro polar relativista en contra-direccion)
+                let u_contra = uv_x * 1.10 - uv_y * 0.90;
+                let v_contra = uv_x * 0.90 + uv_y * 1.10;
+                let contra_wave = 0.16 * (u_contra * 5.0 - time * 3.2).cos() + 0.06 * (u_contra * 14.0 + time * 4.5).sin();
+                let contra_dist = (v_contra - contra_wave + 0.10 / (r_focal * 8.0 + 0.4)).abs();
+
+                let glow_contra = 0.010 / (contra_dist * contra_dist * 48.0 + contra_dist * 3.5 + 0.007);
+                let core_contra = (1.0 - contra_dist / 0.030).max(0.0).powi(2) * 1.4;
+
+                r_acc += col_cobalt[0] * glow_contra + col_white[0] * core_contra;
+                g_acc += col_cobalt[1] * glow_contra + col_white[1] * core_contra;
+                b_acc += col_cobalt[2] * glow_contra + col_white[2] * core_contra;
+
+                // 4. MICRO-TENSOR DE CURVATURA METRICA (Efecto espacio-tiempo cuántico)
+                let tensor = ((dx * 28.0 + time * 0.9).sin() * (dy * 28.0 - time * 0.9).cos() * 0.5 + 0.5).powi(6) * 0.06;
+                r_acc += tensor * 0.2;
+                g_acc += tensor * 0.5;
+                b_acc += tensor * 0.9;
+
+                let px_idx = x * 3;
+                row[px_idx] = (r_acc.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (g_acc.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (b_acc.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 9: Colisionador Cuantico y Haces Laser de Solitones
+// Colision cruzada en X con ondas de choque concentricas y radiacion Cherenkov
+// =========================================================================
+
+pub fn render_quantum_collider_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let col_cherenkov = [0.05f32, 1.0, 0.48];
+    let col_violet = [0.85f32, 0.16, 1.0];
+    let col_cerulean = [0.10f32, 0.85, 1.0];
+    let col_white = [1.0f32, 1.0, 1.0];
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (y as f32) * inv_h - 0.5;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * aspect;
+
+                let mut r_acc = 0.0f32;
+                let mut g_acc = 0.0f32;
+                let mut b_acc = 0.0f32;
+
+                // 1. HAZ ALFA: Diagonal que desciende de arriba-izq a abajo-der
+                let slope_a = 0.62f32;
+                let y_beam_a = uv_x * slope_a + 0.07 * (uv_x * 8.0 - time * 4.5).sin();
+                let dist_a = (uv_y - y_beam_a).abs() / (1.0 + slope_a * slope_a).sqrt();
+                let pulse_a = ((uv_x * 16.0 - time * 6.0).sin().abs()).powi(3) * 0.5 + 0.75;
+                let glow_a = (0.013 / (dist_a * dist_a * 55.0 + dist_a * 3.6 + 0.006)) * pulse_a;
+                let core_a = (1.0 - dist_a / 0.030).max(0.0).powi(2) * 1.7 * pulse_a;
+
+                r_acc += col_cherenkov[0] * glow_a + col_white[0] * core_a;
+                g_acc += col_cherenkov[1] * glow_a + col_white[1] * core_a;
+                b_acc += col_cherenkov[2] * glow_a + col_white[2] * core_a;
+
+                // 2. HAZ BETA: Diagonal contra-propagante que asciende de abajo-izq a arriba-der (cruce en X)
+                let slope_b = -0.62f32;
+                let y_beam_b = uv_x * slope_b + 0.07 * (uv_x * 8.0 + time * 4.5).cos();
+                let dist_b = (uv_y - y_beam_b).abs() / (1.0 + slope_b * slope_b).sqrt();
+                let pulse_b = ((uv_x * 16.0 + time * 6.0).cos().abs()).powi(3) * 0.5 + 0.75;
+                let glow_b = (0.013 / (dist_b * dist_b * 55.0 + dist_b * 3.6 + 0.006)) * pulse_b;
+                let core_b = (1.0 - dist_b / 0.030).max(0.0).powi(2) * 1.7 * pulse_b;
+
+                r_acc += col_violet[0] * glow_b + col_white[0] * core_b;
+                g_acc += col_violet[1] * glow_b + col_white[1] * core_b;
+                b_acc += col_violet[2] * glow_b + col_white[2] * core_b;
+
+                // 3. ONDAS DE CHOQUE CONCENTRICAS CHERENKOV EN EL EPICENTRO DE IMPACTO (0, 0)
+                let r_center = (uv_x * uv_x + uv_y * uv_y).sqrt();
+                let shock_phase = r_center * 26.0 - time * 7.5;
+                let shock_wave = (shock_phase.sin().max(0.0)).powi(4) * (-r_center * 4.2).exp();
+                let glow_shock = shock_wave * 0.65;
+
+                r_acc += col_cerulean[0] * glow_shock + col_white[0] * (glow_shock * 0.5);
+                g_acc += col_cerulean[1] * glow_shock + col_white[1] * (glow_shock * 0.5);
+                b_acc += col_cerulean[2] * glow_shock + col_white[2] * (glow_shock * 0.5);
+
+                // 4. GUIAS MAGNETICAS HORIZONTALES MENORES
+                let dist_c = uv_y.abs();
+                let guide_glow = (0.004 / (dist_c * dist_c * 40.0 + dist_c * 2.0 + 0.010)) * ((-uv_x.abs() * 2.5).exp() * 0.7 + 0.3);
+                r_acc += col_cerulean[0] * guide_glow;
+                g_acc += col_cerulean[1] * guide_glow;
+                b_acc += col_cerulean[2] * guide_glow;
+
+                // 5. DESTELLOS DE DISPERSION SUBATOMICA
+                let spark = (((uv_x * 32.0 + time * 12.0).sin() * (uv_y * 32.0 - time * 10.0).cos()).max(0.0)).powi(8) * 0.25;
+                r_acc += spark * 0.9;
+                g_acc += spark * 1.0;
+                b_acc += spark * 0.9;
+
+                let px_idx = x * 3;
+                row[px_idx] = (r_acc.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (g_acc.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (b_acc.min(1.0) * 255.0) as u8;
+            }
+        });
+
+    let mut jpeg_buf = Vec::with_capacity(32768);
+    let encoder = jpeg_encoder::Encoder::new(&mut jpeg_buf, 75);
+    let _ = encoder.encode(
+        &rgb_buf,
+        width as u16,
+        height as u16,
+        jpeg_encoder::ColorType::Rgb,
+    );
+
+    Bytes::from(jpeg_buf)
+}
+
+// =========================================================================
+// RENDERIZADOR 10: Cosmos Celestial, Constelaciones y Planeta con Limbo
+// Renderizado procedural de campo estelar, enlaces y fisica orbital a 60 FPS
+// =========================================================================
+
+#[inline(always)]
+fn hash21(ix: i32, iy: i32) -> u32 {
+    let mut h = (ix as u32).wrapping_mul(374761393) ^ (iy as u32).wrapping_mul(668265263);
+    h = (h ^ (h >> 13)).wrapping_mul(1274126177);
+    h ^ (h >> 16)
+}
+
+#[inline(always)]
+fn dist_to_segment_sq(px: f32, py: f32, ax: f32, ay: f32, bx: f32, by: f32) -> (f32, f32) {
+    let abx = bx - ax;
+    let aby = by - ay;
+    let apx = px - ax;
+    let apy = py - ay;
+    let ab_len_sq = abx * abx + aby * aby;
+    if ab_len_sq < 1e-6 {
+        return (apx * apx + apy * apy, 0.0);
+    }
+    let t = ((apx * abx + apy * aby) / ab_len_sq).clamp(0.0, 1.0);
+    let proj_x = ax + t * abx;
+    let proj_y = ay + t * aby;
+    let dx = px - proj_x;
+    let dy = py - proj_y;
+    (dx * dx + dy * dy, t)
+}
+
+pub fn render_cosmos_celestial_parallel(time: f32, width: usize, height: usize) -> Bytes {
+    let mut rgb_buf = vec![0u8; width * height * 3];
+    let inv_w = 1.0 / (width as f32);
+    let inv_h = 1.0 / (height as f32);
+    let aspect = (width as f32) / (height as f32);
+
+    let nodes: [(f32, f32); 8] = [
+        (-0.55, -0.28),
+        (-0.35, -0.42),
+        (-0.15, -0.26),
+        (0.08, -0.38),
+        (-0.25, -0.06),
+        (0.02, -0.10),
+        (-0.45, 0.16),
+        (-0.12, 0.22),
+    ];
+
+    let edges: [(usize, usize); 7] = [
+        (0, 1),
+        (1, 2),
+        (2, 3),
+        (1, 4),
+        (4, 5),
+        (4, 6),
+        (5, 7),
+    ];
+
+    let planet_cx = 0.38 * aspect;
+    let planet_cy = 0.08;
+    let planet_r = 0.24;
+    let inv_planet_r = 1.0 / planet_r;
+    let light_dir = [-0.82f32, -0.52, 0.25];
+    let light_len = (light_dir[0]*light_dir[0] + light_dir[1]*light_dir[1] + light_dir[2]*light_dir[2]).sqrt();
+    let lx = light_dir[0] / light_len;
+    let ly = light_dir[1] / light_len;
+    let lz = light_dir[2] / light_len;
+
+    rgb_buf
+        .par_chunks_mut(width * 3)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let uv_y = (y as f32) * inv_h - 0.5;
+
+            for x in 0..width {
+                let uv_x = ((x as f32) * inv_w - 0.5) * aspect;
+
+                let nebula = 0.025 * ((uv_x * 2.5 + uv_y * 1.8 + time * 0.05).sin() * 0.5 + 0.5);
+                let mut r_acc = 0.004 + nebula * 0.4;
+                let mut g_acc = 0.007 + nebula * 0.2;
+                let mut b_acc = 0.018 + nebula * 0.9;
+
+                // 1. CAMPO ESTELAR PROCEDURAL CON CENTELLEO (Hash Grid)
+                let cell_size = 22;
+                let cx = (x / cell_size) as i32;
+                let cy = (y / cell_size) as i32;
+                let h = hash21(cx, cy);
+
+                if (h % 100) < 36 {
+                    let star_local_x = ((h >> 4) % (cell_size as u32 - 4)) as f32 + 2.0;
+                    let star_local_y = ((h >> 8) % (cell_size as u32 - 4)) as f32 + 2.0;
+                    let star_px_x = (cx * cell_size as i32) as f32 + star_local_x;
+                    let star_px_y = (cy * cell_size as i32) as f32 + star_local_y;
+
+                    let dpx = (x as f32) - star_px_x;
+                    let dpy = (y as f32) - star_px_y;
+                    let dist_star_px = (dpx * dpx + dpy * dpy).sqrt();
+
+                    let twinkle_freq = 1.2 + ((h >> 12) % 7) as f32 * 0.6;
+                    let twinkle = 0.72 + 0.28 * (time * twinkle_freq + (h as f32) * 0.1).sin();
+
+                    let star_mag = (h >> 16) % 100;
+                    let (radius, base_bright) = if star_mag < 80 {
+                        (1.1f32, 0.75f32)
+                    } else if star_mag < 95 {
+                        (1.9f32, 1.2f32)
+                    } else {
+                        (2.9f32, 2.0f32)
+                    };
+
+                    if dist_star_px < radius * 3.5 {
+                        let star_intensity = (1.0 - dist_star_px / (radius * 3.5)).max(0.0).powi(2) * base_bright * twinkle;
+                        let star_color = match (h >> 20) % 4 {
+                            0 => [0.75f32, 0.88, 1.0],
+                            1 => [1.0f32, 1.0, 1.0],
+                            2 => [1.0f32, 0.85, 0.55],
+                            _ => [1.0f32, 0.48, 0.35],
+                        };
+                        r_acc += star_color[0] * star_intensity;
+                        g_acc += star_color[1] * star_intensity;
+                        b_acc += star_color[2] * star_intensity;
+
+                        if star_mag >= 95 && (dpx.abs() < 1.0 || dpy.abs() < 1.0) && dist_star_px < 16.0 {
+                            let cross_glow = (1.0 - dist_star_px / 16.0).max(0.0) * 0.65 * twinkle;
+                            r_acc += star_color[0] * cross_glow;
+                            g_acc += star_color[1] * cross_glow;
+                            b_acc += star_color[2] * cross_glow;
+                        }
+                    }
+                }
+
+                // 2. CONSTELACIONES: NODOS Y LINEAS DE UNION VECTORIAL
+                for &(idx_a, idx_b) in &edges {
+                    let (ax, ay) = nodes[idx_a];
+                    let (bx, by) = nodes[idx_b];
+                    let (dist_sq, t_seg) = dist_to_segment_sq(uv_x, uv_y, ax, ay, bx, by);
+                    let dist = dist_sq.sqrt();
+
+                    if dist < 0.012 {
+                        let pulse = ((t_seg * 18.0 - time * 3.0).sin().max(0.0)).powi(4) * 0.7 + 0.35;
+                        let line_glow = (1.0 - dist / 0.012).max(0.0).powi(2) * 0.48 * pulse;
+                        r_acc += 0.20 * line_glow;
+                        g_acc += 0.75 * line_glow;
+                        b_acc += 1.00 * line_glow;
+                    }
+                }
+
+                for &(nx, ny) in &nodes {
+                    let dnx = uv_x - nx;
+                    let dny = uv_y - ny;
+                    let dist_node = (dnx * dnx + dny * dny).sqrt();
+                    if dist_node < 0.024 {
+                        let node_pulse = (1.0 - dist_node / 0.024).powi(2) * (0.8 + 0.4 * (time * 4.0).sin());
+                        r_acc += 0.90 * node_pulse;
+                        g_acc += 0.96 * node_pulse;
+                        b_acc += 1.00 * node_pulse;
+                    }
+                }
+
+                // 3. PLANETA ORBITAL CON LIMBO ATMOSFERICO Y ANILLO
+                let pdx = uv_x - planet_cx;
+                let pdy = uv_y - planet_cy;
+                let pdist = (pdx * pdx + pdy * pdy).sqrt();
+
+                // Atmósfera en Limbo (Rayleigh scattering)
+                if pdist >= planet_r * 0.85 && pdist <= planet_r * 1.30 {
+                    let limb_factor = (-( (pdist - planet_r).abs() * 26.0 )).exp();
+                    let sun_facing = (pdx * lx + pdy * ly) * inv_planet_r;
+                    let limb_glow = limb_factor * (0.35 + 0.65 * sun_facing.max(0.0)) * 1.6;
+                    r_acc += 0.15 * limb_glow;
+                    g_acc += 0.70 * limb_glow;
+                    b_acc += 1.00 * limb_glow;
+                }
+
+                // Superficie esférica del Planeta
+                if pdist < planet_r {
+                    let nx = pdx * inv_planet_r;
+                    let ny = pdy * inv_planet_r;
+                    let nz = (1.0 - nx * nx - ny * ny).max(0.0).sqrt();
+
+                    let diffuse = (nx * lx + ny * ly + nz * lz).max(0.0);
+                    let bands = (ny * 35.0 + (nx * 8.0).sin() * 0.4).sin() * 0.12 + 0.88;
+
+                    let col_day = [0.12 * bands, 0.45 * bands, 0.85 * bands];
+                    let night_light = (1.0 - diffuse).powi(3) * 0.08;
+
+                    r_acc = r_acc * 0.1 + col_day[0] * diffuse + night_light * 0.2;
+                    g_acc = g_acc * 0.1 + col_day[1] * diffuse + night_light * 0.5;
+                    b_acc = b_acc * 0.1 + col_day[2] * diffuse + night_light * 0.9;
+                }
+
+                // Anillo de polvo inclinado
+                let ring_y = pdy * 3.2 + pdx * 0.75;
+                let ring_r = (pdx * pdx + ring_y * ring_y).sqrt();
+                if ring_r > planet_r * 1.35 && ring_r < planet_r * 2.25 {
+                    let cassini = if ring_r > planet_r * 1.70 && ring_r < planet_r * 1.78 { 0.15 } else { 1.0 };
+                    let ring_shade = if pdx < 0.0 && pdist < planet_r * 1.25 { 0.1 } else { 1.0 };
+                    let ring_alpha = (1.0 - ((ring_r - planet_r * 1.8).abs() / (planet_r * 0.45))).max(0.0) * cassini * ring_shade * 0.65;
+
+                    r_acc += 0.70 * ring_alpha;
+                    g_acc += 0.80 * ring_alpha;
+                    b_acc += 0.95 * ring_alpha;
+                }
+
+                let px_idx = x * 3;
+                row[px_idx] = (r_acc.min(1.0) * 255.0) as u8;
+                row[px_idx + 1] = (g_acc.min(1.0) * 255.0) as u8;
+                row[px_idx + 2] = (b_acc.min(1.0) * 255.0) as u8;
             }
         });
 

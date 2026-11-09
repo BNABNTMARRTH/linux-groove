@@ -1,41 +1,51 @@
 /**
- * ROBOT GANTRY // LIVE CONTROLLER & CRYO MIST DIELECTRIC SHADER
- * Skill: create-anatomy (Anatomy Isometric Kit)
- * Cero Emojis // 60 FPS // Feston Catenario & Racks de Servidores
+ * GRUA PORTICO CARTESIANA X/Y/Z // LIVE CONTROLLER & CINEMATICA 3D
+ * Skill: anatomy (Anatomy Isometric Kit - wheresryan22/anatomy)
+ * Cero Emojis // 60 FPS // Feston Catenario & Extraccion de Servidores
  */
 
 (function () {
   'use strict';
 
   const DATA = window.__GANTRY_DATA__ || {};
-  const W = DATA.W || 920;
-  const H = DATA.H || 680;
+  const W = DATA.W || 800;
+  const H = DATA.H || 580;
+  const P = DATA.P;
+  const frameX = DATA.FRAME_X || [-86, 86];
+  const frameY = DATA.FRAME_Y || [-64, 64];
+  const colH = DATA.COLUMN_H || 112;
+
+  const CFG = {
+    FRAME_X: frameX,
+    FRAME_Y: frameY,
+    COLUMN_H: colH
+  };
 
   const stage = document.querySelector('.gantry-stage');
   const canvas = document.querySelector('.gantry-canvas');
+  const kinematicsGroup = document.getElementById('gantryKinematicsGroup');
   const readoutEl = document.querySelector('[data-readout]');
   const liveEl = document.querySelector('[data-live-status]');
-  const btnPatrol = document.querySelector('[data-gantry-patrol]');
-  const btnCryo = document.querySelector('[data-gantry-cryo]');
+  const btnPatrol = document.querySelector('[data-patrol-toggle]');
+  const btnMist = document.querySelector('[data-mist-toggle]');
   const lampEl = document.querySelector('.gantry-lamp');
 
-  const gantryBridge = document.querySelector('[data-gantry="bridge"]');
-  const gantryCarriage = document.querySelector('[data-gantry="carriage"]');
-  const festoonCables = document.querySelectorAll('.festoon-loop');
+  if (!stage || !kinematicsGroup || !P) return;
 
   let isPatrolling = true;
-  let isCryoActive = true;
-  let isManual = false;
+  let isMistActive = true;
   let time = 0;
+  let posX = 12;
+  let posY = 8;
+  let targetX = 12;
+  let targetY = 8;
 
-  let targetX = 0;
-  let targetY = 0;
-  let currentX = 0;
-  let currentY = 0;
-
-  // WebGL para Niebla Criogenica y Chispas Dielectricas
+  // WebGL Cryogenic LN2 Mist Shader
   let gl = null;
   let shaderProgram = null;
+  let uTimeLoc = null;
+  let uMistAlphaLoc = null;
+  let quadBuffer = null;
 
   if (canvas) {
     canvas.width = W;
@@ -60,35 +70,29 @@
     precision mediump float;
     varying vec2 vUv;
     uniform float uTime;
-    uniform float uIntensity;
+    uniform float uMistAlpha;
 
     void main() {
-      if (uIntensity <= 0.01) discard;
+      if (uMistAlpha <= 0.01) discard;
 
-      // Niebla baja entre el pasillo de servidores
-      vec2 center = vec2(0.50, 0.38);
+      vec2 center = vec2(0.50, 0.35);
       vec2 d = vUv - center;
+      float dist = length(d * vec2(1.2, 2.5));
 
-      float aisleMask = smoothstep(0.35, 0.05, abs(d.x)) * smoothstep(0.28, -0.05, d.y);
+      float groundMask = smoothstep(0.40, 0.02, dist);
 
-      // Turbulencia de niebla fria criogenica
-      float mist1 = sin(vUv.x * 25.0 + uTime * 2.5) * cos(vUv.y * 30.0 - uTime * 1.8);
-      float mist2 = sin(vUv.x * 40.0 - uTime * 3.2) * sin(vUv.y * 45.0 + uTime * 2.2);
-      float mist = (mist1 * 0.5 + mist2 * 0.5 + 0.5) * aisleMask * uIntensity;
+      float mist1 = sin(vUv.x * 35.0 - uTime * 1.5 + vUv.y * 15.0);
+      float mist2 = cos(vUv.y * 45.0 + uTime * 1.2 - vUv.x * 20.0);
+      float clouds = (mist1 * mist2) * 0.5 + 0.5;
 
-      // Color cian palido de niebla de nitrogeno liquido
-      vec3 mistColor = vec3(0.5, 0.85, 1.0);
-      float alpha = clamp(mist * 0.38, 0.0, 0.45);
+      vec3 cryoColor = vec3(0.15, 0.85, 0.95);
+      float alpha = groundMask * clouds * 0.26 * uMistAlpha;
 
-      gl_FragColor = vec4(mistColor * alpha, alpha);
+      gl_FragColor = vec4(cryoColor * alpha, alpha);
     }
   `;
 
-  let uTimeLoc = null;
-  let uIntensityLoc = null;
-  let quadBuffer = null;
-
-  function initShaders() {
+  function initGL() {
     if (!gl) return;
     const vs = gl.createShader(gl.VERTEX_SHADER);
     gl.shaderSource(vs, vsSource);
@@ -104,7 +108,7 @@
     gl.linkProgram(shaderProgram);
 
     uTimeLoc = gl.getUniformLocation(shaderProgram, 'uTime');
-    uIntensityLoc = gl.getUniformLocation(shaderProgram, 'uIntensity');
+    uMistAlphaLoc = gl.getUniformLocation(shaderProgram, 'uMistAlpha');
 
     const quadVerts = new Float32Array([
       -1, -1,
@@ -122,21 +126,24 @@
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
   }
-  initShaders();
+  initGL();
 
+  // Controles de Interaccion
   if (stage) {
     stage.addEventListener('mousemove', function (e) {
+      isPatrolling = false;
+      if (btnPatrol) btnPatrol.classList.remove('active');
+      if (liveEl) liveEl.textContent = 'CONTROL MANUAL DE CARRO X/Y/Z';
       const rect = stage.getBoundingClientRect();
       const normX = (e.clientX - rect.left) / rect.width;
       const normY = (e.clientY - rect.top) / rect.height;
-
-      targetX = (normX - 0.5) * 80;
-      targetY = (normY - 0.5) * 60;
-      isManual = true;
+      targetX = (normX - 0.5) * 110;
+      targetY = (normY - 0.5) * 80;
     });
-
     stage.addEventListener('mouseleave', function () {
-      isManual = false;
+      isPatrolling = true;
+      if (btnPatrol) btnPatrol.classList.add('active');
+      if (liveEl) liveEl.textContent = 'PATRULLAJE AUTONOMO DE RACKS';
     });
   }
 
@@ -144,57 +151,46 @@
     btnPatrol.addEventListener('click', function () {
       isPatrolling = !isPatrolling;
       btnPatrol.classList.toggle('active', isPatrolling);
+      if (liveEl) {
+        liveEl.textContent = isPatrolling ? 'PATRULLAJE AUTONOMO DE RACKS' : 'CONTROL MANUAL DE CARRO X/Y/Z';
+      }
     });
   }
 
-  if (btnCryo) {
-    btnCryo.addEventListener('click', function () {
-      isCryoActive = !isCryoActive;
-      btnCryo.classList.toggle('active', isCryoActive);
-      if (lampEl) {
-        lampEl.classList.toggle('lit', isCryoActive);
-      }
+  if (btnMist) {
+    btnMist.addEventListener('click', function () {
+      isMistActive = !isMistActive;
+      btnMist.classList.toggle('active', isMistActive);
+      if (lampEl) lampEl.classList.toggle('lit', isMistActive);
     });
   }
 
   function loop() {
     time += 0.025;
 
-    if (!isManual && isPatrolling) {
-      targetX = Math.sin(time * 0.7) * 45;
-      targetY = Math.cos(time * 0.9) * 30;
+    if (isPatrolling) {
+      targetX = Math.sin(time * 0.75) * 48;
+      targetY = Math.cos(time * 1.05) * 34;
     }
 
-    currentX += (targetX - currentX) * 0.08;
-    currentY += (targetY - currentY) * 0.08;
+    posX += (targetX - posX) * 0.08;
+    posY += (targetY - posY) * 0.08;
 
-    if (gantryBridge) {
-      gantryBridge.setAttribute('transform', `translate(${currentX.toFixed(1)}, 0)`);
+    const mastBottomZ = 42.0 + Math.sin(time * 1.8) * 16.0;
+    const bladeSlide = Math.sin(time * 1.5) * 5.0;
+
+    if (typeof renderGantryMechanism === 'function') {
+      const state = renderGantryMechanism(posX, posY, mastBottomZ, bladeSlide, P, k, G, CFG);
+      kinematicsGroup.innerHTML = state.svg;
     }
-    if (gantryCarriage) {
-      gantryCarriage.setAttribute('transform', `translate(0, ${currentY.toFixed(1)})`);
-    }
 
-    // Deformacion dinamica de los lazos del feston catenario segun la posicion
-    festoonCables.forEach(function (cable, index) {
-      const pct = (index + 1) / (festoonCables.length + 1);
-      const stretch = (currentX * 0.4) * pct;
-      cable.setAttribute('transform', `scale(${(1.0 + stretch * 0.01).toFixed(2)}, 1)`);
-    });
-
-    // Telemetria
-    const posX = (2.4 + currentX * 0.05).toFixed(2);
-    const posY = (1.8 + currentY * 0.04).toFixed(2);
-    const posZ = (0.75 + Math.sin(time * 2) * 0.1).toFixed(2);
+    const mX = (posX * 0.02).toFixed(2);
+    const mY = (posY * 0.02).toFixed(2);
 
     if (readoutEl) {
-      readoutEl.textContent = `CARTESIANO X/Y/Z · PASILLO SERVIDORES · FESTON FIBRA · X:${posX}m Y:${posY}m Z:${posZ}m`;
-    }
-    if (liveEl) {
-      liveEl.textContent = isPatrolling ? 'PATRULLAJE AUTONOMO DE RACKS' : 'CONTROL MANUAL EN ESPERA';
+      readoutEl.textContent = `PATRULLAJE AUTONOMO · CARRO [${mX}m, ${mY}m] · MASTIL Z ${mastBottomZ.toFixed(1)}mm`;
     }
 
-    // WebGL
     if (gl && shaderProgram) {
       gl.viewport(0, 0, W, H);
       gl.clearColor(0, 0, 0, 0);
@@ -202,7 +198,7 @@
 
       gl.useProgram(shaderProgram);
       gl.uniform1f(uTimeLoc, time);
-      gl.uniform1f(uIntensityLoc, isCryoActive ? 1.0 : 0.0);
+      gl.uniform1f(uMistAlphaLoc, isMistActive ? 1.0 : 0.0);
 
       const posLoc = gl.getAttribLocation(shaderProgram, 'aPosition');
       gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
@@ -217,4 +213,3 @@
 
   requestAnimationFrame(loop);
 })();
-

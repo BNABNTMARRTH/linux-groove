@@ -58,17 +58,30 @@ body::before {
   z-index: 0;
 }
 
-/* Barra de progreso de scroll superior */
+/* Barra de progreso de scroll superior 100% Pure CSS */
 #scroll-progress-bar {
   position: fixed;
   top: 0;
   left: 0;
   height: 3px;
   background: linear-gradient(90deg, var(--accent-cyan), var(--accent-magenta), var(--accent-green));
-  width: 0%;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
   z-index: 1000;
   box-shadow: 0 0 10px var(--accent-cyan);
-  transition: width 0.05s linear;
+}
+
+@supports (animation-timeline: scroll()) {
+  #scroll-progress-bar {
+    animation: catalogScrollProgress auto linear both;
+    animation-timeline: scroll();
+  }
+}
+
+@keyframes catalogScrollProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 /* Cabecera y HUD Superior Fijo */
@@ -186,7 +199,34 @@ header.catalog-header {
   background: rgba(0, 229, 255, 0.08);
 }
 
-.filter-btn.active {
+/* =========================================================================
+   SISTEMA DE FILTRO DE CATEGORIAS 100% PURE CSS (CERO JAVASCRIPT)
+   ========================================================================= */
+.cat-radio {
+  display: none !important;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Ocultar secciones segun el radio button seleccionado */
+#cat-robotics:checked ~ .catalog-container .category-section:not([data-category="robotics"]),
+#cat-machines:checked ~ .catalog-container .category-section:not([data-category="machines"]),
+#cat-biowasm:checked ~ .catalog-container .category-section:not([data-category="biowasm"]),
+#cat-objects3d:checked ~ .catalog-container .category-section:not([data-category="objects3d"]),
+#cat-rays:checked ~ .catalog-container .category-section:not([data-category="rays"]),
+#cat-nav:checked ~ .catalog-container .category-section:not([data-category="nav"]) {
+  display: none !important;
+}
+
+/* Resaltado del label del boton activo en CSS puro */
+#cat-all:checked ~ header.catalog-header label[for="cat-all"],
+#cat-robotics:checked ~ header.catalog-header label[for="cat-robotics"],
+#cat-machines:checked ~ header.catalog-header label[for="cat-machines"],
+#cat-biowasm:checked ~ header.catalog-header label[for="cat-biowasm"],
+#cat-objects3d:checked ~ header.catalog-header label[for="cat-objects3d"],
+#cat-rays:checked ~ header.catalog-header label[for="cat-rays"],
+#cat-nav:checked ~ header.catalog-header label[for="cat-nav"] {
   background: var(--accent-cyan);
   color: #040711;
   border-color: var(--accent-cyan);
@@ -326,7 +366,7 @@ header.catalog-header {
   }
 }
 
-/* Tarjeta de Proyecto */
+/* Tarjeta de Proyecto con Efecto 3D Tilt Pure CSS */
 .project-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -334,15 +374,19 @@ header.catalog-header {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
   position: relative;
   backdrop-filter: blur(10px);
+  perspective: 1000px;
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
 .project-card:hover {
-  border-color: var(--border-active);
-  box-shadow: 0 16px 36px rgba(0, 229, 255, 0.15), 0 0 15px rgba(0, 229, 255, 0.08);
-  transform: translateY(-4px);
+  transform: perspective(1000px) translateY(-8px) rotateX(3.5deg) scale(1.02);
+  border-color: var(--accent-cyan);
+  box-shadow: 
+    0 22px 45px rgba(0, 0, 0, 0.85),
+    0 0 25px rgba(0, 229, 255, 0.25);
 }
 
 /* Barra Superior de la Tarjeta */
@@ -438,8 +482,7 @@ header.catalog-header {
   border: none;
   pointer-events: none;
   background: transparent;
-  opacity: 0;
-  transition: opacity 0.5s ease;
+  opacity: 1;
   z-index: 2;
 }
 
@@ -447,9 +490,18 @@ header.catalog-header {
   opacity: 1;
 }
 
-/* Interaccion habilitada en hover si el usuario quiere probarlo directo */
+img.preview-iframe {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: none;
+}
+
+/* Micro-Viewport en tiempo real exclusivamente de vista previa (sin captura de cursor) */
 .project-card:hover .preview-iframe {
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 /* Capa de Control y Enlace */
@@ -457,7 +509,7 @@ header.catalog-header {
   position: absolute;
   bottom: 8px;
   right: 8px;
-  z-index: 10;
+  z-index: 30;
   pointer-events: auto;
 }
 
@@ -477,6 +529,7 @@ header.catalog-header {
   gap: 5px;
   backdrop-filter: blur(4px);
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .btn-open-preview:hover {
@@ -492,6 +545,8 @@ header.catalog-header {
   flex-direction: column;
   gap: 10px;
   flex: 1;
+  position: relative;
+  z-index: 25;
 }
 
 .card-title-link {
@@ -501,10 +556,13 @@ header.catalog-header {
   text-decoration: none;
   letter-spacing: 0.5px;
   display: block;
+  cursor: pointer;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
 .card-title-link:hover {
   color: var(--accent-cyan);
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
 }
 
 .card-description {

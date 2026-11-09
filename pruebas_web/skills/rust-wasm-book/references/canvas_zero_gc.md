@@ -51,3 +51,4 @@ function drawParticle(ctx, x, y, size, r, g, b, alpha) {
 - Despues de los primeros 10 cuadros, `colorCache` contiene todos los colores posibles del gradiente (~200 cadenas).
 - **Cero cadenas nuevas asignadas por fotograma**.
 - Reduccion del 90%+ en llamadas a la maquina de estados de Canvas 2D.
+
