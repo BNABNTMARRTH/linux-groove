@@ -58,7 +58,8 @@ find \"\$ROOT/usr/share/wallpapers\" -type d -exec chmod 755 {} + 2>/dev/null ||
 find \"\$ROOT/usr/share/wallpapers\" -type f -exec chmod 644 {} + 2>/dev/null || true
 
 # Sincronizar directorio de usuario groove desde /etc/skel
-mkdir -p \"\$ROOT/home/groove/Desktop\"
+mkdir -p \"\$ROOT/home/groove/Desktop\" \"\$ROOT/home/groove/.config\"
+rm -rf \"\$ROOT/home/groove/.cache\" \"\$ROOT/root/.cache\"
 cp -a \"\$ROOT/etc/skel/.\" \"\$ROOT/home/groove/\"
 chmod 755 \"\$ROOT/home/groove/Desktop/\"*.desktop 2>/dev/null || true
 chmod 644 \"\$ROOT/etc/skel/.face.icon\" \"\$ROOT/home/groove/.face.icon\" \"\$ROOT/var/lib/AccountsService/icons/groove\" 2>/dev/null || true

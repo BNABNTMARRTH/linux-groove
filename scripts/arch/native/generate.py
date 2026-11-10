@@ -49,15 +49,19 @@ ButtonsOnRight=
 blurEnabled=false
 wobblywindowsEnabled=false
 cubeEnabled=false
-dialogparentEnabled=true
+dialogparentEnabled=false
 dimscreenEnabled=false
 diminactiveEnabled=false
 [Windows]
 BorderlessMaximizedWindows=false
 [Compositing]
 AnimationSpeed=0
-DirectScanout=true
+DirectScanout=false
 LatencyPolicy=ExtremelyLow
+[NightColor]
+Active=false
+Mode=Constant
+NightTemperature=6500
 ''')
 put('etc/fonts/conf.d/65-groove-fonts.conf', f'''<?xml version="1.0"?>
 <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
