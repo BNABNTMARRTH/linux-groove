@@ -65,6 +65,14 @@ chmod 755 \"\$ROOT/home/groove/Desktop/\"*.desktop 2>/dev/null || true
 chmod 644 \"\$ROOT/etc/skel/.face.icon\" \"\$ROOT/home/groove/.face.icon\" \"\$ROOT/var/lib/AccountsService/icons/groove\" 2>/dev/null || true
 arch-chroot \"\$ROOT\" chown -R groove:users /home/groove
 
+# Establecer contrasenas estandar y autorizar llave SSH del administrador
+echo \"groove:groove\" | arch-chroot \"\$ROOT\" chpasswd
+echo \"root:groove\" | arch-chroot \"\$ROOT\" chpasswd
+mkdir -p \"\$ROOT/root/.ssh\"
+cp -f \"\$ROOT/etc/skel/.ssh/authorized_keys\" \"\$ROOT/root/.ssh/authorized_keys\" 2>/dev/null || true
+chmod 700 \"\$ROOT/root/.ssh\" \"\$ROOT/home/groove/.ssh\" 2>/dev/null || true
+chmod 600 \"\$ROOT/root/.ssh/authorized_keys\" \"\$ROOT/home/groove/.ssh/authorized_keys\" 2>/dev/null || true
+
 # Verificar servicios habilitados
 chroot \"\$ROOT\" systemctl enable sddm NetworkManager systemd-timesyncd sshd groove-audio-init groove-boostd || true
 "
