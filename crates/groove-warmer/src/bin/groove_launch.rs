@@ -45,3 +45,4 @@ fn main() {
     eprintln!("Error ejecutando {}: {}", app, err);
     std::process::exit(1);
 }
+
