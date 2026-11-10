@@ -21,17 +21,53 @@ impl ProcessClass {
     }
 }
 
-pub fn classify_comm(comm: &str) -> ProcessClass {
+pub fn is_gui_or_creative_app(comm: &str) -> bool {
+    let clean = comm.trim_matches(|c: char| c.is_whitespace() || c == '\0');
+    let known_apps = [
+        "dolphin", "konsole", "systemsettings", "ark", "kate", "kcalc", "spectacle",
+        "firefox", "firefox-bin", "chromium", "chrome", "brave", "edge",
+        "reaper", "bitwig-studio", "ardour", "audacity", "lmms",
+        "blender", "gimp", "inkscape", "obs", "vlc", "mpv",
+        "code", "codium", "thunderbird", "telegram-desktop", "discord", "spotify", "steam",
+        "thunar", "nautilus", "pcmanfm", "gedit", "mousepad",
+    ];
+    known_apps.iter().any(|&app| clean == app || clean.starts_with(app))
+}
+
+pub fn is_system_or_cli_comm(comm: &str) -> bool {
+    let clean = comm.trim_matches(|c: char| c.is_whitespace() || c == '\0');
+    let cli_tools = [
+        "systemd", "systemd-journal", "systemd-logind", "systemd-udevd",
+        "dbus-daemon", "dbus-broker", "sshd", "cron", "crond",
+        "bash", "zsh", "sh", "fish", "top", "htop", "btop", "ps", "ls",
+        "grep", "sed", "awk", "find", "cargo", "rustc", "gcc", "g++",
+        "clang", "make", "ninja", "git", "tar", "gzip", "bzip2", "xz",
+        "zstd", "pacman", "yay", "dpkg", "apt", "sleep", "su", "sudo",
+    ];
+    cli_tools.iter().any(|&tool| clean == tool || clean.starts_with(tool))
+}
+
+pub fn classify_process(comm: &str, has_gui_env: bool) -> ProcessClass {
     let clean = comm.trim_matches(|c: char| c.is_whitespace() || c == '\0');
     match clean {
         "kwin_wayland" | "wayfire" | "kwin_x11" => ProcessClass::Compositor,
         "plasmashell" | "krunner" | "sddm-greeter" | "plasma-desktop" => ProcessClass::ShellUI,
         "pipewire" | "pipewire-pulse" | "wireplumber" => ProcessClass::RealtimeAudio,
-        "dolphin" | "konsole" | "systemsettings" | "ark" | "kate" | "kcalc" => {
-            ProcessClass::InteractiveApp
+        _ => {
+            if is_gui_or_creative_app(clean) {
+                ProcessClass::InteractiveApp
+            } else if has_gui_env && !is_system_or_cli_comm(clean) {
+                // Cualquier aplicacion de usuario ejecutandose dentro de la sesion grafica
+                ProcessClass::InteractiveApp
+            } else {
+                ProcessClass::Standard
+            }
         }
-        _ => ProcessClass::Standard,
     }
+}
+
+pub fn classify_comm(comm: &str) -> ProcessClass {
+    classify_process(comm, false)
 }
 
 pub fn read_current_comm() -> String {
@@ -61,7 +97,7 @@ pub fn apply_process_priority(class: ProcessClass) -> Result<i32, String> {
         // PRIO_PROCESS = 0, who = 0 (current process)
         let res = libc::setpriority(libc::PRIO_PROCESS, 0, target);
         if res != 0 {
-            let err = std::io::Error::last_os_error();
+            let _err = std::io::Error::last_os_error();
             // Permiso denegado si no es root / sin CAP_SYS_NICE: no abortar
             return Ok(target);
         }
@@ -105,7 +141,8 @@ pub fn fast_deallocate(ptr: *mut u8, size: usize) {
 static INIT_ARRAY: extern "C" fn() = {
     extern "C" fn init() {
         let comm = read_current_comm();
-        let class = classify_comm(&comm);
+        let has_gui = std::env::var_os("WAYLAND_DISPLAY").is_some() || std::env::var_os("DISPLAY").is_some();
+        let class = classify_process(&comm, has_gui);
         let _ = apply_process_priority(class);
     }
     init
@@ -137,6 +174,16 @@ mod tests {
             ProcessClass::InteractiveApp
         );
         assert_eq!(ProcessClass::InteractiveApp.target_nice(), -5);
+
+        // Apps de terceros comunes
+        assert_eq!(classify_comm("firefox"), ProcessClass::InteractiveApp);
+        assert_eq!(classify_comm("reaper"), ProcessClass::InteractiveApp);
+        assert_eq!(classify_comm("blender"), ProcessClass::InteractiveApp);
+        assert_eq!(classify_comm("code"), ProcessClass::InteractiveApp);
+
+        // Deteccion universal por entorno grafico
+        assert_eq!(classify_process("mi_app_personalizada", true), ProcessClass::InteractiveApp);
+        assert_eq!(classify_process("mi_app_personalizada", false), ProcessClass::Standard);
     }
 
     #[test]
@@ -146,6 +193,8 @@ mod tests {
         assert_eq!(classify_comm("ls"), ProcessClass::Standard);
         assert_eq!(classify_comm("systemd"), ProcessClass::Standard);
         assert_eq!(classify_comm("python3"), ProcessClass::Standard);
+        assert_eq!(classify_process("bash", true), ProcessClass::Standard);
+        assert_eq!(classify_process("systemd", true), ProcessClass::Standard);
         assert_eq!(ProcessClass::Standard.target_nice(), 0);
     }
 

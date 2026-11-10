@@ -38,6 +38,8 @@ Theme=breeze-dark
 [KDE]
 widgetStyle=Breeze
 LookAndFeelPackage=org.groove.desktop
+SystemdApplicationLaunch=false
+AnimationDurationFactor=0
 ''')
 put('etc/xdg/kwinrc', '''[org.kde.kdecoration2]
 library=org.kde.breeze

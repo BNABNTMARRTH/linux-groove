@@ -1,0 +1,12 @@
+[Unit]
+Description=Groove Window Pre-warming and Instant Launch Engine
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/groove-warmer
+Restart=on-failure
+RestartSec=1
+
+[Install]
+WantedBy=graphical-session.target

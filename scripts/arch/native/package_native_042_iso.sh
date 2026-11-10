@@ -43,7 +43,12 @@ chmod 644 \"\$ROOT/etc/vconsole.conf\" \"\$ROOT/etc/X11/xorg.conf.d/00-keyboard.
 chmod 644 \"\$ROOT/etc/xdg/plasma-localerc\" \"\$ROOT/etc/skel/.config/plasma-localerc\" 2>/dev/null || true
 chmod 644 \"\$ROOT/etc/xdg/klaunchrc\" \"\$ROOT/etc/xdg/UserFeedbackrc\" 2>/dev/null || true
 chmod 644 \"\$ROOT/etc/xdg/xdg-desktop-portal/kde-portals.conf\" 2>/dev/null || true
-chmod 755 \"\$ROOT/usr/bin/groove-latency-test\" 2>/dev/null || true
+chmod 755 \"\$ROOT/usr/bin/\"groove-* 2>/dev/null || true
+chmod 755 \"\$ROOT/usr/lib/libgroove_fast.so\" 2>/dev/null || true
+chmod 644 \"\$ROOT/usr/lib/systemd/user/groove-warmer.service\" 2>/dev/null || true
+chmod 644 \"\$ROOT/etc/xdg/autostart/groove-warmer.desktop\" 2>/dev/null || true
+chmod 644 \"\$ROOT/etc/sysctl.d/99-groove-lowlatency.conf\" 2>/dev/null || true
+sed -i 's|^Exec=dolphin|Exec=groove-launch dolphin|' \"\$ROOT/usr/share/applications/org.kde.dolphin.desktop\" 2>/dev/null || true
 rm -f \"\$ROOT/etc/xdg/autostart/spice-vdagent.desktop\" 2>/dev/null || true
 chmod 644 \"\$ROOT/usr/share/color-schemes/Groove.colors\" 2>/dev/null || true
 find \"\$ROOT/usr/share/plasma/look-and-feel/org.groove.desktop\" -type d -exec chmod 755 {} + 2>/dev/null || true

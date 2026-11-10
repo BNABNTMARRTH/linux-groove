@@ -68,6 +68,21 @@ pub fn apply_sysctl_tuning() {
     }
 }
 
+pub fn extract_exec_binary_from_desktop_content(content: &str) -> Option<String> {
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("Exec=") {
+            let cmd_part = &trimmed["Exec=".len()..];
+            let first_token = cmd_part.split_whitespace().next()?;
+            let clean = first_token.trim_matches(|c| c == '"' || c == '\'');
+            if !clean.is_empty() {
+                return Some(clean.to_string());
+            }
+        }
+    }
+    None
+}
+
 pub fn warm_system_libraries() -> (usize, usize) {
     let search_dirs = ["/usr/lib", "/usr/lib64", "/usr/bin"];
     let mut total_files = 0;
@@ -89,16 +104,45 @@ pub fn warm_system_libraries() -> (usize, usize) {
             }
         }
     }
+
+    // Escaneo universal de aplicaciones registradas en el sistema (.desktop)
+    let app_dirs = ["/usr/share/applications", "/usr/local/share/applications"];
+    for dir in &app_dirs {
+        let p = Path::new(dir);
+        if let Ok(entries) = std::fs::read_dir(p) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) == Some("desktop") {
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        if let Some(exec_bin) = extract_exec_binary_from_desktop_content(&content) {
+                            let bin_path = if exec_bin.starts_with('/') {
+                                std::path::PathBuf::from(exec_bin)
+                            } else {
+                                std::path::PathBuf::from(format!("/usr/bin/{}", exec_bin))
+                            };
+                            if bin_path.exists() {
+                                if let Ok((_pages, bytes)) = warm_file_into_ram(&bin_path) {
+                                    total_files += 1;
+                                    total_bytes += bytes;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     (total_files, total_bytes)
 }
 
 fn main() {
-    println!("🚀 [groove-boostd] Iniciando daemon de aceleración en RAM para Linux Groove...");
+    println!("[groove-boostd] Iniciando daemon de aceleracion en RAM para Linux Groove...");
     apply_sysctl_tuning();
     let (files, bytes) = warm_system_libraries();
     let mb = bytes as f64 / (1024.0 * 1024.0);
     println!(
-        "⚡ [groove-boostd] Precarga completada: {} bibliotecas/binarios cacheados ({:.1} MB en RAM).",
+        "[groove-boostd] Precarga completada: {} bibliotecas/binarios cacheados ({:.1} MB en RAM).",
         files, mb
     );
 }
@@ -168,5 +212,18 @@ mod tests {
         assert_eq!(params[0], ("vm.swappiness", "10"));
         assert_eq!(params[1], ("vm.vfs_cache_pressure", "50"));
         assert_eq!(params[2], ("vm.dirty_ratio", "15"));
+    }
+
+    #[test]
+    fn test_desktop_exec_extraction() {
+        // UT-BST-05
+        let sample = "[Desktop Entry]\nName=Firefox\nExec=/usr/lib/firefox/firefox %u\nType=Application";
+        assert_eq!(extract_exec_binary_from_desktop_content(sample), Some("/usr/lib/firefox/firefox".to_string()));
+
+        let sample2 = "[Desktop Entry]\nName=Reaper\nExec=reaper %F\n";
+        assert_eq!(extract_exec_binary_from_desktop_content(sample2), Some("reaper".to_string()));
+
+        let sample3 = "[Desktop Entry]\nName=NoExec\n";
+        assert_eq!(extract_exec_binary_from_desktop_content(sample3), None);
     }
 }
