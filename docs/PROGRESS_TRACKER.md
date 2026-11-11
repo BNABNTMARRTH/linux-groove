@@ -102,8 +102,8 @@ la configuración vigente usa XFWM y coherencia por aplicación.
 
 ## Linux Groove OS 0.4.0 — antecedentes
 
-- **Imagen:** `linux-groove-0.4.0-steamos-arch-aarch64.iso`
-- **Ubicación:** `/Volumes/Backup/linux_groove_terabit/iso/linux-groove-0.4.0-steamos-arch-aarch64.iso`
+- **Imagen:** `linux-groove-0.4.0-studio-arch-aarch64.iso`
+- **Ubicación:** `/Volumes/Backup/linux_groove_terabit/iso/linux-groove-0.4.0-studio-arch-aarch64.iso`
 - **Tamaño:** 2.6 GB (2,756,263,936 bytes)
 - **SHA-256:** `9b40c9229894b7ffe4e40aea400083a6af399acb27bab66f5deda7e1a6a758b3`
 - **Base del Sistema:** Arch Linux ARM (`aarch64`) oficial con Kernel 6.12.0 PREEMPT_RT, audio PipeWire/JACK, gestión de paquetes nativa `pacman` y soporte Flatpak/Flathub.

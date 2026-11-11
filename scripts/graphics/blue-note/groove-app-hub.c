@@ -1,6 +1,6 @@
 /*
  * groove-app-hub.c - 1-Click Application Catalog for Linux Groove OS
- * Inspired by Valve SteamOS Discover / Holo App Architecture
+ * Built for Groove Studio Immutable Architecture
  * Supports Flathub, native Arch ARM64 packages, and AI harnesses.
  */
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     GtkWidget *header = gtk_header_bar_new();
     gtk_header_bar_set_show_close_button(GTK_HEADER_BAR(header), TRUE);
     gtk_header_bar_set_title(GTK_HEADER_BAR(header), "Groove App Hub");
-    gtk_header_bar_set_subtitle(GTK_HEADER_BAR(header), "Suite de Aplicaciones a 1 Clic · SteamOS Architecture");
+    gtk_header_bar_set_subtitle(GTK_HEADER_BAR(header), "Suite de Aplicaciones a 1 Clic · Groove Studio Architecture");
     gtk_window_set_titlebar(GTK_WINDOW(win), header);
 
     // Estilos CSS

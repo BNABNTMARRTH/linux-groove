@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
     /* Session Selector Dropdown */
     session_combo = gtk_combo_box_text_new();
     gtk_widget_set_name(session_combo, "session-combo");
-    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "plasma", "Groove · SteamOS Edition (KDE Plasma 6 Wayland)");
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "plasma", "Groove Studio Edition (KDE Plasma 6 Wayland)");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-xfce", "Groove · macOS Glass (XFCE)");
     gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(session_combo), "groove-wayfire", "Groove · Wayfire 3D (Cubo y Efectos)");
     gtk_combo_box_set_active_id(GTK_COMBO_BOX(session_combo), "plasma");

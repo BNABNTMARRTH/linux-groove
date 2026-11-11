@@ -113,7 +113,7 @@ if [ -f /boot/grub/fonts/unicode.pf2 ]; then
     fi
 fi
 
-menuentry \"Linux Groove 0.4.2 (Arch ARM + SteamOS) - KDE Plasma 6 (Wayland)\" {
+menuentry \"Linux Groove 0.4.2 (Arch ARM Studio) - KDE Plasma 6 (Wayland)\" {
     linux /boot/vmlinuz console=tty0 console=ttyAMA0,115200 groove.live=1
     initrd /boot/initramfs.cpio.gz
 }

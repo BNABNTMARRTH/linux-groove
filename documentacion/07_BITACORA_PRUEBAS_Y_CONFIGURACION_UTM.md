@@ -1,5 +1,5 @@
 # Bitácora de Pruebas, Especificación de la ISO y Configuración Óptima en UTM
-**Linux Groove 0.4.1 (Arch ARM + SteamOS aarch64)**
+**Linux Groove 0.4.1 (Arch ARM Studio aarch64)**
 
 ---
 

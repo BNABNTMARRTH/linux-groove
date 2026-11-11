@@ -5,7 +5,7 @@ set -euo pipefail
 WORKSPACE=$(cd "$(dirname "$0")/../.." && pwd)
 STORAGE=${STORAGE:-/Volumes/Backup/linux_groove_terabit}
 BUILDER=${BUILDER:-groove-graphical-build}
-VERSION="0.4.0-steamos-arch"
+VERSION="0.4.0-studio-arch"
 WORK_ROOT="/tmp/groove-arch-root"
 STAGING="/tmp/groove-arch-iso-staging"
 OUTPUT_ISO="/tmp/linux-groove-$VERSION-aarch64.iso"
@@ -80,7 +80,7 @@ if [ -f /boot/grub/fonts/unicode.pf2 ]; then
     fi
 fi
 
-menuentry \"Linux Groove 0.4.0 (Arch ARM + SteamOS) - KDE Plasma 6 (Wayland)\" {
+menuentry \"Linux Groove 0.4.0 (Arch ARM Studio) - KDE Plasma 6 (Wayland)\" {
     linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0
     initrd /boot/initramfs.cpio.gz
 }

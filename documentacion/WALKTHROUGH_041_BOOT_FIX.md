@@ -209,7 +209,7 @@ help() { echo 'Mount the Groove Live squashfs with writable RAM overlay from the
 set default=0
 set timeout=5
 
-menuentry "Linux Groove 0.4.1 (Arch ARM + SteamOS) - KDE Plasma 6 (Wayland)" {
+menuentry "Linux Groove 0.4.1 (Arch ARM Studio) - KDE Plasma 6 (Wayland)" {
     linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.live=1
     initrd /boot/initramfs.cpio.gz
 }

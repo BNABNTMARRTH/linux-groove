@@ -3,12 +3,12 @@
 Sistema operativo Linux de alto rendimiento para creadores de música, código y contenido en Apple Silicon (MacBooks M1, M2, M3, M4) y hardware ARM64 (`aarch64`), compatible tanto en virtualización nativa (UTM / Hypervisor.framework) como en bare metal.
 
 Groove usa una base nativa de Arch Linux ARM con systemd, KDE Plasma Wayland
-como escritorio principal y Wayfire como sesión alternativa. No es SteamOS
-oficial ni una certificación de Arch o KDE.
+como escritorio principal y Wayfire como sesión alternativa. Es un desarrollo
+independiente enfocado en creadores y alto rendimiento.
 
 ## Estado actual (0.4.1 candidate — Noviembre 2026)
 
-- **Imagen ISO:** `linux-groove-0.4.0-steamos-arch-aarch64.iso` (2.6 GB, SHA-256: `9b40c9229894b7ffe4e40aea400083a6af399acb27bab66f5deda7e1a6a758b3`).
+- **Imagen ISO:** `linux-groove-0.4.0-studio-arch-aarch64.iso` (2.6 GB, SHA-256: `9b40c9229894b7ffe4e40aea400083a6af399acb27bab66f5deda7e1a6a758b3`).
 - **Base del Sistema:** Arch Linux ARM oficial con `pacman`, `systemd`, `logind`, SDDM, NetworkManager, PipeWire/WirePlumber y Flatpak.
 - **Entorno Predeterminado:** **KDE Plasma 6 Wayland** (acelerado por KWin, con soporte de resoluciones dinámicas Mac Retina, menú contextual completo con clic derecho y centro de ajustes del sistema integrado).
 - **Diseño Visual:** Groove oscuro sobrio, acento latón, controles monocromáticos a la izquierda y Breeze nativo; blur solo en el perfil Expresivo.
@@ -17,14 +17,14 @@ oficial ni una certificación de Arch o KDE.
   - Atajo global universal para forzar salida: `Cmd + Option + Esc` / `Ctrl + Alt + Esc` con terminador instantáneo `Kill Window`.
   - Cierre rápido con `Cmd + Q` / `Alt + F4`.
 - **Sesiones Disponibles en GRUB y Pantalla de Inicio:**
-  1. **Groove · SteamOS Edition (KDE Plasma 6 Wayland)** *(Predeterminada)*.
+  1. **Groove Studio Edition (KDE Plasma 6 Wayland)** *(Predeterminada)*.
   2. **Groove · Wayfire (Wayfire 0.11 con plugins compatibles)**.
   4. **Consola de recuperación**.
 
 ## Documentación
 
 - [Diseño del Sistema e Interfaz (.interface-design/system.md)](.interface-design/system.md).
-- [Plan Maestro de Arquitectura SteamOS (docs/plans/PLAN_ARQUITECTURA_STEAMOS_ARCH.md)](docs/plans/PLAN_ARQUITECTURA_STEAMOS_ARCH.md).
+- [Plan Maestro de Arquitectura Groove Studio (docs/plans/PLAN_ARQUITECTURA_GROOVE_STUDIO.md)](docs/plans/PLAN_ARQUITECTURA_GROOVE_STUDIO.md).
 - [Registro de Avance y Mediciones (docs/PROGRESS_TRACKER.md)](docs/PROGRESS_TRACKER.md).
 - [Diagnóstico del arranque UTM/ACPI (docs/UTM_BOOT.md)](docs/UTM_BOOT.md).
 

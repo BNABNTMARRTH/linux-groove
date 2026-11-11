@@ -131,7 +131,7 @@ Se reordena la directiva de consolas en el menu de arranque GRUB para asegurar q
 --- a/scripts/arch/native/package_native_042_iso.sh
 +++ b/scripts/arch/native/package_native_042_iso.sh
 @@ -75,7 +75,7 @@
- menuentry \"Linux Groove 0.4.2 (Arch ARM + SteamOS) - KDE Plasma 6 (Wayland)\" {
+ menuentry \"Linux Groove 0.4.2 (Arch ARM Studio) - KDE Plasma 6 (Wayland)\" {
 -    linux /boot/vmlinuz console=ttyAMA0,115200 console=tty0 groove.live=1
 +    linux /boot/vmlinuz console=tty0 console=ttyAMA0,115200 groove.live=1
      initrd /boot/initramfs.cpio.gz

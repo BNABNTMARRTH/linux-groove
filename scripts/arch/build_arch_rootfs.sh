@@ -127,10 +127,10 @@ SUDO
     echo 'Registrando repositorio oficial Flathub...'
     arch-chroot '$WORK_ROOT' flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
-    # Crear script groove-readonly (estilo steamos-readonly)
+    # Crear script groove-readonly: herramienta de proteccion inmutable del rootfs
     cat <<'READONLY_CMD' > '$WORK_ROOT/usr/bin/groove-readonly'
 #!/bin/bash
-# groove-readonly: Valve SteamOS-style rootfs protection tool
+# groove-readonly: Groove Studio rootfs protection tool
 case \"\$1\" in
     status)
         if [ -w / ]; then

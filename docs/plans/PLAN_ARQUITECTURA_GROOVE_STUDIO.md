@@ -1,14 +1,14 @@
-# Plan Maestro de Arquitectura: Linux Groove OS "SteamOS Edition" (Base Arch Linux ARM + Groove 3D + Flatpak + App Hub 1-Click)
+# Plan Maestro de Arquitectura: Linux Groove OS Studio Edition (Base Arch Linux ARM + Groove 3D + Flatpak + App Hub 1-Click)
 
 **Proyecto:** Linux Groove OS 1.0 (Blue Note Edition)  
-**Inspiración Arquitectónica:** Valve SteamOS 3.0 (Holo)  
+**Inspiración Arquitectónica:** Arquitectura Desacoplada e Inmutable de Alto Rendimiento  
 **Hardware & Arquitectura Objetivo:** Apple Silicon (MacBooks M1, M2, M3, M4) y hardware ARM64 general (`aarch64`), compatible tanto en **UTM / Hypervisor nativo** como en **Bare Metal** (Asahi / m1n1 bootloader).
 
 ---
 
-## 1. Visión General: El Modelo SteamOS Adaptado a Mac Apple Silicon
+## 1. Visión General: El Modelo Groove Studio Adaptado a Mac Apple Silicon
 
-Valve diseñó **SteamOS 3.0** dividiendo el sistema en 4 capas desacopladas. En **Linux Groove OS** aplicamos esta misma filosofía sobre **Arch Linux ARM (`aarch64`)**: el sistema base es inmutable y sólido como una roca, mientras que el usuario tiene acceso instantáneo a aplicaciones profesionales mediante un **Groove App Hub (Instaladores a 1 Clic)** sin inflar la imagen ISO base.
+La arquitectura de **Groove Studio** divide el sistema en 4 capas desacopladas sobre **Arch Linux ARM (`aarch64`)**: el sistema base es inmutable y sólido como una roca, mientras que el usuario tiene acceso instantáneo a aplicaciones profesionales mediante un **Groove App Hub (Instaladores a 1 Clic)** sin inflar la imagen ISO base.
 
 ```mermaid
 flowchart TD
@@ -19,7 +19,7 @@ flowchart TD
         VIRT_MAC["Virtualización & macOS Lab (Virt-Manager tipo UTM, soporte .dmg, Darling)"]
     end
 
-    subgraph Layer3["Capa 3: Experiencia Visual Groove (KDE Plasma 6 Wayland - SteamOS Edition)"]
+    subgraph Layer3["Capa 3: Experiencia Visual Groove (KDE Plasma 6 Wayland - Groove Studio Edition)"]
         KDE_WAYLAND["KDE Plasma 6 Wayland Nativo (KWin, Aislamiento de Procesos, Cero Congelamientos)"]
         MACOS_DESIGN["Diseño macOS Glass (Botones Semáforo a la izquierda, KWin Blur, Fuentes Inter LCD)"]
         SYSTEM_APPS["Herramientas de Sistema (Dolphin, Konsole, System Settings, Spectacle, App Hub)"]
@@ -100,7 +100,7 @@ Para que la ISO base se mantenga liviana (~1.8 GB a 2.5 GB) y ultra ágil, el si
 - Crear el usuario `groove` (UID 1000) en los grupos `wheel`, `audio`, `video`, `realtime`.
 - Configurar `/etc/sudoers.d/groove` con acceso completo sin errores de PAM.
 - Añadir el repositorio oficial de **Flathub** (`flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo`).
-- Configurar el comando `groove-readonly` (estilo SteamOS) para proteger el sistema o desbloquearlo para desarrollo.
+- Configurar el comando `groove-readonly` (protección inmutable nativa) para proteger el sistema o desbloquearlo para desarrollo.
 
 ### Fase 3: Inyección de la Capa Exclusiva "Linux Groove OS"
 - Inyectar nuestro **Kernel 6.12 LTS Groove RT** y el módulo **`groove_rt.ko`** (`/dev/groove_rt`).
@@ -120,6 +120,6 @@ Para que la ISO base se mantenga liviana (~1.8 GB a 2.5 GB) y ultra ágil, el si
   3. Carga y permisos del módulo `groove_rt.ko`.
   4. Ejecución de un script de prueba de OpenCode y lanzadores Electron.
 
-### Fase 5: Generación de la ISO Final Híbrida (`0.4.0-steamos-arch`)
+### Fase 5: Generación de la ISO Final Híbrida (`0.4.0-studio-arch`)
 - Empaquetar el rootfs en `rootfs.squashfs` con compresión ZSTD multinúcleo.
-- Configurar GRUB EFI para arranque en Apple Silicon (UTM / Mac) y generar `linux-groove-0.4.0-steamos-arch-aarch64.iso` en `/Volumes/Backup/linux_groove_terabit/iso/`.
+- Configurar GRUB EFI para arranque en Apple Silicon (UTM / Mac) y generar `linux-groove-0.4.0-studio-arch-aarch64.iso` en `/Volumes/Backup/linux_groove_terabit/iso/`.

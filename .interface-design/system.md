@@ -43,15 +43,15 @@ Controles monocromáticos a la derecha; radios 12 px. Blur solo en superficies
 translúcidas, no sobre el texto de la terminal. Animaciones 160–180 ms;
 perfil reducido conservado. Weston usa los mismos cuatro lanzadores básicos.
 
-## Evolución Definitiva — 2026-11-06: Arquitectura SteamOS + KDE Plasma 6 (Wayland)
+## Evolución Definitiva — 2026-11-06: Arquitectura Groove Studio + KDE Plasma 6 (Wayland)
 
-Se adopta como entorno de escritorio principal el estándar oficial de **Valve SteamOS 3.0** sobre **Arch Linux ARM (`aarch64`)**: **KDE Plasma 6 con motor Wayland nativo**.
+Se adopta como entorno de escritorio principal una arquitectura moderna y desacoplada sobre **Arch Linux ARM (`aarch64`)**: **KDE Plasma 6 con motor Wayland nativo**.
 
 ### 1. Motivación y Causa Raíz Erradicada
 - **Aislamiento de Procesos Wayland**: A diferencia de los entornos X11 clásicos donde un cuelgue de cliente o bloqueo de puntero (como en aplicaciones pesadas de IA/Electron como OpenCode) congela el bucle sincrónico del servidor gráfico, KWin Wayland ejecuta cada cliente en su propio búfer de memoria aislado. Si una aplicación falla, el cursor, el dock y el compositor se mantienen fluidos a 60 fps.
 - **Entorno de Escritorio Maduro y Completo**: Resuelve de raíz las limitaciones de compositores mínimos (Wayfire/Weston), ofreciendo menú contextual completo en el escritorio con clic derecho (Crear carpeta, abrir terminal, configurar pantalla), centro de ajustes del sistema integrado (`systemsettings`), control de resoluciones dinámicas Mac Retina en UTM, y bandeja con calendario funcional.
 
-### 2. Firma Visual: macOS Glass + SteamOS Studio
+### 2. Firma Visual: macOS Glass + Groove Studio
 - **Botones de Ventana (Estilo Semáforo macOS)**: Controles en la esquina superior izquierda (`ButtonsOnLeft=XIA`: Cerrar, Minimizar, Maximizar) con bordes suavizados y espaciado ergonómico.
 - **Paleta y Superficies**: Tema oscuro `BreezeDark` con efecto Glass translúcido y desenfoque (blur KWin nativo por hardware) en paneles y decoraciones.
 - **Tipografía**: `Inter` 10 pt para interfaz general y `Inter Medium` para barras de título, con renderizado LCD subpixel nítido sin pixelado.
